@@ -1,0 +1,7 @@
+Elektronik
+- WS2812 Ring/Stripe um den NFC Reader
+
+
+CAD
+-Platzsparende Anordnung
+-25mm NFC Tags (eingedruckt ins Objekt)
