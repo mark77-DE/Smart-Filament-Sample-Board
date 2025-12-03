@@ -1,5 +1,7 @@
 Elektronik
+- Abgesetzte Einheit bestehend aus: Display , Reader + ???
 - WS2812 Ring/Stripe um den NFC Reader
+- WS2812 (30LEDS/m) zur Anzeige vom Steckplatz des jeweiligen Samples
 
 
 CAD
