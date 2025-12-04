@@ -1,7 +1,8 @@
 Elektronik
-- Abgesetzte Einheit bestehend aus: Display , Reader + ???
+- Abgesetzte Einheit bestehend aus: Display , Reader + ??? -> CDU ( Control Display Unit) -> Stromversorgung über USB C ? 
 - WS2812 Ring/Stripe um den NFC Reader
 - WS2812 (30LEDS/m) zur Anzeige vom Steckplatz des jeweiligen Samples
+- Speaker/Pieper/Buzzer verbauen für akustisches Feedback beim Lesen/Schreiben NFC Tag (zusätzlich zur LED/WS2812 Ring)
 
 
 CAD
