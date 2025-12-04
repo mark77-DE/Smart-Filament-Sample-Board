@@ -6,5 +6,6 @@ Elektronik
 
 
 CAD
--Platzsparende Anordnung
--25mm NFC Tags (eingedruckt ins Objekt)
+- Platzsparende Anordnung
+- Rastermaß beachten (LED Streifen und mögliche Halterungen (Skadis, Multiboard) ) 
+- 25mm NFC Tags (eingedruckt ins Objekt)
