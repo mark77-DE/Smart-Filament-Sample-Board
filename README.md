@@ -17,4 +17,4 @@ Worklfow basierend auf eigener Datenbank:
 NFC-Tag wird über den NFC-Reader gelesen
 ESP32 Fragt Datenbank ab und stellt Daten auf Display dar.
 
-Für beide ggf. Anbindung an Spoolman zum ANzeigen möglicher Bestände
+Für beide ggf. Anbindung an Spoolman zum Anzeigen möglicher Bestände
