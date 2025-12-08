@@ -10,8 +10,6 @@ extern int LED_BRIGHTNESS;
 extern unsigned long lastTagTime;
 extern String lastScannedUID;
 extern void notifyUID(const String &uid);
-void handleUID(const String &uid);
-
 
 
 void setLedBrightness(int index, int brightness);

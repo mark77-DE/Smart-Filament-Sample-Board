@@ -32,7 +32,14 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
     if(doc["action"].is<String>() && doc["action"] == "highlightLED")
 {
     String uid = doc["uid"];
-    handleUID(uid); // <-- NICHT mehr notifyUID(), sondern zentrale handleUID()
+    FilamentEntry entry;
+
+    // gültigen Eintrag anhand UID aus DB holen
+    if(FilamentDB::findByUID(uid, entry))
+    {
+        // virtuell scannen
+        notifyUID(entry.uid);   // <<< alles wie bei einem echten Scan
+    }
 }
 
 }

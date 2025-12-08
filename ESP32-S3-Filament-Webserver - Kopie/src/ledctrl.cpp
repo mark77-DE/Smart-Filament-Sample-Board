@@ -2,7 +2,7 @@
 
 int LED_COUNT = 60;          // oder wie viele LEDs du hast
 int LED_BRIGHTNESS = 200;    // Standardhelligkeit
-
+int targetLed = -1;
 unsigned long lastTagTime = 0;
 
 Adafruit_NeoPixel* LEDCTRL::_leds = nullptr;

@@ -51,14 +51,14 @@ Adafruit_NeoPixel leds(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
 #define SCL_PIN 22
 
 // ----------------- LED & Display Timing -----------------
-int targetLed = -1;
-unsigned long ledStartTime = 0;
+//int targetLed = -1;
+//unsigned long lastTagTime = 0;
 const unsigned long LED_TIMEOUT = 3000;
 bool displayIdleShown = false;
 
 // ----------------- Globale Variablen -----------------
 String activeUID = "";       // aktuell aktive UID
-
+unsigned long ledStartTime = 0;  // Startzeit der LED
 
 // ----------------- Hilfsfunktionen -----------------
 
@@ -88,49 +88,80 @@ void showCentered(const String &msg){
     display.display();
 }
 
-
-
-
-void activateLed(int index) {
-    if(targetLed != -1 && targetLed != index){
-        // alte LED ausschalten
-        leds.setPixelColor(targetLed, 0, 0, 0);
-    }
-
-    if(index >= 0 && index < LED_COUNT){
-        leds.setPixelColor(index, LED_COLOR_R, LED_COLOR_G, LED_COLOR_B);
-        targetLed = index;
-        ledStartTime = millis();  // Timer starten
-    } else {
-        targetLed = -1;
-    }
-
-    leds.show();
-}
-
-
-
-
-void handleUID(const String &uid){
-    FilamentEntry entry;
-    if(FilamentDB::findByUID(uid, entry)){
-        activateLed(entry.ledIndex);
-        MYDISPLAY::show(entry);
-    } else {
-        // unbekannt -> alle LEDs aus
+// ----------------- Zentrale UID-Aktivierung -----------------
+void setActiveUID(const String &uid){
+    if(uid != activeUID){
+        // alte LED löschen
         if(targetLed != -1){
-            leds.setPixelColor(targetLed, 0,0,0);
+            leds.clear();
             leds.show();
             targetLed = -1;
         }
-        showCentered("UNBEKANNT");
+
+        FilamentEntry entry;
+        if(FilamentDB::findByUID(uid, entry) && entry.ledIndex >= 0 && entry.ledIndex < LED_COUNT){
+            targetLed = entry.ledIndex;
+            setLedBrightness(targetLed, LED_BRIGHTNESS);
+            MYDISPLAY::show(entry);
+        } else {
+            targetLed = -1;
+            showCentered("UNBEKANNT");
+        }
+
+        activeUID = uid;
+        ledStartTime = millis();
+        displayIdleShown = false;
+    } else {
+        // gleiche UID -> Timer neu starten
+        ledStartTime = millis();
     }
 
     // --- Web UI informieren ---
     DynamicJsonDocument doc(256);
     doc["uid"] = uid;
     String msg;
-    serializeJson(doc, msg);
+    serializeJson(doc,msg);
+    ws.textAll(msg);
+}
+
+
+void activateLed(int index){
+    if(index < 0 || index >= LED_COUNT) return;
+
+    // Alte LED löschen, falls eine andere aktiv ist
+    if(targetLed != -1 && targetLed != index){
+        setLedBrightness(targetLed, 0);
+        leds.show();
+    }
+
+    targetLed = index;
+    setLedBrightness(targetLed, LED_BRIGHTNESS);
+    leds.show();
+    lastTagTime = millis(); // Timer für Timeout
+}
+
+
+void notifyUID(const String &uid){
+    FilamentEntry entry;
+    bool known = FilamentDB::findByUID(uid, entry);
+
+    if(known && entry.ledIndex >= 0 && entry.ledIndex < LED_COUNT){
+        targetLed = entry.ledIndex;
+        setLedBrightness(targetLed, LED_BRIGHTNESS); // LED einschalten
+        lastTagTime = millis(); // Timer starten
+        MYDISPLAY::show(entry); // Display aktualisieren
+    } else {
+        targetLed = -1;
+        leds.clear(); leds.show();
+        showCentered("UNBEKANNT");
+        lastTagTime = millis();
+    }
+
+    // --- Web UI informieren ---
+    DynamicJsonDocument doc(256);
+    doc["uid"] = uid;
+    String msg;
+    serializeJson(doc,msg);
     ws.textAll(msg);
 }
 
@@ -205,36 +236,33 @@ void loop(){
 
     // NFC Lesen
     uint8_t uid[7]; uint8_t uidLength = 0;
-nfc.startPassiveTargetIDDetection(PN532_MIFARE_ISO14443A);
-if(nfc.readDetectedPassiveTargetID(uid, &uidLength) && uidLength > 0){
-    String uidStr;
-    for(uint8_t i=0;i<uidLength;i++){
-        if(uid[i]<0x10) uidStr += "0";
-        uidStr += String(uid[i], HEX);
-        if(i != uidLength-1) uidStr += ":";
+    nfc.startPassiveTargetIDDetection(PN532_MIFARE_ISO14443A);
+    if(nfc.readDetectedPassiveTargetID(uid, &uidLength) && uidLength > 0){
+        String uidStr;
+        for(uint8_t i=0;i<uidLength;i++){
+            if(uid[i]<0x10) uidStr += "0";
+            uidStr += String(uid[i], HEX);
+            if(i != uidLength-1) uidStr += ":";
+        }
+        uidStr.toUpperCase();
+        Serial.println("FOUND UID: " + uidStr);
+        setActiveUID(uidStr);
+        nfc.SAMConfig();
     }
-    uidStr.toUpperCase();
-    Serial.println("FOUND UID: " + uidStr);
-    handleUID(uidStr);  // <-- NEU: zentrale Funktion
-    nfc.SAMConfig();
-}
 
+    // LED Timeout
+    if(targetLed != -1 && now - ledStartTime > LED_TIMEOUT){
+        leds.clear(); leds.show();
+        targetLed = -1;
+        activeUID = "";
+        displayIdleShown = false;
+    }
 
-    
-
-// LED Timeout
-if(targetLed != -1 && now - ledStartTime > LED_TIMEOUT){
-    leds.setPixelColor(targetLed, 0, 0, 0);
-    leds.show();
-    targetLed = -1;
-    displayIdleShown = false;
-}
-
-// Display Timeout
-if(targetLed == -1 && !displayIdleShown){
-    showCentered("SCAN TAG");
-    displayIdleShown = true;
-}
+    // Display Timeout / Idle
+    if(targetLed == -1 && !displayIdleShown){
+        showCentered("SCAN TAG");
+        displayIdleShown = true;
+    }
 
     delay(10);
 }
