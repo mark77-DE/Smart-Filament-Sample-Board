@@ -67,8 +67,6 @@ String activeUID = "";       // aktuell aktive UID
 
 // ----------------- Hilfsfunktionen -----------------
 
-
-
 // ----------------- LED & Display -----------------
 void setLedBrightness(int index, int brightness){
     uint8_t r = (LED_COLOR_R * brightness) / 255;
