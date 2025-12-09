@@ -30,4 +30,8 @@ namespace FilamentDB {
 
     bool loadFromFile();
     bool saveToFile();
+    bool add(const FilamentEntry &entry);
+    bool update(const FilamentEntry &entry);
+    bool remove(const String &uid);
+    bool deleteEntry(int index);
 }

@@ -152,6 +152,12 @@ void setup(){
 
     Wire.begin(SDA_PIN,SCL_PIN);
 
+    // ----------------- Filesystem & Webserver -----------------
+    if(!LittleFS.begin()){
+        Serial.println("LittleFS mount failed!");
+        while(1);
+    }
+
     // OLED init
     if(!display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR)){
         Serial.println("OLED init failed!");
@@ -191,11 +197,7 @@ void setup(){
     delay(5000);
     showCentered("SCAN TAG");
 
-    // ----------------- Filesystem & Webserver -----------------
-    if(!LittleFS.begin()){
-        Serial.println("LittleFS mount failed!");
-        while(1);
-    }
+    
 
     // WebSocket starten
     

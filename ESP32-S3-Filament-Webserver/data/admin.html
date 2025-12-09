@@ -11,6 +11,16 @@
 <h3>Einträge</h3>
 <div id="db"></div>
 
+<h3>Neuen Eintrag</h3>
+<form id="addForm">
+  <input type="text" name="uid" placeholder="UID (z. B. 04:...)" required>
+  <input type="text" name="vendor" placeholder="Hersteller" required>
+  <input type="text" name="type" placeholder="Typ" required>
+  <input type="text" name="color" placeholder="Farbe" required>
+  <input type="number" name="ledIndex" placeholder="LED Index" required>
+  <button type="submit">Hinzufügen</button>
+</form>
+
 <a href="/api/export" download="filaments.json">Export</a>
 
 <h3>Import</h3>
