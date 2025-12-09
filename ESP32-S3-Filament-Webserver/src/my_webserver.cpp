@@ -6,7 +6,6 @@
 extern int LED_COUNT;
 extern int LED_BRIGHTNESS;
 extern int targetLed;
-extern unsigned long lastTagTime;
 extern void setLedBrightness(int led, int brightness);
 extern String lastScannedUID;
 

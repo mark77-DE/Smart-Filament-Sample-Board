@@ -56,6 +56,11 @@ unsigned long ledStartTime = 0;
 const unsigned long LED_TIMEOUT = 3000;
 bool displayIdleShown = false;
 
+unsigned long lastTagTime = 0;
+unsigned long now = 0;
+
+bool isActive = false;
+
 // ----------------- Globale Variablen -----------------
 String activeUID = "";       // aktuell aktive UID
 
@@ -83,7 +88,7 @@ void showCentered(const String &msg){
     display.setTextSize(1);
     int16_t x1, y1; uint16_t w,h;
     display.getTextBounds(msg,0,0,&x1,&y1,&w,&h);
-    display.setCursor((SCREEN_WIDTH - w)/2,(SCREEN_HEIGHT - h)/2);
+    display.setCursor((SCREEN_WIDTH - w)/2,(SCREEN_HEIGHT - h)/2 + 2);
     display.print(msg);
     display.display();
 }
@@ -106,22 +111,28 @@ void activateLed(int index) {
     }
 
     leds.show();
+    Serial.print(index);
+    Serial.println(ledStartTime);
 }
 
 
 
 
 void handleUID(const String &uid){
+    lastTagTime = now;
+    isActive = true; 
     FilamentEntry entry;
     if(FilamentDB::findByUID(uid, entry)){
         activateLed(entry.ledIndex);
         MYDISPLAY::show(entry);
+        
     } else {
         // unbekannt -> alle LEDs aus
         if(targetLed != -1){
             leds.setPixelColor(targetLed, 0,0,0);
             leds.show();
             targetLed = -1;
+            ledStartTime = millis();
         }
         showCentered("UNBEKANNT");
     }
@@ -133,10 +144,6 @@ void handleUID(const String &uid){
     serializeJson(doc, msg);
     ws.textAll(msg);
 }
-
-
-
-
 
 
 
@@ -201,40 +208,39 @@ void setup(){
 }
 
 void loop(){
-    unsigned long now = millis();
+    now = millis();
 
     // NFC Lesen
     uint8_t uid[7]; uint8_t uidLength = 0;
-nfc.startPassiveTargetIDDetection(PN532_MIFARE_ISO14443A);
-if(nfc.readDetectedPassiveTargetID(uid, &uidLength) && uidLength > 0){
-    String uidStr;
-    for(uint8_t i=0;i<uidLength;i++){
-        if(uid[i]<0x10) uidStr += "0";
-        uidStr += String(uid[i], HEX);
-        if(i != uidLength-1) uidStr += ":";
-    }
-    uidStr.toUpperCase();
-    Serial.println("FOUND UID: " + uidStr);
-    handleUID(uidStr);  // <-- NEU: zentrale Funktion
-    nfc.SAMConfig();
-}
+    nfc.startPassiveTargetIDDetection(PN532_MIFARE_ISO14443A);
+    if(nfc.readDetectedPassiveTargetID(uid, &uidLength) && uidLength > 0){
+        String uidStr;
+        for(uint8_t i=0;i<uidLength;i++){
+            if(uid[i]<0x10) uidStr += "0";
+            uidStr += String(uid[i], HEX);
+            if(i != uidLength-1) uidStr += ":";
+        }
+        uidStr.toUpperCase();
+        Serial.println("FOUND UID: " + uidStr);
+        handleUID(uidStr);  // <-- NEU: zentrale Funktion
+        nfc.SAMConfig();
+    }   
 
+    // LED Timeout
+    if (now - lastTagTime > LED_TIMEOUT && isActive) {
+        // LED ausschalten
+        targetLed = -1;
+        leds.clear();
+        leds.show();
+        Serial.println("LED Timeout - alle LEDs aus");
+        Serial.println("Display idle");
+        showCentered("SCAN TAG");
+
+        isActive = false;
+    }
 
     
 
-// LED Timeout
-if(targetLed != -1 && now - ledStartTime > LED_TIMEOUT){
-    leds.setPixelColor(targetLed, 0, 0, 0);
-    leds.show();
-    targetLed = -1;
-    displayIdleShown = false;
-}
-
-// Display Timeout
-if(targetLed == -1 && !displayIdleShown){
-    showCentered("SCAN TAG");
-    displayIdleShown = true;
-}
-
+    
     delay(10);
 }

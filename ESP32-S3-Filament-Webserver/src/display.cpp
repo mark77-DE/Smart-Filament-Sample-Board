@@ -14,4 +14,5 @@ void MYDISPLAY::show(const FilamentEntry& entry) {
     _display->println(entry.type);
     _display->println(entry.color);
     _display->display();
+    Serial.println("DISPLAY: " + entry.vendor + " " + entry.type + " " + entry.color);
 }
