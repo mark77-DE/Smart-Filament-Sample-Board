@@ -15,7 +15,22 @@
 <form id="addForm">
   <input type="text" name="uid" placeholder="UID (z. B. 04:...)" required>
   <input type="text" name="vendor" placeholder="Hersteller" required>
-  <input type="text" name="type" placeholder="Typ" required>
+  
+  <!-- Filament Typ als Dropdown -->
+  <select name="type" required>
+    <option value="">-- Typ wählen --</option>
+    <option value="PLA">PLA</option>
+    <option value="PLA+">PLA+</option>
+    <option value="PLA-CF">PLA-CF</option>
+    <option value="PETG">PETG</option>
+    <option value="PETG-CF">PETG-CF</option>
+    <option value="ABS">ABS</option>
+    <option value="ASA">ASA</option>
+    <option value="TPU">TPU</option>
+    <option value="Nylon">Nylon</option>
+    <option value="Holz">Holz-Filament</option>
+  </select>
+
   <input type="text" name="color" placeholder="Farbe" required>
   <input type="number" name="ledIndex" placeholder="LED Index" required>
   <button type="submit">Hinzufügen</button>

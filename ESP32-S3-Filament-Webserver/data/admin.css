@@ -21,3 +21,7 @@ th, td {
     background-color: yellow;
     transition: background-color 0.5s;
 }
+
+tr.highlight {
+    background-color: #ffe08a;
+}

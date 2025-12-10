@@ -163,33 +163,39 @@ server.on("/api/update", HTTP_POST,
 
 
 // Neuen Eintrag anlegen
-server.on("/api/add", HTTP_POST, [](AsyncWebServerRequest *req){
-    if(!req->hasParam("plain", true)) {
-        req->send(400, "text/plain", "missing body");
-        return;
+server.on("/api/add", HTTP_POST,
+    [](AsyncWebServerRequest *req){
+        req->send(200, "text/plain", "Processing");
+    },
+    nullptr,
+    [](AsyncWebServerRequest *req, uint8_t *data, size_t len, size_t index, size_t total){
+        static String body;
+        if (index == 0) body = "";
+        for (size_t i = 0; i < len; i++) body += (char)data[i];
+        if (index + len != total) return;
+
+        DynamicJsonDocument doc(512);
+        if (deserializeJson(doc, body)) {
+            Serial.println("ADD: JSON parse failed");
+            return;
+        }
+
+        FilamentEntry entry;
+        entry.uid      = doc["uid"].as<String>();
+        entry.vendor   = doc["vendor"].as<String>();
+        entry.type     = doc["type"].as<String>();
+        entry.color    = doc["color"].as<String>();
+        entry.ledIndex = doc["ledIndex"].as<int>();
+
+        if (FilamentDB::add(entry)) {
+            Serial.println("ADD: OK");
+            FilamentDB::saveToFile();
+        } else {
+            Serial.println("ADD: FAILED");
+        }
     }
+);
 
-    String body = req->getParam("plain", true)->value();
-
-    DynamicJsonDocument doc(512);
-    if(deserializeJson(doc, body)) {
-        req->send(400, "text/plain", "JSON parse failed");
-        return;
-    }
-
-    FilamentEntry entry;
-    entry.uid      = doc["uid"].as<String>();
-    entry.vendor   = doc["vendor"].as<String>();
-    entry.type     = doc["type"].as<String>();
-    entry.color    = doc["color"].as<String>();
-    entry.ledIndex = doc["ledIndex"].as<int>();
-
-    if(FilamentDB::add(entry)) {
-        req->send(200, "text/plain", "Entry added!");
-    } else {
-        req->send(500, "text/plain", "DB full or error");
-    }
-});
 
 
 

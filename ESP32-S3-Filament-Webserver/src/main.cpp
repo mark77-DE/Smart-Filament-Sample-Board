@@ -120,12 +120,23 @@ void handleUID(const String &uid){
     lastTagTime = now;
     isActive = true; 
     FilamentEntry entry;
+
+    DynamicJsonDocument doc(256);
+    doc["uid"] = uid;
+
     if(FilamentDB::findByUID(uid, entry)){
+        // Bekannte UID
         activateLed(entry.ledIndex);
         MYDISPLAY::show(entry);
-        
+
+        doc["action"] = "knownUID";
+        doc["ledIndex"] = entry.ledIndex;
+        doc["vendor"] = entry.vendor;
+        doc["type"] = entry.type;
+        doc["color"] = entry.color;
+
     } else {
-        // unbekannt -> alle LEDs aus
+        // Unbekannt → LEDs zurücksetzen
         if(targetLed != -1){
             leds.setPixelColor(targetLed, 0,0,0);
             leds.show();
@@ -133,11 +144,11 @@ void handleUID(const String &uid){
             ledStartTime = millis();
         }
         showCentered("UNBEKANNT");
+
+        // WebUI informieren
+        doc["action"] = "unknownUID";
     }
 
-    // --- Web UI informieren ---
-    DynamicJsonDocument doc(256);
-    doc["uid"] = uid;
     String msg;
     serializeJson(doc, msg);
     ws.textAll(msg);
