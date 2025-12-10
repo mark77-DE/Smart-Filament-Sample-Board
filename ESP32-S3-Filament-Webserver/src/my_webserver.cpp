@@ -217,6 +217,24 @@ server.on("/api/delete", HTTP_POST, [] (AsyncWebServerRequest *request) {
 });
 
 
+// Config als JSON ausliefern
+server.on("/config.json", HTTP_GET, [](AsyncWebServerRequest *request){
+    DynamicJsonDocument doc(256);
+
+    // Beispielwerte
+    JsonObject layout = doc.createNestedObject("layout");
+    layout["columns"] = 2;
+    layout["rows"] = 5;
+
+    JsonObject options = doc.createNestedObject("options");
+    options["darkmode"] = true;
+    options["mqtt"] = false;
+    options["ledCount"] = LED_COUNT;
+
+    String json;
+    serializeJson(doc, json);
+    request->send(200, "application/json", json);
+});
 
 
 

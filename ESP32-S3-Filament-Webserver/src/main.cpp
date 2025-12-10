@@ -161,6 +161,9 @@ void setup(){
     Serial.begin(115200);
     while(!Serial);
 
+    Serial.println("Firmware Version: " FIRMWARE_VERSION);
+    Serial.println("Git Hash: " GIT_HASH);
+
     Wire.begin(SDA_PIN,SCL_PIN);
 
     // ----------------- Filesystem & Webserver -----------------
