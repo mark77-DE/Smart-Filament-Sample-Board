@@ -33,6 +33,14 @@ th, td {
     transition: background-color 0.5s; 
 }
 
+.logo {
+    width: 150px;      /* z.B. feste Breite */
+    height: auto;      /* Höhe proportional */
+    display: block;
+    margin: 10px auto; /* zentrieren */
+}
+
+
 #unknown { 
     position: fixed; 
     top: 20px; 

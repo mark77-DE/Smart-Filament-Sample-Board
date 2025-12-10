@@ -236,7 +236,9 @@ server.on("/config.json", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send(200, "application/json", json);
 });
 
-
+server.on("/logo.png", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send(LittleFS, "/logo.png", "image/png");
+});
 
 
     ws.onEvent(onWsEvent);
