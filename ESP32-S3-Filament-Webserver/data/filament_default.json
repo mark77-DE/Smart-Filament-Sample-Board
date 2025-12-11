@@ -1,0 +1,24 @@
+{
+  "config": {
+    "layout": {
+      "columns": 2,
+      "rows": 5,
+      "items": 6
+    },
+    "options": {
+      "darkmode": true,
+      "mqtt": false,
+      "ledCount": 8,
+      "ledPin": 5
+    }
+  },
+  "filaments": [
+    {
+      "uid": "04:D3:4F:51:6F:61:81",
+      "vendor": "HerstellerA",
+      "type": "PLA",
+      "color": "Rot",
+      "ledIndex": 0
+    }
+  ]
+}

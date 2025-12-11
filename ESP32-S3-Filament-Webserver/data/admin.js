@@ -6,6 +6,7 @@ let CONFIG = null;
 
 
 
+
 /* ------------------------ WebSocket ------------------------ */
 const ws = new WebSocket(`ws://${location.host}/ws`);
 
@@ -53,30 +54,60 @@ ws.onmessage = async (ev) => {
     }
 };
 
-/* ------------------------ File-Upload ------------------------ */
-form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-
-    const fileInput = form.querySelector("input[name=file]");
-    if (!fileInput.files.length) return;
-
-    const formData = new FormData();
-    formData.append("file", fileInput.files[0]);
-
+// ------------------------ Export All ------------------------
+document.getElementById("exportAllBtn").addEventListener("click", async () => {
     try {
-        const res = await fetch("/api/import", { method: "POST", body: formData });
-        if (res.ok) {
-            alert("Upload erfolgreich!");
-            await loadTable();
-            await updateAddFormLEDs();
-        } else {
-            alert("Upload fehlgeschlagen!");
-        }
+        const res = await fetch("/api/exportAll");
+        if (!res.ok) throw new Error("Export fehlgeschlagen");
+
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "filament_package.json";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
     } catch (err) {
-        console.error(err);
-        alert("Fetch-Fehler: " + err);
+        alert("Export fehlgeschlagen: " + err);
     }
 });
+
+// ------------------------ Import All ------------------------
+const importForm = document.getElementById("importAllForm");
+importForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const fileInput = importForm.querySelector("input[name=file]");
+    if (!fileInput.files.length) return;
+
+    const file = fileInput.files[0];
+    const text = await file.text(); // erst hier lesen
+
+    try {
+        const res = await fetch("/api/importAll", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: text
+        });
+
+        if (res.ok) {
+            alert("Import erfolgreich!");
+            CONFIG = null;                // vorherige Config verwerfen
+            await loadConfig();           // neue Config laden
+            await loadTable();       // Tabelle neu laden
+            await updateAddFormLEDs(); // Dropdowns neu befüllen
+        } else {
+            const errText = await res.text();
+            alert("Import fehlgeschlagen: " + errText);
+        }
+    } catch (err) {
+        alert("Import fehlgeschlagen: " + err);
+    }
+});
+
+
 
 /* ------------------------ Tabelle laden ------------------------ */
 async function loadTable() {
@@ -233,6 +264,8 @@ function getFreeLEDs(data) {
     const maxLEDs = CONFIG.options.ledCount;
     const used = new Set(data.map(e => Number(e.ledIndex)));
 
+    console.log("Max LEDs:", maxLEDs, "Used LEDs:", used);
+
     const free = [];
     for (let i = 0; i < maxLEDs; i++) {
         if (!used.has(i)) free.push(i);
@@ -280,6 +313,56 @@ function buildLedDropdown(currentLED, usedLEDs) {
     return html;
 }
 
+async function loadLedConfig() {
+    const res = await fetch("/config.json");
+    if(!res.ok) return;
+    const config = await res.json();
+
+    document.getElementById("maxLED").value = config.options.ledCount || 8;
+    document.getElementById("ledPin").value = config.options.ledPin || 5;
+    document.getElementById("ledBrightness").value = config.options.ledBrightness || 50;
+
+    const col = config.options.ledColor || [255,0,0];
+    const hex = '#' + col.map(v => v.toString(16).padStart(2,'0')).join('');
+    document.getElementById("ledColor").value = hex;
+}
+
+document.getElementById("saveLedConfig").addEventListener("click", async () => {
+    const ledCount = Number(document.getElementById("maxLED").value);
+    const ledPin   = Number(document.getElementById("ledPin").value);
+    const ledBrightness = Number(document.getElementById("ledBrightness").value);
+    const col = document.getElementById("ledColor").value; // #RRGGBB
+    const ledColor = [
+        parseInt(col.substr(1,2),16),
+        parseInt(col.substr(3,2),16),
+        parseInt(col.substr(5,2),16)
+    ];
+
+    const res = await fetch("/api/updateLedConfig", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ledCount, ledPin, ledBrightness, ledColor })
+    });
+
+    const text = await res.text();
+    if (text.includes("REBOOTING")) {
+        document.body.innerHTML = "<h2>Device is rebooting...</h2><p>Please wait...</p>";
+        const check = setInterval(async () => {
+            try {
+                const ping = await fetch("/config.json", { cache: "no-store" });
+                if (ping.ok) {
+                    clearInterval(check);
+                    location.reload();
+                }
+            } catch (e) {}
+        }, 2000);
+    } else {
+        alert("Error saving LED config");
+    }
+});
+
+
+loadLedConfig();
 
 async function loadConfig() {
     if (!CONFIG) {

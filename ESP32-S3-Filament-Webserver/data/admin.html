@@ -36,18 +36,41 @@
   <button type="submit">Hinzufügen</button>
 </form>
 
-<!--
-http://<IP>/api/export?file=filaments
-http://<IP>/api/export?file=config
--->
-<a href="/api/export?file=filaments" download="filaments.json">Export Filaments</a>
-<a href="/api/export?file=config" download="filaments.json">Export Config</a>
+<h3>LED Settings</h3>
+<label for="maxLED">Number of LEDs (1-100):</label>
+<input type="number" id="maxLED" name="maxLED" min="1" max="100" value="8" />
 
-<h3>Import</h3>
-<form id="uploadForm" enctype="multipart/form-data">
-    <input type="file" name="file" required>
-    <button type="submit">Upload</button>
+<label for="ledPin">LED Pin:</label>
+<select id="ledPin" name="ledPin">
+  <option value="2">2</option>
+  <option value="4">4</option>
+  <option value="5">5</option>
+  <option value="12">12</option>
+  <option value="14">14</option>
+  <option value="15">15</option>
+  <option value="16">16</option>
+  <option value="17">17</option>
+</select>
+
+<label for="ledBrightness">LED Brightness (0-255):</label>
+<input type="number" id="ledBrightness" name="ledBrightness" min="0" max="255" value="50" />
+
+<label for="ledColor">LED Color (RGB):</label>
+<input type="color" id="ledColor" name="ledColor" value="#ff0000" />
+
+<button id="saveLedConfig">Save LED Config</button>
+
+
+
+
+<h3>Alles Exportieren / Importieren</h3>
+<button id="exportAllBtn">Alles exportieren</button>
+
+<form id="importAllForm" method="POST" enctype="multipart/form-data">
+    <input type="file" name="file" accept=".json" required>
+    <button type="submit">Importieren</button>
 </form>
+
 
 <script src="/admin.js"></script>
 </body>

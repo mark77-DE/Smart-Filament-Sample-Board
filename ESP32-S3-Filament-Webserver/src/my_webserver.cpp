@@ -89,59 +89,93 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
     });
 
     // Export DB
-   server.on("/api/export", HTTP_GET, [](AsyncWebServerRequest *req){
-    if (!req->hasParam("file")) {
-        req->send(400, "text/plain", "Missing file parameter");
+   #include <ArduinoJson.h>
+#include <LittleFS.h>
+
+// --- Export ALL (filaments + config) ---
+server.on("/api/exportAll", HTTP_GET, [](AsyncWebServerRequest *req){
+    // filaments.json
+    File f1 = LittleFS.open("/filaments.json", "r");
+    if(!f1){
+        req->send(404, "text/plain", "filaments.json not found");
         return;
     }
+    String filamentsStr = f1.readString();
+    f1.close();
 
-    String which = req->getParam("file")->value();
-    String path;
-
-    if (which == "filaments") {
-        path = "/filaments.json";
-    } else if (which == "config") {
-        path = "/config.json";
-    } else {
-        req->send(400, "text/plain", "Unknown file");
+    // config.json
+    File f2 = LittleFS.open("/config.json", "r");
+    if(!f2){
+        req->send(404, "text/plain", "config.json not found");
         return;
     }
+    String configStr = f2.readString();
+    f2.close();
 
-    File f = LittleFS.open(path, "r");
-    if(!f){
-        req->send(404, "text/plain", "File not found");
-        return;
-    }
+    // alles in ein JSON packen
+    DynamicJsonDocument doc(128*1024); // 32kB sollten reichen
+    JsonDocument filamentsDoc;
+    deserializeJson(filamentsDoc, filamentsStr);
+    doc["filaments"] = filamentsDoc.as<JsonArray>();
 
-    req->send(f, path, "application/json", true);
+    JsonDocument configDoc;
+    deserializeJson(configDoc, configStr);
+    doc["config"] = configDoc.as<JsonObject>();
+
+    String out;
+    serializeJson(doc, out);
+
+    req->send(200, "application/json", out);
 });
 
+// --- Import ALL ---
+server.on("/api/importAll", HTTP_POST,
+    [](AsyncWebServerRequest *req){
+        req->send(200, "text/plain", "Upload started");
+    },
+    nullptr,
+    [](AsyncWebServerRequest *req, uint8_t *data, size_t len, size_t index, size_t total){
+        static String body;
+        if(index == 0) body = "";
+        for(size_t i = 0; i < len; i++) body += (char)data[i];
+        if(index + len != total) return;
 
-    // Import DB
-    server.on("/api/import", HTTP_POST,
-        [](AsyncWebServerRequest *req){
-            req->send(200, "text/plain", "Upload OK");
-        },
-        [](AsyncWebServerRequest *req, String filename, size_t index,
-           uint8_t *data, size_t len, bool final)
-        {
-            static File uploadFile;
+        DynamicJsonDocument doc(128*1024);
+        if(deserializeJson(doc, body)){
+            req->send(400, "text/plain", "JSON parse failed");
+            return;
+        }
+        req->send(200, "text/plain", "Import OK");
 
-            if(index == 0){
-                uploadFile = LittleFS.open("/filaments.json", "w");
-                if(!uploadFile) return;
-            }
-
-            if(uploadFile){
-                uploadFile.write(data, len);
-            }
-
-            if(final){
-                uploadFile.close();
-                FilamentDB::loadFromFile();
+        // Filaments speichern
+        if(doc.containsKey("filaments")){
+            File f = LittleFS.open("/filaments.json", "w");
+            if(f){
+                String out;
+                serializeJson(doc["filaments"], out);
+                f.print(out);
+                f.close();
+                FilamentDB::loadFromFile(); // falls du direkt DB neu laden willst
+                Serial.println("Filaments imported");
             }
         }
-    );
+
+        // Config speichern
+        if(doc.containsKey("config")){
+            File f = LittleFS.open("/config.json", "w");
+            if(f){
+                String out;
+                serializeJson(doc["config"], out); // die gesamte JSON-Struktur speichern
+                f.print(out);
+                f.close();
+                loadConfig();
+                LEDCTRL::init(LED_COUNT, LED_PIN);
+                Serial.println("Config imported");
+            }
+        }
+    }
+);
+
 
     // Update eines Eintrags
 server.on("/api/update", HTTP_POST,
@@ -217,9 +251,6 @@ server.on("/api/add", HTTP_POST,
 
 
 
-
-
-
 server.on("/api/delete", HTTP_POST, [] (AsyncWebServerRequest *request) {
     if (!request->hasParam("index", true)) {
         request->send(400, "application/json", "{\"status\":\"error\",\"msg\":\"missing index\"}");
@@ -238,21 +269,11 @@ server.on("/api/delete", HTTP_POST, [] (AsyncWebServerRequest *request) {
 
 // Config als JSON ausliefern
 server.on("/config.json", HTTP_GET, [](AsyncWebServerRequest *request){
-    DynamicJsonDocument doc(256);
-
-    // Beispielwerte
-    JsonObject layout = doc.createNestedObject("layout");
-    layout["columns"] = 2;
-    layout["rows"] = 5;
-
-    JsonObject options = doc.createNestedObject("options");
-    options["darkmode"] = true;
-    options["mqtt"] = false;
-    options["ledCount"] = LED_COUNT;
-
-    String json;
-    serializeJson(doc, json);
-    request->send(200, "application/json", json);
+    if (!LittleFS.exists("/config.json")) {
+        request->send(404, "application/json", "{\"error\":\"config.json missing\"}");
+        return;
+    }
+    request->send(LittleFS, "/config.json", "application/json");
 });
 
 server.on("/logo.png", HTTP_GET, [](AsyncWebServerRequest *request){
@@ -260,8 +281,67 @@ server.on("/logo.png", HTTP_GET, [](AsyncWebServerRequest *request){
 });
 
 
+server.on("/api/updateLedConfig", HTTP_POST, 
+    [](AsyncWebServerRequest *req){},
+    nullptr,
+    [](AsyncWebServerRequest *req, uint8_t *data, size_t len, size_t index, size_t total){
+        static String body;
+        if(index == 0) body = "";
+        body += String((char*)data).substring(0, len);
+
+        if(index + len != total) return;
+
+        StaticJsonDocument<256> doc;
+        if(deserializeJson(doc, body)){
+            req->send(400, "text/plain", "JSON Error");
+            return;
+        }
+
+        int newCount      = doc["ledCount"] | 8;
+        int newPin        = doc["ledPin"]   | 5;
+        int newBrightness = doc["ledBrightness"] | 50;
+
+        // Farbe aus dem Request
+        JsonArray colorArr = doc["ledColor"];
+
+        // Config.json laden
+        StaticJsonDocument<1024> configDoc;
+        File f = LittleFS.open("/config.json", "r");
+        if(f){
+            deserializeJson(configDoc, f);
+            f.close();
+        }
+
+        configDoc["options"]["ledCount"] = newCount;
+        configDoc["options"]["ledPin"]   = newPin;
+        configDoc["options"]["ledBrightness"] = newBrightness;
+
+        // Farbe korrekt kopieren
+        JsonArray col = configDoc["options"]["ledColor"].to<JsonArray>();
+        col.clear();
+        for (int i = 0; i < 3; i++) col.add(colorArr[i].as<int>());
+
+        // zurückschreiben
+        f = LittleFS.open("/config.json", "w");
+        if(f){
+            serializeJson(configDoc, f);
+            f.close();
+        }
+
+        req->send(200, "text/plain", "REBOOTING");
+        delay(200);
+        ESP.restart();
+    }
+);
+
+
+
+
+
+
     ws.onEvent(onWsEvent);
     server.addHandler(&ws);
 
     server.begin();
 }
+

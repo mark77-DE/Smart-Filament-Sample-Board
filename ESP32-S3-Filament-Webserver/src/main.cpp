@@ -39,8 +39,8 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 Adafruit_PN532 nfc(PN532_SCK, PN532_MISO, PN532_MOSI, PN532_CS);
 
 // ----------------- LEDs -----------------
-#define LED_PIN 4
-#define LED_COUNT 8
+
+
 Adafruit_NeoPixel leds(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
 #define LED_COLOR_R 255
 #define LED_COLOR_G 0
@@ -49,6 +49,9 @@ Adafruit_NeoPixel leds(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
 
 #define SDA_PIN 21
 #define SCL_PIN 22
+
+
+
 
 // ----------------- LED & Display Timing -----------------
 int targetLed = -1;
@@ -178,7 +181,17 @@ void setup(){
         while(1);
     }
 
-    LEDCTRL::init(&leds);
+    // 1. Config laden
+    loadConfig(); // LED_COUNT wird gesetzt
+
+    Serial.print("LED_COUNT = ");
+    Serial.println(LED_COUNT);
+
+    // 2. LED Strip initialisieren
+    LEDCTRL::init(LED_COUNT, LED_PIN);
+
+    // 3. Test
+    LEDCTRL::allOff();
     MYDISPLAY::init(&display);
     FilamentDB::load();
 
