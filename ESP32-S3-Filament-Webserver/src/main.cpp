@@ -6,6 +6,7 @@
 #include <Adafruit_PN532.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SH110X.h>
+#include <Adafruit_NeoPixel.h>
 
 #include <ArduinoJson.h>
 #include "filament_db.h"
@@ -14,13 +15,12 @@
 #include "display.h"
 #include "display_config.h"
 
-#include <Fonts/FreeMono7pt7b.h>
 #include "my_webserver.h"
 
 #include <LittleFS.h>
 #include "globals.h"
 
-
+#include "display_anim.h"
 
 
 // ----------------- Server & WS -----------------
@@ -59,18 +59,21 @@ bool isActive = false;
 String activeUID = "";       // aktuell aktive UID
 
 // ----------------- Hilfsfunktionen -----------------
-void showCentered(const String &msg){
-    display.clearDisplay();
-    display.setFont(&FreeMono7pt7b);
-    display.setTextSize(1);
-    int16_t x1, y1; uint16_t w,h;
-    display.getTextBounds(msg,0,0,&x1,&y1,&w,&h);
-    display.setCursor((SCREEN_WIDTH - w)/2,(SCREEN_HEIGHT - h)/2 + 2);
-    display.print(msg);
-    display.display();
-}
 
 // ----------------- LED & Display -----------------
+void setLedBrightness(int index, int brightness){
+    uint8_t r = (LED_COLOR_R * brightness) / 255;
+    uint8_t g = (LED_COLOR_G * brightness) / 255;
+    uint8_t b = (LED_COLOR_B * brightness) / 255;
+
+    for(int i=0;i<LED_COUNT;i++){
+        if(i == index) leds.setPixelColor(i,r,g,b);
+        else leds.setPixelColor(i,0);
+    }
+    leds.show();
+}
+
+
 void activateLed(int index) {
 
    
@@ -90,6 +93,11 @@ void activateLed(int index) {
 void handleUID(const String &uid){
     lastTagTime = now;
     isActive = true; 
+
+    // Idle-Animation stoppen, weil jetzt aktiv etwas angezeigt wird
+    DisplayAnim::stop();
+
+
     FilamentEntry entry;
 
     DynamicJsonDocument doc(256);
@@ -113,7 +121,7 @@ void handleUID(const String &uid){
             targetLed = -1;
             ledStartTime = millis();
         }
-        showCentered("UNBEKANNT");
+        MYDISPLAY::showCentered("UNBEKANNT");
 
         // WebUI informieren
         doc["action"] = "unknownUID";
@@ -170,18 +178,16 @@ void setup(){
     FilamentDB::load();
 
     display.clearDisplay();
-    display.setFont(&FreeMono7pt7b);
-    display.setTextSize(1);
-    display.setTextColor(DISPLAY_COLOR);
 
-    showCentered("WIFI CONNECTING...");
+
+    MYDISPLAY::showCentered("WIFI CONNECTING...");
 
     // PN532 init
     nfc.begin();
     uint32_t versiondata = nfc.getFirmwareVersion();
     if(!versiondata){
         Serial.println("PN532 not found!");
-        showCentered("PN532 FEHLT!");
+        MYDISPLAY::showCentered("PN532 FEHLT!");
         while(1);
     }
     nfc.SAMConfig();
@@ -189,14 +195,18 @@ void setup(){
 
     // ----------------- WLAN -----------------
     WiFiManager wifiManager;
-    showCentered("VERBINDUNG...");
+    MYDISPLAY::showCentered("VERBINDUNG...");
     if(!wifiManager.autoConnect("NFC-Setup-AP")){
         ESP.restart();
     }
     Serial.print("IP: "); Serial.println(WiFi.localIP());
-    showCentered(WiFi.localIP().toString());
+    MYDISPLAY::showCentered(WiFi.localIP().toString());
     delay(5000);
-    showCentered("SCAN TAG");
+
+    // Erst "SCAN TAG" anzeigen, dann später in die Animation wechseln
+    DisplayAnim::startIdleTextFirst(millis());
+
+    
 
     // WebSocket starten
     server.addHandler(&ws);
@@ -210,6 +220,11 @@ void setup(){
 // ----------------- Loop -----------------
 void loop(){
     now = millis();
+
+    // Idle-Animation nur laufen lassen, wenn das System nicht aktiv ist
+    if (!isActive) {
+        DisplayAnim::tickIdle(display, now);
+    }
 
     // NFC Lesen
     uint8_t uid[7]; uint8_t uidLength = 0;
@@ -232,7 +247,11 @@ void loop(){
         targetLed = -1;
         LEDCTRL::allOff();   // <-- alles über LEDCTRL
         Serial.println("LED Timeout - alle LEDs aus");
-        showCentered("SCAN TAG");
+        Serial.println("Display idle");
+
+
+        DisplayAnim::startIdleTextFirst(now);
+
         isActive = false;
     }
 

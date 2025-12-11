@@ -3,6 +3,17 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SH110X.h>
 #include <Adafruit_SSD1306.h>
+#include <Fonts/FreeMono7pt7b.h>
+#include <Fonts/FreeSans9pt7b.h>
+
+// Idle-Animation-Konfiguration (standard, aber überschreibbar)
+#ifndef IDLE_ANIM_FRAME_DELAY
+  #define IDLE_ANIM_FRAME_DELAY 42    // ms zwischen Frames
+#endif
+
+#ifndef IDLE_TEXT_DURATION
+  #define IDLE_TEXT_DURATION 5000     // ms "SCAN TAG" anzeigen
+#endif
 
 // -----------------------------
 // Display-Typ wählen
@@ -15,6 +26,25 @@
   // Default, falls nichts per build_flag gesetzt wird:
   #define DISPLAY_TYPE DISPLAY_TYPE_SH1106
 #endif
+
+// -----------------------------
+// Auto Fit Konfiguration
+// -----------------------------
+// Ab wie vielen Zeichen auf die Standard-Font (nullptr) gewechselt wird.
+// 0 = Autofit nur per Pixelbreite, kein Wechsel nur wegen Länge.
+#define DISPLAY_AUTOFIT_THRESHOLD 12
+
+
+// -----------------------------
+// FONT Einstellungen
+// -----------------------------
+// Zentrale Font-Auswahl:
+// - für GFX-Font:    &FreeSans9pt7b
+// - für Standardfont: nullptr
+#define DISPLAY_FONT &FreeSans9pt7b
+//#define DISPLAY_FONT      &FreeMono7pt7b
+//#define DISPLAY_FONT nullptr   // <- wenn du die Standard-Schrift nutzen willst
+
 
 // -----------------------------
 // Display-Konfiguration
@@ -32,7 +62,7 @@
 
   using DisplayType = Adafruit_SSD1306;
   static constexpr int SCREEN_WIDTH   = 128;
-  static constexpr int SCREEN_HEIGHT  = 64;
+  static constexpr int SCREEN_HEIGHT  = 32;
   static constexpr int OLED_RESET_PIN = -1;
   static constexpr uint8_t OLED_ADDR  = 0x3C;
   static constexpr uint16_t DISPLAY_COLOR = SSD1306_WHITE;
