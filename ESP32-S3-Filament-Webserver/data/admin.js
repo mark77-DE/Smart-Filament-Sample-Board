@@ -2,8 +2,9 @@ const form = document.getElementById("uploadForm");
 const dbDiv = document.getElementById("db");
 const addForm = document.getElementById("addForm");
 let lastHighlightedRow = null;
+let CONFIG = null;
 
-const maxLEDs = 120;
+
 
 /* ------------------------ WebSocket ------------------------ */
 const ws = new WebSocket(`ws://${location.host}/ws`);
@@ -79,6 +80,7 @@ form.addEventListener("submit", async (e) => {
 
 /* ------------------------ Tabelle laden ------------------------ */
 async function loadTable() {
+    await loadConfig();
     const res = await fetch("/filaments.json");
     if (!res.ok) {
         dbDiv.innerHTML = "<p>Fehler beim Laden der Daten.</p>";
@@ -86,11 +88,13 @@ async function loadTable() {
     }
 
     const data = await res.json();
+    const usedLEDs = new Set(data.map(e => Number(e.ledIndex)));
 
     let html = `
         <table>
             <tr>
-                <th>UID</th><th>Hersteller</th><th>Typ</th><th>Farbe</th><th>LED</th>
+                <th>UID</th><th>Hersteller</th><th>Typ</th>
+                <th>Farbe</th><th>LED</th>
                 <th colspan="2">Aktion</th>
             </tr>
     `;
@@ -108,7 +112,10 @@ async function loadTable() {
                 </td>
 
                 <td contenteditable="true" data-field="color" data-idx="${idx}">${e.color}</td>
-                <td contenteditable="true" data-field="ledIndex" data-idx="${idx}">${e.ledIndex}</td>
+
+                <td data-idx="${idx}">
+                    ${buildLedDropdown(Number(e.ledIndex), usedLEDs)}
+                </td>
 
                 <td><button class="saveBtn" data-idx="${idx}">Speichern</button></td>
                 <td><button class="deleteBtn" data-idx="${idx}">Löschen</button></td>
@@ -121,6 +128,7 @@ async function loadTable() {
 
     activateButtons();
 }
+
 
 function getTypeOptions(selected) {
     const types = ["PLA","PLA+","PLA-CF","PETG","PETG-CF","ABS","ASA","TPU","Nylon","Holz"];
@@ -221,16 +229,23 @@ addForm.addEventListener("submit", async (e) => {
 });
 
 /* ------------------------ LED Dropdown ------------------------ */
-function getFreeLEDs(data, maxLEDs) {
+function getFreeLEDs(data) {
+    const maxLEDs = CONFIG.options.ledCount;
     const used = new Set(data.map(e => Number(e.ledIndex)));
+
     const free = [];
-    for (let i = 0; i < maxLEDs; i++) if (!used.has(i)) free.push(i);
+    for (let i = 0; i < maxLEDs; i++) {
+        if (!used.has(i)) free.push(i);
+    }
     return free;
 }
 
+
 async function updateAddFormLEDs() {
+    await loadConfig();
+
     const data = await (await fetch("/filaments.json")).json();
-    const free = getFreeLEDs(data, maxLEDs);
+    const free = getFreeLEDs(data);
 
     const sel = document.getElementById("ledIndexSelect");
     sel.innerHTML = "";
@@ -242,8 +257,41 @@ async function updateAddFormLEDs() {
     });
 }
 
+
+function buildLedDropdown(currentLED, usedLEDs) {
+
+    const maxLEDs = CONFIG.options.ledCount;
+
+    let html = `<select data-field="ledIndex">`;
+
+    for (let i = 0; i < maxLEDs; i++) {
+        const isUsed = usedLEDs.has(i);
+        const isCurrent = (i === currentLED);
+
+        // aktuelle LED darf benutzt bleiben
+        if (!isUsed || isCurrent) {
+            html += `<option value="${i}" ${isCurrent ? "selected" : ""}>
+                        LED ${i}
+                     </option>`;
+        }
+    }
+
+    html += `</select>`;
+    return html;
+}
+
+
+async function loadConfig() {
+    if (!CONFIG) {
+        const res = await fetch("/config.json");
+        CONFIG = await res.json();
+    }
+    return CONFIG;
+}
+
 /* ------------------------ Init ------------------------ */
 async function init() {
+    await loadConfig();
     await loadTable();
     await updateAddFormLEDs();
 }

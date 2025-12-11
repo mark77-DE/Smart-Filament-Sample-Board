@@ -36,7 +36,12 @@
   <button type="submit">Hinzufügen</button>
 </form>
 
-<a href="/api/export" download="filaments.json">Export</a>
+<!--
+http://<IP>/api/export?file=filaments
+http://<IP>/api/export?file=config
+-->
+<a href="/api/export?file=filaments" download="filaments.json">Export Filaments</a>
+<a href="/api/export?file=config" download="filaments.json">Export Config</a>
 
 <h3>Import</h3>
 <form id="uploadForm" enctype="multipart/form-data">

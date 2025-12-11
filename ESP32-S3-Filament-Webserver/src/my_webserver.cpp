@@ -89,14 +89,33 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
     });
 
     // Export DB
-    server.on("/api/export", HTTP_GET, [](AsyncWebServerRequest *req){
-        File f = LittleFS.open("/filaments.json", "r");
-        if(!f){
-            req->send(404, "text/plain", "File not found");
-            return;
-        }
-        req->send(f, "/filaments.json", "application/json", true);
-    });
+   server.on("/api/export", HTTP_GET, [](AsyncWebServerRequest *req){
+    if (!req->hasParam("file")) {
+        req->send(400, "text/plain", "Missing file parameter");
+        return;
+    }
+
+    String which = req->getParam("file")->value();
+    String path;
+
+    if (which == "filaments") {
+        path = "/filaments.json";
+    } else if (which == "config") {
+        path = "/config.json";
+    } else {
+        req->send(400, "text/plain", "Unknown file");
+        return;
+    }
+
+    File f = LittleFS.open(path, "r");
+    if(!f){
+        req->send(404, "text/plain", "File not found");
+        return;
+    }
+
+    req->send(f, path, "application/json", true);
+});
+
 
     // Import DB
     server.on("/api/import", HTTP_POST,
