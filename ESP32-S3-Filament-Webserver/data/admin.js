@@ -4,9 +4,6 @@ const addForm = document.getElementById("addForm");
 let lastHighlightedRow = null;
 let CONFIG = null;
 
-
-
-
 /* ------------------------ WebSocket ------------------------ */
 const ws = new WebSocket(`ws://${location.host}/ws`);
 
@@ -20,11 +17,9 @@ ws.onmessage = async (ev) => {
     }
 
     if (!data.uid) return;
-
     const scannedUID = data.uid;
 
     await loadTable();
-
     const rows = document.querySelectorAll("#db table tr");
     let found = false;
 
@@ -35,12 +30,10 @@ ws.onmessage = async (ev) => {
 
         if (uidCell.innerText.trim() === scannedUID) {
             found = true;
-
             if (lastHighlightedRow) lastHighlightedRow.classList.remove("highlight");
 
             row.classList.add("highlight");
             lastHighlightedRow = row;
-
             row.scrollIntoView({ behavior: "smooth", block: "center" });
         }
     });
@@ -48,13 +41,12 @@ ws.onmessage = async (ev) => {
     if (!found) {
         document.querySelector('#addForm input[name="uid"]').value = scannedUID;
         document.querySelector('#addForm input[name="vendor"]').focus();
-
         if (lastHighlightedRow) lastHighlightedRow.classList.remove("highlight");
         lastHighlightedRow = null;
     }
 };
 
-// ------------------------ Export All ------------------------
+/* ------------------------ Export All ------------------------ */
 document.getElementById("exportAllBtn").addEventListener("click", async () => {
     try {
         const res = await fetch("/api/exportAll");
@@ -62,7 +54,6 @@ document.getElementById("exportAllBtn").addEventListener("click", async () => {
 
         const blob = await res.blob();
         const url = URL.createObjectURL(blob);
-
         const a = document.createElement("a");
         a.href = url;
         a.download = "filament_package.json";
@@ -75,7 +66,7 @@ document.getElementById("exportAllBtn").addEventListener("click", async () => {
     }
 });
 
-// ------------------------ Import All ------------------------
+/* ------------------------ Import All ------------------------ */
 const importForm = document.getElementById("importAllForm");
 importForm.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -83,7 +74,7 @@ importForm.addEventListener("submit", async (e) => {
     if (!fileInput.files.length) return;
 
     const file = fileInput.files[0];
-    const text = await file.text(); // erst hier lesen
+    const text = await file.text();
 
     try {
         const res = await fetch("/api/importAll", {
@@ -94,10 +85,10 @@ importForm.addEventListener("submit", async (e) => {
 
         if (res.ok) {
             alert("Import erfolgreich!");
-            CONFIG = null;                // vorherige Config verwerfen
-            await loadConfig();           // neue Config laden
-            await loadTable();       // Tabelle neu laden
-            await updateAddFormLEDs(); // Dropdowns neu befüllen
+            CONFIG = null;
+            await loadConfig();
+            await loadTable();
+            await updateAddFormLEDs();
         } else {
             const errText = await res.text();
             alert("Import fehlgeschlagen: " + errText);
@@ -106,8 +97,6 @@ importForm.addEventListener("submit", async (e) => {
         alert("Import fehlgeschlagen: " + err);
     }
 });
-
-
 
 /* ------------------------ Tabelle laden ------------------------ */
 async function loadTable() {
@@ -135,50 +124,43 @@ async function loadTable() {
             <tr>
                 <td contenteditable="true" data-field="uid" data-idx="${idx}">${e.uid}</td>
                 <td contenteditable="true" data-field="vendor" data-idx="${idx}">${e.vendor}</td>
-
                 <td data-idx="${idx}">
                     <select data-field="type">
                         ${getTypeOptions(e.type)}
                     </select>
                 </td>
-
                 <td contenteditable="true" data-field="color" data-idx="${idx}">${e.color}</td>
-
                 <td data-idx="${idx}">
                     ${buildLedDropdown(Number(e.ledIndex), usedLEDs)}
                 </td>
-
                 <td><button class="saveBtn" data-idx="${idx}">Speichern</button></td>
-                <td><button class="deleteBtn" data-idx="${idx}">Löschen</button></td>
+                <td><button class="deleteBtn" data-uid="${e.uid}">Löschen</button></td>
             </tr>
         `;
     });
 
     html += "</table>";
     dbDiv.innerHTML = html;
-
     activateButtons();
 }
 
-
 function getTypeOptions(selected) {
     const types = ["PLA","PLA+","PLA-CF","PETG","PETG-CF","ABS","ASA","TPU","Nylon","Holz"];
-    return types
-        .map(t => `<option value="${t}" ${t === selected ? "selected" : ""}>${t}</option>`)
-        .join("");
+    return types.map(t => `<option value="${t}" ${t === selected ? "selected" : ""}>${t}</option>`).join("");
 }
 
 /* ------------------------ Buttons aktivieren ------------------------ */
 function activateButtons() {
+    // Save
     document.querySelectorAll(".saveBtn").forEach(btn => {
         btn.addEventListener("click", async () => {
-            const idx = btn.dataset.idx;
+            const idx = Number(btn.dataset.idx);
             const row = btn.closest("tr");
-            const entry = {};
+            const entry = { idx };
 
             row.querySelectorAll("[data-field]").forEach(el => {
                 const field = el.dataset.field;
-                if (el.tagName === "SELECT") {
+                if(el.tagName === "SELECT"){
                     entry[field] = el.value;
                 } else {
                     entry[field] = el.innerText.trim();
@@ -201,14 +183,16 @@ function activateButtons() {
         });
     });
 
+    // Delete über UID
     document.querySelectorAll(".deleteBtn").forEach(btn => {
         btn.addEventListener("click", async () => {
             if (!confirm("Eintrag wirklich löschen?")) return;
 
+            const uid = btn.dataset.uid;
             const res = await fetch("/api/delete", {
                 method: "POST",
-                headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                body: "index=" + btn.dataset.idx
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ uid })
             });
 
             if (res.ok) {
@@ -236,7 +220,6 @@ addForm.addEventListener("submit", async (e) => {
     };
 
     const db = await (await fetch("/filaments.json")).json();
-
     const used = db.find(e => Number(e.ledIndex) === entry.ledIndex);
     if (used) {
         alert(`LED ${entry.ledIndex} wird bereits verwendet von UID ${used.uid}.`);
@@ -263,9 +246,6 @@ addForm.addEventListener("submit", async (e) => {
 function getFreeLEDs(data) {
     const maxLEDs = CONFIG.options.ledCount;
     const used = new Set(data.map(e => Number(e.ledIndex)));
-
-    console.log("Max LEDs:", maxLEDs, "Used LEDs:", used);
-
     const free = [];
     for (let i = 0; i < maxLEDs; i++) {
         if (!used.has(i)) free.push(i);
@@ -273,10 +253,8 @@ function getFreeLEDs(data) {
     return free;
 }
 
-
 async function updateAddFormLEDs() {
     await loadConfig();
-
     const data = await (await fetch("/filaments.json")).json();
     const free = getFreeLEDs(data);
 
@@ -290,29 +268,21 @@ async function updateAddFormLEDs() {
     });
 }
 
-
 function buildLedDropdown(currentLED, usedLEDs) {
-
     const maxLEDs = CONFIG.options.ledCount;
-
     let html = `<select data-field="ledIndex">`;
-
     for (let i = 0; i < maxLEDs; i++) {
         const isUsed = usedLEDs.has(i);
         const isCurrent = (i === currentLED);
-
-        // aktuelle LED darf benutzt bleiben
         if (!isUsed || isCurrent) {
-            html += `<option value="${i}" ${isCurrent ? "selected" : ""}>
-                        LED ${i}
-                     </option>`;
+            html += `<option value="${i}" ${isCurrent ? "selected" : ""}>LED ${i}</option>`;
         }
     }
-
     html += `</select>`;
     return html;
 }
 
+/* ------------------------ LED Config ------------------------ */
 async function loadLedConfig() {
     const res = await fetch("/config.json");
     if(!res.ok) return;
@@ -322,16 +292,27 @@ async function loadLedConfig() {
     document.getElementById("ledPin").value = config.options.ledPin || 5;
     document.getElementById("ledBrightness").value = config.options.ledBrightness || 50;
 
-    const col = config.options.ledColor || [255,0,0];
-    const hex = '#' + col.map(v => v.toString(16).padStart(2,'0')).join('');
+    let r=255, g=0, b=0; // default rot
+
+    if (Array.isArray(config.options.ledColor) && config.options.ledColor.length === 3) {
+        [r, g, b] = config.options.ledColor;
+    } else if (typeof config.options.ledColor === 'number') {
+        r = (config.options.ledColor >> 16) & 0xFF;
+        g = (config.options.ledColor >> 8) & 0xFF;
+        b = config.options.ledColor & 0xFF;
+    }
+
+    const hex = '#' + [r,g,b].map(v => v.toString(16).padStart(2,'0')).join('');
     document.getElementById("ledColor").value = hex;
+
+    console.log(`Loaded LED color from config: R=${r}, G=${g}, B=${b}`);
 }
 
 document.getElementById("saveLedConfig").addEventListener("click", async () => {
     const ledCount = Number(document.getElementById("maxLED").value);
     const ledPin   = Number(document.getElementById("ledPin").value);
     const ledBrightness = Number(document.getElementById("ledBrightness").value);
-    const col = document.getElementById("ledColor").value; // #RRGGBB
+    const col = document.getElementById("ledColor").value;
     const ledColor = [
         parseInt(col.substr(1,2),16),
         parseInt(col.substr(3,2),16),
@@ -361,9 +342,7 @@ document.getElementById("saveLedConfig").addEventListener("click", async () => {
     }
 });
 
-
-loadLedConfig();
-
+/* ------------------------ Config ------------------------ */
 async function loadConfig() {
     if (!CONFIG) {
         const res = await fetch("/config.json");
@@ -377,5 +356,6 @@ async function init() {
     await loadConfig();
     await loadTable();
     await updateAddFormLEDs();
+    await loadLedConfig();
 }
 init();
