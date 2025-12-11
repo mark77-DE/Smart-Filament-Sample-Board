@@ -7,6 +7,9 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SH110X.h>
 #include <Adafruit_NeoPixel.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SH110X.h>
+
 #include <ArduinoJson.h>
 #include <LittleFS.h>
 #include "filament_db.h"
@@ -14,8 +17,14 @@
 #include "ledctrl_nfc.h"
 #include "display.h"
 #include "display_config.h"
+
+#include <Fonts/FreeMono7pt7b.h>
+#include "display_config.h"
 #include "my_webserver.h"
 #include "globals.h"
+
+
+
 #include "display_anim.h"
 
 
@@ -23,6 +32,9 @@
 AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
 
+// ----------------- OLED ---------------
+
+DisplayType display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET_PIN);
 // ----------------- OLED ---------------
 
 DisplayType display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET_PIN);
