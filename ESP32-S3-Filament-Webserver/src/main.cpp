@@ -5,13 +5,14 @@
 #include <SPI.h>
 #include <Adafruit_PN532.h>
 #include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306.h>
+#include <Adafruit_SH110X.h>
 
 #include <ArduinoJson.h>
 #include "filament_db.h"
 #include "ledctrl.h"
 #include "ledctrl_nfc.h"
 #include "display.h"
+#include "display_config.h"
 
 #include <Fonts/FreeMono7pt7b.h>
 #include "my_webserver.h"
@@ -19,16 +20,16 @@
 #include <LittleFS.h>
 #include "globals.h"
 
+
+
+
 // ----------------- Server & WS -----------------
 AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
 
-// ----------------- OLED Settings -----------------
-#define SCREEN_WIDTH 128
-#define SCREEN_HEIGHT 32
-#define OLED_RESET -1
-#define OLED_ADDR 0x3C
-Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+// ----------------- OLED ---------------
+
+DisplayType display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET_PIN);
 
 // ----------------- PN532 SPI Settings -----------------
 #define PN532_SCK 18
@@ -140,9 +141,9 @@ void setup(){
     }
 
     // OLED init
-    if(!display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR)){
-        Serial.println("OLED init failed!");
-        while(1);
+    if (!initDisplay(display)) {
+    Serial.println("OLED init failed!");
+    while (1);
     }
 
     // 1. Config laden
@@ -171,7 +172,7 @@ void setup(){
     display.clearDisplay();
     display.setFont(&FreeMono7pt7b);
     display.setTextSize(1);
-    display.setTextColor(SSD1306_WHITE);
+    display.setTextColor(DISPLAY_COLOR);
 
     showCentered("WIFI CONNECTING...");
 

@@ -1,11 +1,11 @@
 #pragma once
-#include <Adafruit_SSD1306.h>
+#include "display_config.h"
 #include "filament_db.h"
 
 class MYDISPLAY {
 public:
-    static void init(Adafruit_SSD1306* disp);
+    static void init(DisplayType* disp);
     static void show(const FilamentEntry& entry);
 private:
-    static Adafruit_SSD1306* _display;
+    static DisplayType* _display;
 };
