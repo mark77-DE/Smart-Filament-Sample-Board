@@ -10,6 +10,7 @@
 #include <ArduinoJson.h>
 #include "filament_db.h"
 #include "ledctrl.h"
+#include "ledctrl_nfc.h"
 #include "display.h"
 
 #include <Fonts/FreeMono7pt7b.h>
@@ -146,11 +147,22 @@ void setup(){
 
     // 1. Config laden
     loadConfig(); // LED_COUNT und LED_PIN werden gesetzt
+    loadNfcLedConfig();
     Serial.print("LED_COUNT = "); Serial.println(LED_COUNT);
+    Serial.print("LED_PIN = "); Serial.println(LED_PIN);
+    Serial.print("LED_COLOR = "); Serial.println(LED_COLOR);
+    Serial.print("NFC_LED_COUNT = "); Serial.println(NFC_LED_COUNT);
+    Serial.print("NFC_LED_PIN = "); Serial.println(NFC_LED_PIN);
+    Serial.print("NFC_LED_COLOR = "); Serial.println(NFC_LED_COLOR);
+
+
 
     // 2. LED Strip initialisieren
     LEDCTRL::init(LED_COUNT, LED_PIN);
     LEDCTRL::allOff();
+
+    LEDCTRL_NFC::init(NFC_LED_COUNT, NFC_LED_PIN);
+    LEDCTRL_NFC::allOff();
 
     // 3. Display & DB init
     MYDISPLAY::init(&display);

@@ -1,24 +1,37 @@
 {
-  "config": {
-    "layout": {
-      "columns": 2,
-      "rows": 5,
-      "items": 6
-    },
-    "options": {
-      "darkmode": true,
-      "mqtt": false,
-      "ledCount": 8,
-      "ledPin": 5
-    }
+  "layout": {
+    "columns": 2,
+    "rows": 5,
+    "items": 6
+  },
+  "options": {
+    "darkmode": true,
+    "mqtt": false,
+    
+    "ledCount": 8,
+    "ledPin": 4,
+    "ledBrightness": 50,
+    "ledColor": [255, 0, 0],
+
+    "nfcLedCount": 8,
+    "nfcLedPin": 15,
+    "nfcLedBrightness": 100,
+    "nfcLedColor": [0, 255, 0]
   },
   "filaments": [
     {
-      "uid": "04:D3:4F:51:6F:61:81",
-      "vendor": "HerstellerA",
+      "uid": "04:92:89:51:6F:61:80",
+      "vendor": "test",
       "type": "PLA",
-      "color": "Rot",
+      "color": "rot",
       "ledIndex": 0
+    },
+    {
+      "uid": "04:92:89:51:6F:61:81",
+      "vendor": "test",
+      "type": "PLA",
+      "color": "rot",
+      "ledIndex": 1
     }
   ]
 }

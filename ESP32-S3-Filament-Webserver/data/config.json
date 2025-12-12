@@ -7,9 +7,15 @@
   "options": {
     "darkmode": true,
     "mqtt": false,
+    
     "ledCount": 8,
-    "ledPin": 5,
+    "ledPin": 4,
     "ledBrightness": 50,
-    "ledColor": [255, 0, 0] 
+    "ledColor": [255, 0, 0],
+
+    "nfcLedCount": 8,
+    "nfcLedPin": 15,
+    "nfcLedBrightness": 100,
+    "nfcLedColor": [0, 255, 0]
   }
 }
