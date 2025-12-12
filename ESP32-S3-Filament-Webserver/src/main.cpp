@@ -17,14 +17,8 @@
 #include "ledctrl_nfc.h"
 #include "display.h"
 #include "display_config.h"
-
-#include <Fonts/FreeMono7pt7b.h>
-#include "display_config.h"
 #include "my_webserver.h"
 #include "globals.h"
-
-
-
 #include "display_anim.h"
 
 
