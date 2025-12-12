@@ -78,14 +78,10 @@ void loadConfig() {
             colorArr[1].as<int>(),
             colorArr[2].as<int>()
         );
-        Serial.printf("Loaded LED color from config: R=%d, G=%d, B=%d\n",
-                      colorArr[0].as<int>(),
-                      colorArr[1].as<int>(),
-                      colorArr[2].as<int>());
+        
     } else {
         LED_COLOR = Adafruit_NeoPixel::Color(255, 0, 0);
     }
 
-    Serial.printf("LED config loaded: count=%d, pin=%d, brightness=%d, color=0x%06X\n",
-                  LED_COUNT, LED_PIN, LED_BRIGHTNESS, LED_COLOR);
+    
 }

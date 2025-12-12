@@ -79,7 +79,7 @@ async function loadFilamentTiles() {
 
         const colorSpan = document.createElement("span");
         colorSpan.className = "color";
-        colorSpan.style.backgroundColor = f.color; // Farbe als Hintergrund
+        colorSpan.textContent = f.color; // Farbe als Hintergrund
 
         const typeSpan = document.createElement("span");
         typeSpan.className = "type";

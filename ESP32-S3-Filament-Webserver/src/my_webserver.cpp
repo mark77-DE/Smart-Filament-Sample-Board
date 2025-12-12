@@ -331,6 +331,11 @@ server.on("/api/update", HTTP_POST,
         request->send(LittleFS, "/logo.png", "image/png");
     });
 
+    server.on("/favicon.ico", HTTP_GET, [](AsyncWebServerRequest *request){
+        request->send(LittleFS, "/favicon.ico", "image/x-icon");
+    });
+
+
     // Update LED Config (sicherer Upload-Handler)
     server.on("/api/updateLedConfig", HTTP_POST,
         [](AsyncWebServerRequest *req){},
@@ -355,12 +360,16 @@ server.on("/api/update", HTTP_POST,
                 return;
             }
 
-            int newCount      = doc["ledCount"] | 8;
-            int newPin        = doc["ledPin"]   | 5;
-            int newBrightness = doc["ledBrightness"] | 50;
+            int newCount            = doc["ledCount"] | 8;
+            int newPin              = doc["ledPin"]   | 4;
+            int newBrightness       = doc["ledBrightness"] | 50;
+            int newNfcCount         = doc["nfcLedCount"] | 8;
+            int newNfcPin           = doc["nfcLedPin"]   | 16;
+            int newNfcBrightness    = doc["nfcLedBrightness"] | 50;
 
             // Farbe aus dem Request
-            JsonArray colorArr = doc["ledColor"].as<JsonArray>();
+            JsonArray colorArr      = doc["ledColor"].as<JsonArray>();
+            JsonArray colorNfcArr   = doc["ledNfcColor"].as<JsonArray>();
 
             // Config.json laden
             StaticJsonDocument<1024> configDoc;
@@ -377,12 +386,21 @@ server.on("/api/update", HTTP_POST,
             configDoc["options"]["ledCount"] = newCount;
             configDoc["options"]["ledPin"]   = newPin;
             configDoc["options"]["ledBrightness"] = newBrightness;
+            configDoc["options"]["ledNfcCount"] = newNfcCount;
+            configDoc["options"]["nfcLedPin"]   = newNfcPin;
+            configDoc["options"]["ledNfcBrightness"] = newNfcBrightness;
 
             // Farbe korrekt kopieren (sichere Prüfung)
             if (colorArr.size() >= 3) {
                 JsonArray col = configDoc["options"]["ledColor"].to<JsonArray>();
                 col.clear();
                 for (int i = 0; i < 3; i++) col.add(colorArr[i].as<int>());
+            }
+
+            if (colorNfcArr.size() >= 3) {
+                JsonArray col = configDoc["options"]["ledNfcColor"].to<JsonArray>();
+                col.clear();
+                for (int i = 0; i < 3; i++) col.add(colorNfcArr[i].as<int>());
             }
 
             // zurückschreiben
@@ -395,7 +413,7 @@ server.on("/api/update", HTTP_POST,
             }
 
             req->send(200, "text/plain", "REBOOTING");
-            delay(200);
+            delay(500);
             ESP.restart();
         }
     );

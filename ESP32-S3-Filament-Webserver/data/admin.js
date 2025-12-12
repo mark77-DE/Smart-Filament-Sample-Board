@@ -3,6 +3,9 @@ const dbDiv = document.getElementById("db");
 const addForm = document.getElementById("addForm");
 const wsStatus = document.getElementById("wsStatus");
 const editToggle = document.getElementById("editToggle");
+const ledPinSelect = document.getElementById("ledPin");
+const nfcLedPinSelect = document.getElementById("nfcLedPin");
+
 let EDIT_MODE = false;
 let CONFIG = null;
 let lastHighlightedRow = null;
@@ -14,7 +17,14 @@ let LAST_CONFIG_JSON = null; // speichert die letzte geladene Config
 const ws = new WebSocket(`ws://${location.host}/ws`);
 
 ws.onopen = () => updateWSStatus(true);
-ws.onclose = () => { updateWSStatus(false); setTimeout(() => location.reload(), 3000); };
+ws.onclose = () => {
+    updateWSStatus(false);
+    document.body.innerHTML = `
+        <h2>ESP wird neu gestartet...</h2>
+        <p>Bitte warten und die Seite in 5 Sekunden neu laden.</p>
+    `;
+    setTimeout(() => location.reload(), 5000);
+};
 ws.onerror = () => updateWSStatus(false);
 ws.onmessage = handleWSMessage;
 
@@ -208,6 +218,9 @@ async function loadTable() {
 
     activateButtons();
     applyEditMode(); // Buttons / selects im Edit-Modus korrekt setzen
+
+    ledPinSelect.value = CONFIG.options.ledPin;
+    nfcLedPinSelect.value = CONFIG.options.nfcLedPin;
 }
 
 
@@ -250,21 +263,48 @@ function activateButtons(){
 async function updateAddFormLEDs(){ const data=await (await fetch("/filaments.json")).json(); const free=[]; for(let i=0;i<CONFIG.options.ledCount;i++){ if(!data.find(e=>Number(e.ledIndex)===i)) free.push(i); } const sel=document.getElementById("ledIndexSelect"); sel.innerHTML=""; free.forEach(v=>{ const opt=document.createElement("option"); opt.value=v; opt.textContent=`LED ${v}`; sel.appendChild(opt); }); }
 
 // -------------------- LED Config --------------------
-document.getElementById("saveLedConfig").addEventListener("click", async ()=>{
+document.getElementById("saveLedConfig").addEventListener("click", async () => {
     const ledCount = Number(document.getElementById("maxLED").value);
     const ledPin = Number(document.getElementById("ledPin").value);
     const ledBrightness = Number(document.getElementById("ledBrightness").value);
     const col = document.getElementById("ledColor").value;
-    const ledColor = [parseInt(col.substr(1,2),16),parseInt(col.substr(3,2),16),parseInt(col.substr(5,2),16)];
-    const res=await fetch("/api/updateLedConfig",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({ledCount,ledPin,ledBrightness,ledColor})});
-    const text=await res.text();
-    if(text.includes("REBOOTING")){
-        document.body.innerHTML="<h2>Device is rebooting...</h2><p>Please wait...</p>";
-        const check=setInterval(async()=>{
-            try{ if((await fetch("/config.json",{cache:"no-store"})).ok){ clearInterval(check); location.reload(); } } catch(e){}
-        },2000);
-    }else alert("Error saving LED config");
+    const ledColor = [parseInt(col.substr(1,2),16), parseInt(col.substr(3,2),16), parseInt(col.substr(5,2),16)];
+
+    const nfcLedCount = Number(document.getElementById("maxNfcLED").value);
+    const nfcLedPin = Number(document.getElementById("nfcLedPin").value);
+    const nfcLedBrightness = Number(document.getElementById("nfcLedBrightness").value);
+    const nfcCol = document.getElementById("ledNfcColor").value;
+    const nfcLedColor = [parseInt(nfcCol.substr(1,2),16), parseInt(nfcCol.substr(3,2),16), parseInt(nfcCol.substr(5,2),16)];
+
+    // Nachricht sofort anzeigen
+    document.body.innerHTML = "<h2>ESP wird neu gestartet...</h2><p>Bitte warten...</p>";
+
+    // fetch absenden, Fehler ignorieren, weil ESP evtl. sofort rebootet
+    try {
+        await fetch("/api/updateLedConfig", {
+            method: "POST",
+            headers: {"Content-Type":"application/json"},
+            body: JSON.stringify({
+                ledCount, ledPin, ledBrightness, ledColor,
+                nfcLedCount, nfcLedPin, nfcLedBrightness, nfcLedColor
+            })
+        });
+    } catch(e){
+        // ESP schon offline – kein Problem
+    }
+
+    // Prüfen, wann ESP wieder online ist
+    const check = setInterval(async () => {
+        try {
+            if ((await fetch("/config.json", {cache:"no-store"})).ok) {
+                clearInterval(check);
+                location.reload();
+            }
+        } catch(e){}
+    }, 2000);
 });
+
+
 
 
 
@@ -289,11 +329,31 @@ async function loadConfig() {
 
 
 
+function updatePinOptions() {
+    const ledPinValue = Number(ledPinSelect.value);
+    const nfcPinValue = Number(nfcLedPinSelect.value);
+
+    // Alle Optionen wieder aktivieren
+    Array.from(ledPinSelect.options).forEach(opt => opt.disabled = false);
+    Array.from(nfcLedPinSelect.options).forEach(opt => opt.disabled = false);
+
+    // Pin vom jeweils anderen Dropdown deaktivieren
+    nfcLedPinSelect.querySelectorAll(`option[value='${ledPinValue}']`).forEach(opt => opt.disabled = true);
+    ledPinSelect.querySelectorAll(`option[value='${nfcPinValue}']`).forEach(opt => opt.disabled = true);
+}
+
+// Eventlistener hinzufügen
+ledPinSelect.addEventListener("change", updatePinOptions);
+nfcLedPinSelect.addEventListener("change", updatePinOptions);
+
+
+
 // -------------------- Init --------------------
 async function init() {
     const rebootNeeded = await loadConfig();
     await loadTable();
     await updateAddFormLEDs();
+    updatePinOptions();
 
     if(rebootNeeded){
         // Automatischer Reboot
