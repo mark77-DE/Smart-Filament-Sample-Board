@@ -6,26 +6,24 @@
 #include <Fonts/FreeMono7pt7b.h>
 #include <Fonts/FreeSans9pt7b.h>
 
-// Idle-Animation-Konfiguration (standard, aber überschreibbar)
-#ifndef IDLE_ANIM_FRAME_DELAY
-  #define IDLE_ANIM_FRAME_DELAY 42    // ms zwischen Frames
-#endif
 
-#ifndef IDLE_TEXT_DURATION
-  #define IDLE_TEXT_DURATION 5000     // ms "SCAN TAG" anzeigen
-#endif
+//Standby Text
+#define IDLE_TEXT_STRING "SCAN TAG"
 
-// -----------------------------
-// Display-Typ wählen
-// -----------------------------
-// Entweder hier hart einstellen, oder über die platformio.ini per build_flag
-#define DISPLAY_TYPE_SH1106 1
-#define DISPLAY_TYPE_SSD1306 2
+// Idle-Animation-Konfiguration Zeit in ms zwischen Frames (Animation)
+#define IDLE_ANIM_FRAME_DELAY 42    
 
-#ifndef DISPLAY_TYPE
-  // Default, falls nichts per build_flag gesetzt wird:
-  #define DISPLAY_TYPE DISPLAY_TYPE_SH1106
-#endif
+//Anzeigedauer Standy-Text
+#define IDLE_TEXT_DURATION 5000
+
+// Delay zwischen den Buchstaben in ms (SCAN TAG Schriftzug)
+#define IDLE_TEXT_CHAR_DELAY 75 
+
+//Blink-Intervall für den Cursor "_"
+#define IDLE_TEXT_CURSOR_BLINK_INTERVAL 400
+
+// Cropping-Modus bei 32er Displays 1= Zentriert
+#define FRAME_CROP_MODE_CENTER 1
 
 // -----------------------------
 // Auto Fit Konfiguration
@@ -44,6 +42,19 @@
 #define DISPLAY_FONT &FreeSans9pt7b
 //#define DISPLAY_FONT      &FreeMono7pt7b
 //#define DISPLAY_FONT nullptr   // <- wenn du die Standard-Schrift nutzen willst
+
+
+// -----------------------------
+// Display-Typ wählen
+// -----------------------------
+// Entweder hier hart einstellen, oder über die platformio.ini per build_flag
+#define DISPLAY_TYPE_SH1106 1
+#define DISPLAY_TYPE_SSD1306 2
+
+#ifndef DISPLAY_TYPE
+  // Default, falls nichts per build_flag gesetzt wird:
+  #define DISPLAY_TYPE DISPLAY_TYPE_SH1106
+#endif
 
 
 // -----------------------------

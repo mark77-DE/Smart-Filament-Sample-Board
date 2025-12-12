@@ -7,19 +7,15 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SH110X.h>
 #include <Adafruit_NeoPixel.h>
-
 #include <ArduinoJson.h>
+#include <LittleFS.h>
 #include "filament_db.h"
 #include "ledctrl.h"
 #include "ledctrl_nfc.h"
 #include "display.h"
 #include "display_config.h"
-
 #include "my_webserver.h"
-
-#include <LittleFS.h>
 #include "globals.h"
-
 #include "display_anim.h"
 
 

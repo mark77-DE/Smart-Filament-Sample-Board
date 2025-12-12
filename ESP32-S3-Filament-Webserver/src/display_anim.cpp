@@ -1,41 +1,13 @@
-// src/display_anim.cpp
 #include "display_anim.h"
 #include "display_config.h"
 #include "display.h"
-#include <Adafruit_GFX.h>
 
-// ---------------- Konfiguration (über display_config.h überschreibbar) ---------
 
-#ifndef IDLE_ANIM_FRAME_DELAY
-  #define IDLE_ANIM_FRAME_DELAY 42      // ms zwischen Frames
-#endif
-
-#ifndef IDLE_TEXT_DURATION
-  #define IDLE_TEXT_DURATION 2000       // ms "SCAN TAG" anzeigen
-#endif
-
-#ifndef IDLE_TEXT_STRING
-  #define IDLE_TEXT_STRING "SCAN TAG"
-#endif
-
-// Neu: Delay zwischen den Buchstaben in ms
-#ifndef IDLE_TEXT_CHAR_DELAY
-  #define IDLE_TEXT_CHAR_DELAY 75      // ms zwischen zwei neuen Zeichen
-#endif
-
-// Neu: Blink-Intervall für den Cursor "_"
-#ifndef IDLE_TEXT_CURSOR_BLINK_INTERVAL
-  #define IDLE_TEXT_CURSOR_BLINK_INTERVAL 400  // ms zwischen Umschalten sichtbar/unsichtbar
-#endif
-
-// Diese Werte stammen aus deinem Animator-Export:
+// Diese Werte stammen aus dem Animator-Export:
 #define FRAME_WIDTH  64
 #define FRAME_HEIGHT 64
 
-// ---------------- Frames aus deinem bisherigen Sketch -------------------------
-// !!! HIER deine frames[] rein kopieren !!!
-
-// Beispiel-Kopf, dann dein kompletter Array-Inhalt:
+// Animation
 const byte PROGMEM frames[][512] = {
   {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,24,0,0,0,0,0,0,0,24,0,0,0,0,0,0,0,60,0,0,0,0,0,0,0,60,0,0,0,0,0,0,0,60,0,0,0,0,0,0,0,60,0,0,0,0,0,0,0,60,0,0,0,0,0,0,0,124,0,0,0,0,0,0,0,126,0,0,0,0,0,0,0,110,0,0,0,0,0,0,0,102,0,0,0,0,0,0,0,230,0,0,0,0,0,0,0,230,0,0,0,0,0,0,0,230,0,0,0,0,0,1,192,199,0,96,0,0,0,1,192,199,0,112,0,0,0,3,225,195,0,240,0,0,0,3,225,195,0,248,0,0,0,7,225,131,0,248,0,0,0,7,113,131,1,216,0,0,0,14,115,131,129,220,0,0,7,254,51,131,129,156,31,224,15,252,59,129,131,140,63,240,7,248,63,1,131,142,127,224,0,0,31,1,131,142,96,0,0,0,31,1,131,7,224,0,0,0,15,1,199,7,192,0,0,0,14,1,199,3,192,0,0,0,14,0,198,3,128,0,0,0,6,0,206,1,0,0,0,0,0,0,206,0,0,0,0,0,0,0,204,0,0,0,0,0,0,0,252,0,0,0,0,0,0,0,252,0,0,0,0,0,0,0,120,0,0,0,0,0,0,0,120,0,0,0,0,0,0,0,120,0,0,0,0,0,0,0,112,0,0,0,0,0,0,0,112,0,0,0,0,0,0,0,112,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
   {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,24,0,0,0,0,0,0,0,24,0,0,0,0,0,0,0,60,0,0,0,0,0,0,0,60,0,0,0,0,0,0,0,60,0,0,0,0,0,0,0,60,0,0,0,0,0,0,0,60,0,0,0,0,0,0,0,124,0,0,0,0,0,0,0,126,0,0,0,0,0,0,0,110,0,0,0,0,0,0,0,102,0,0,0,0,0,0,0,230,0,0,0,0,0,0,0,230,0,0,0,0,0,0,0,230,0,0,0,0,0,1,192,199,0,96,0,0,0,1,192,199,0,112,0,0,0,3,225,195,0,240,0,0,0,3,225,195,0,248,0,0,0,7,225,131,0,248,0,0,0,7,113,131,1,216,0,0,0,14,115,131,129,220,0,0,7,254,51,131,129,156,31,224,15,252,59,129,131,140,63,240,7,248,63,1,131,142,127,224,0,0,31,1,131,142,96,0,0,0,31,1,131,7,224,0,0,0,15,1,199,7,192,0,0,0,14,1,199,3,192,0,0,0,14,0,198,3,128,0,0,0,6,0,206,1,0,0,0,0,0,0,206,0,0,0,0,0,0,0,204,0,0,0,0,0,0,0,252,0,0,0,0,0,0,0,252,0,0,0,0,0,0,0,120,0,0,0,0,0,0,0,120,0,0,0,0,0,0,0,120,0,0,0,0,0,0,0,112,0,0,0,0,0,0,0,112,0,0,0,0,0,0,0,112,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
@@ -108,6 +80,45 @@ int16_t        s_cursorX         = 0;
 int16_t        s_cursorY         = 0;
 uint16_t       s_cursorW         = 0;
 uint16_t       s_cursorH         = 0;
+
+static int16_t s_cursorX1 = 0;   // x-offset aus getTextBounds
+static int16_t s_cursorY1 = 0;   // y-offset aus getTextBounds
+
+// ------------------------------------------------------------
+// Frame-Cropping für 32px
+// ------------------------------------------------------------
+
+static void drawFrameCropped(DisplayType &display, uint16_t frameIdx) {
+    // 1bpp Bitmap: bytes pro Zeile
+    const int16_t bytesPerRow = (FRAME_WIDTH + 7) / 8;
+
+    // Zielhöhe = min(FRAME_HEIGHT, SCREEN_HEIGHT)
+    int16_t drawH = FRAME_HEIGHT;
+    if (SCREEN_HEIGHT < FRAME_HEIGHT) drawH = SCREEN_HEIGHT;
+
+    // Vertikal mittig aus dem 64px Frame ausschneiden
+    int16_t srcYOffset = 0;
+        if (drawH < FRAME_HEIGHT) {
+        #if FRAME_CROP_MODE_CENTER
+            srcYOffset = (FRAME_HEIGHT - drawH) / 2;
+        #else
+        srcYOffset = 0; // oben abschneiden
+        #endif
+}
+
+
+    const uint8_t *bmp = (const uint8_t*)frames[frameIdx];
+    bmp += srcYOffset * bytesPerRow;
+
+    int16_t x = (SCREEN_WIDTH  - FRAME_WIDTH) / 2;
+    int16_t y = (SCREEN_HEIGHT - drawH)      / 2;
+    if (x < 0) x = 0;
+    if (y < 0) y = 0;
+
+    display.clearDisplay();
+    display.drawBitmap(x, y, bmp, FRAME_WIDTH, drawH, DISPLAY_COLOR);
+    display.display();
+}
 
 
 // ------------------------------------------------------------
@@ -189,6 +200,7 @@ static void computeLayout(DisplayType &display) {
     int16_t x1, y1;
     uint16_t wText, hText;
 
+
     // Nur den finalen Text vermessen
     display.getTextBounds(s_textBuffer, 0, 0, &x1, &y1, &wText, &hText);
 
@@ -208,9 +220,18 @@ static void computeLayout(DisplayType &display) {
     uint16_t cw, ch;
     display.getTextBounds("_", 0, 0, &cx1, &cy1, &cw, &ch);
 
+    s_cursorX1 = cx1;
+    s_cursorY1 = cy1;
+
     // Cursor zentriert auf neuer Zeile unter dem Text
     s_cursorX = (SCREEN_WIDTH - cw) / 2;
     s_cursorY = s_textY + s_textH + 4;   // +4 als Abstand nach unten
+
+    // Clamp, damit Cursor immer im sichtbaren Bereich bleibt
+    if (s_cursorY + (int16_t)ch > SCREEN_HEIGHT) {
+        s_cursorY = SCREEN_HEIGHT - (int16_t)ch;
+    }
+    if (s_cursorY < 0) s_cursorY = 0;
 
     s_cursorW = cw;
     s_cursorH = ch;
@@ -225,13 +246,24 @@ static void computeLayout(DisplayType &display) {
 static void drawCursor(DisplayType &display, bool visible) {
     if (!s_layoutReady) return;
 
-    display.setTextWrap(false);
-    display.setTextColor(visible ? DISPLAY_COLOR : 0); // 0 = schwarz → „löschen“
+    // Cursor-Bereich löschen
+    display.fillRect(s_cursorX, s_cursorY, s_cursorW, s_cursorH, 0);
 
-    display.setCursor(s_cursorX, s_cursorY);
-    display.print("_");
+    if (visible) {
+        display.setTextWrap(false);
+        display.setTextColor(DISPLAY_COLOR);
+
+        // ✅ Baseline-Korrektur (DAS war der Bug!)
+        display.setCursor(
+            s_cursorX - s_cursorX1,
+            s_cursorY - s_cursorY1
+        );
+        display.print("_");
+    }
+
     display.display();
 }
+
 
 } // Ende anonymer Namespace
 
@@ -294,23 +326,7 @@ void tickIdle(DisplayType &display, unsigned long now) {
         case IDLE_ANIM: {
             if (s_lastFrameTime == 0 || (now - s_lastFrameTime) >= IDLE_ANIM_FRAME_DELAY) {
 
-                display.clearDisplay();
-
-                int16_t x = (SCREEN_WIDTH  - FRAME_WIDTH)  / 2;
-                int16_t y = (SCREEN_HEIGHT - FRAME_HEIGHT) / 2;
-
-                if (x < 0) x = 0;
-                if (y < 0) y = 0;
-
-                display.drawBitmap(
-                    x, y,
-                    frames[s_frame],
-                    FRAME_WIDTH,
-                    FRAME_HEIGHT,
-                    DISPLAY_COLOR
-                );
-
-                display.display();
+                drawFrameCropped(display, s_frame);
 
                 s_lastFrameTime = now;
                 s_frame++;

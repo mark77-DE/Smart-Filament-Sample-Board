@@ -1,4 +1,3 @@
-// include/display_anim.h
 #pragma once
 
 #include <Arduino.h>
