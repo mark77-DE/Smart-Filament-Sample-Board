@@ -133,7 +133,7 @@ void setup(){
     Wire.begin(SDA_PIN,SCL_PIN);
 
     // ----------------- Filesystem & Webserver -----------------
-    if(!LittleFS.begin()){
+    if(!LittleFS.begin(true)){
         Serial.println("LittleFS mount failed!");
         while(1);
     }
@@ -190,6 +190,8 @@ void setup(){
 
     // Webserver starten
     initWebServer(server, ws);
+
+    WiFi.setSleep(false);
 }
 
 // ----------------- Loop -----------------

@@ -200,7 +200,10 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
                     loadConfig();
                     // LEDCTRL::init erwartet evtl. LED_PIN extern definiert
                     LEDCTRL::init(LED_COUNT, LED_PIN);
-                    Serial.println("Config imported");
+                    Serial.println("Config imported, ESP will reboot... Please refresh browser in 5s...");
+                    delay(500);
+                    ESP.restart();
+
                 } else {
                     Serial.println("Failed to open /config.json for writing");
                 }
@@ -397,8 +400,24 @@ server.on("/api/update", HTTP_POST,
         }
     );
 
+
+    server.on("/api/reboot", HTTP_POST, [](AsyncWebServerRequest *request){
+        request->send(200, "text/plain", "Rebooting...");
+        // Give the response a short delay, dann reboot
+        delay(500);
+        ESP.restart();
+    });
+
+
+
     ws.onEvent(onWsEvent);
     server.addHandler(&ws);
+
+    server.serveStatic("/admin.js", LittleFS, "/admin.js")
+          .setCacheControl("max-age=86400");
+
+    server.serveStatic("/admin.css", LittleFS, "/admin.css")
+          .setCacheControl("max-age=86400");
 
     server.begin();
 }

@@ -6,71 +6,141 @@
 <link rel="stylesheet" href="/admin.css">
 </head>
 <body>
-<h1>Filament DB</h1>
+  <div id="header">
+    <div id="logo"><img src="/logo.png" alt="Logo" class="logo"></div>
+    <div id="headline">Spot My Filament Samples - Configuration</div>
+  </div>
 
-<h3>Einträge</h3>
+  <div id="systemSection">
+
+  <!-- System Control -->
+  <div class="sysGroup">
+    <button id="rebootBtn">Reboot</button>
+  </div>
+
+  <!-- Export / Import -->
+  <div class="sysGroup">
+
+    <!-- Export -->
+    <button id="exportAllBtn">Export</button>
+
+    <!-- Import -->
+    <form id="importAllForm" method="POST" enctype="multipart/form-data">
+
+      <!-- Stylbarer Upload-Button -->
+      <label for="importFile" id="uploadLabel" class="upload-btn">Choose file</label>
+      <input type="file" id="importFile" name="file" accept=".json" required hidden>
+
+      <!-- Import starten -->
+      <button id="importBtn" type="submit">Import</button>
+
+    </form>
+
+  </div>
+
+  <div id="toggle">
+    <label class="edit-toggle">
+      <input type="checkbox" id="editToggle">
+      <span class="slider"></span>
+        edit
+  </div>
+
+  <div id="wsStatus" class="ws-status ws-disconnected">WebSocket: getrennt</div>
+
+</div>
+
+
+
+
+
+
+
+<div id="sectionSettings">
+
+<div id="addEntry" class="card">
+    <div class="cardHeader">Neuen Eintrag</div>
+
+    <form id="addForm" class="formGrid">
+
+        <label for="uid">UID:</label>
+        <input type="text" name="uid" placeholder="UID (z. B. 04:...)" required>
+
+        <label for="vendor">Hersteller:</label>
+        <input type="text" name="vendor" placeholder="Hersteller" required>
+
+        <label for="type">Filament Typ:</label>
+        <select name="type" required>
+            <option value="">-- Typ wählen --</option>
+            <option value="PLA">PLA</option>
+            <option value="PLA+">PLA+</option>
+            <option value="PLA-CF">PLA-CF</option>
+            <option value="PETG">PETG</option>
+            <option value="PETG-CF">PETG-CF</option>
+            <option value="ABS">ABS</option>
+            <option value="ASA">ASA</option>
+            <option value="TPU">TPU</option>
+            <option value="Nylon">Nylon</option>
+            <option value="Holz">Holz-Filament</option>
+        </select>
+
+        <label for="color">Farbe:</label>
+        <input type="text" name="color" placeholder="Farbe" required>
+
+        <label for="ledIndexSelect">LED:</label>
+        <select name="ledIndex" id="ledIndexSelect" required></select>
+
+        <!-- Button über beide Spalten -->
+        <div style="grid-column: span 2;">
+            <button id="addBtn" type="submit" class="primaryBtn">Hinzufügen</button>
+        </div>
+
+    </form>
+</div>
+
+
+
+<div id="ledSettings" class="card">
+    <div class="cardHeader">LED Settings</div>
+
+    <div class="formGrid">
+
+        <label for="maxLED">Number of LEDs (1–100):</label>
+        <input type="number" id="maxLED" name="maxLED" min="1" max="100" value="8">
+
+        <label for="ledPin">LED Pin:</label>
+        <select id="ledPin" name="ledPin">
+            <option value="2">2</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+            <option value="12">12</option>
+            <option value="14">14</option>
+            <option value="15">15</option>
+            <option value="16">16</option>
+            <option value="17">17</option>
+        </select>
+
+        <label for="ledBrightness">LED Brightness (0–255):</label>
+        <input type="number" id="ledBrightness" name="ledBrightness" min="0" max="255" value="50">
+
+        <label for="ledColor">LED Color (RGB):</label>
+        <input type="color" id="ledColor" name="ledColor" value="#ff0000">
+
+    </div>
+
+    <button id="saveLedConfig" class="primaryBtn">Save LED Config</button>
+</div>
+
+</div>
+
+
+
+
+
+
+
+
+
 <div id="db"></div>
-
-<h3>Neuen Eintrag</h3>
-<form id="addForm">
-  <input type="text" name="uid" placeholder="UID (z. B. 04:...)" required>
-  <input type="text" name="vendor" placeholder="Hersteller" required>
-  
-  <!-- Filament Typ als Dropdown -->
-  <select name="type" required>
-    <option value="">-- Typ wählen --</option>
-    <option value="PLA">PLA</option>
-    <option value="PLA+">PLA+</option>
-    <option value="PLA-CF">PLA-CF</option>
-    <option value="PETG">PETG</option>
-    <option value="PETG-CF">PETG-CF</option>
-    <option value="ABS">ABS</option>
-    <option value="ASA">ASA</option>
-    <option value="TPU">TPU</option>
-    <option value="Nylon">Nylon</option>
-    <option value="Holz">Holz-Filament</option>
-  </select>
-
-  <input type="text" name="color" placeholder="Farbe" required>
-  <select name="ledIndex" id="ledIndexSelect" required></select>
-  <button type="submit">Hinzufügen</button>
-</form>
-
-<h3>LED Settings</h3>
-<label for="maxLED">Number of LEDs (1-100):</label>
-<input type="number" id="maxLED" name="maxLED" min="1" max="100" value="8" />
-
-<label for="ledPin">LED Pin:</label>
-<select id="ledPin" name="ledPin">
-  <option value="2">2</option>
-  <option value="4">4</option>
-  <option value="5">5</option>
-  <option value="12">12</option>
-  <option value="14">14</option>
-  <option value="15">15</option>
-  <option value="16">16</option>
-  <option value="17">17</option>
-</select>
-
-<label for="ledBrightness">LED Brightness (0-255):</label>
-<input type="number" id="ledBrightness" name="ledBrightness" min="0" max="255" value="50" />
-
-<label for="ledColor">LED Color (RGB):</label>
-<input type="color" id="ledColor" name="ledColor" value="#ff0000" />
-
-<button id="saveLedConfig">Save LED Config</button>
-
-
-
-
-<h3>Alles Exportieren / Importieren</h3>
-<button id="exportAllBtn">Alles exportieren</button>
-
-<form id="importAllForm" method="POST" enctype="multipart/form-data">
-    <input type="file" name="file" accept=".json" required>
-    <button type="submit">Importieren</button>
-</form>
-
 
 <script src="/admin.js"></script>
 </body>
