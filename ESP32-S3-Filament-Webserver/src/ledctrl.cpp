@@ -3,12 +3,45 @@
 #include <LittleFS.h>
 #include "ledctrl.h"
 
+int LED_COUNT = 0;
+int LED_PIN = 0;
+uint32_t LED_COLOR = 0xFF0000; // Standard: rot
+int LED_BRIGHTNESS = 50; // default
+
+
 Adafruit_NeoPixel* LEDCTRL::_leds = nullptr;
 
-int LED_COUNT = 4;
-int LED_PIN = 4;       // aus config.json
-int LED_BRIGHTNESS = 50;
-uint32_t LED_COLOR = 0xFF0000;  // default Rot
+void LEDCTRL::init(int count, int pin){
+    LED_COUNT = count;
+    LED_PIN = pin;
+
+    if(_leds) delete _leds; // evtl. alten Strip löschen
+    _leds = new Adafruit_NeoPixel(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
+    _leds->begin();
+    _leds->setBrightness(LED_BRIGHTNESS); // <- Helligkeit anwenden
+
+    allOff();
+}
+
+void LEDCTRL::setPixel(int index, uint32_t color){
+
+    Serial.printf("Set LED %d to color 0x%06X\n", index, color);
+
+    if(!_leds) return;
+    if(index < 0 || index >= LED_COUNT) return;
+
+    _leds->setPixelColor(index, color);
+    _leds->show();
+}
+
+void LEDCTRL::allOff(){
+    if(!_leds) return;
+
+    for(int i=0;i<LED_COUNT;i++){
+        _leds->setPixelColor(i, 0);
+    }
+    _leds->show();
+}
 
 
 void loadConfig() {
@@ -17,16 +50,15 @@ void loadConfig() {
         return;
     }
 
-    File f;
     String filename = LittleFS.exists("/config.json") ? "/config.json" : "/filament_default.json";
-    f = LittleFS.open(filename, "r");
-
+    File f = LittleFS.open(filename, "r");
     if (!f) {
         Serial.println("Failed to open " + filename);
         return;
     }
 
-    StaticJsonDocument<2048> doc;
+    // <-- hier ändern -->
+    DynamicJsonDocument doc(2048); // korrekt: DynamicJsonDocument mit Größe
     DeserializationError err = deserializeJson(doc, f);
     f.close();
 
@@ -57,31 +89,3 @@ void loadConfig() {
     Serial.printf("LED config loaded: count=%d, pin=%d, brightness=%d, color=0x%06X\n",
                   LED_COUNT, LED_PIN, LED_BRIGHTNESS, LED_COLOR);
 }
-
-
-
-// init jetzt dynamisch
-void LEDCTRL::init(int count, int pin) {
-    if (_leds) delete _leds; // alte Instanz löschen, falls vorhanden
-
-    _leds = new Adafruit_NeoPixel(count, pin, NEO_GRB + NEO_KHZ800);
-    _leds->begin();
-    _leds->show();
-}
-
-// highlight z. B. mit konfigurierter Farbe und Helligkeit
-void LEDCTRL::highlight(int index) {
-    if (!_leds || index < 0 || index >= _leds->numPixels()) return;
-    _leds->clear();
-    uint32_t col = LED_COLOR;
-    _leds->setPixelColor(index, col);
-    _leds->setBrightness(LED_BRIGHTNESS);
-    _leds->show();
-}
-
-void LEDCTRL::allOff() {
-    if (!_leds) return;
-    _leds->clear();
-    _leds->show();
-}
-
