@@ -30,6 +30,78 @@ void MYDISPLAY::show(const FilamentEntry& entry) {
     _display->setTextWrap(false);
     _display->setTextColor(DISPLAY_COLOR);
 
+    // ============================================================
+    // ✅ NUR FÜR 32px DISPLAY: Standard-Font erzwingen
+    // (damit 3 Zeilen sicher passen)
+    // ============================================================
+    const bool forceStdFontFor32 = (SCREEN_HEIGHT <= 32);
+
+    if (forceStdFontFor32) {
+        _display->setFont(nullptr);   // Standard 5x7
+        _display->setTextSize(1);
+
+        // Zeilenhöhe aus Standardfont ermitteln (nicht raten!)
+        int16_t x1, y1;
+        uint16_t w, h;
+        _display->getTextBounds("Hg", 0, 0, &x1, &y1, &w, &h);
+
+        // 3 Zeilen auf 32px: wenig Abstand, aber lesbar
+        const int16_t lineHeight = (int16_t)h + 1;
+
+        int16_t y = lineHeight; // erste Zeile
+
+        auto printStdLine = [&](const String& text, int16_t yLine) {
+            String t = text;
+
+            // Breite prüfen
+            _display->getTextBounds(t, 0, 0, &x1, &y1, &w, &h);
+            if (w <= SCREEN_WIDTH) {
+                _display->setCursor(0, yLine);
+                _display->print(t);
+                return;
+            }
+
+            // Kürzen + "..."
+            String base = t;
+            String out;
+            while (base.length() > 0) {
+                out = base + "...";
+                _display->getTextBounds(out, 0, 0, &x1, &y1, &w, &h);
+                if (w <= SCREEN_WIDTH) {
+                    _display->setCursor(0, yLine);
+                    _display->print(out);
+                    return;
+                }
+                base.remove(base.length() - 1);
+            }
+
+            _display->setCursor(0, yLine);
+            _display->print("...");
+        };
+
+        printStdLine(fixUmlauts(entry.vendor), y);
+        y += lineHeight;
+        printStdLine(fixUmlauts(entry.type), y);
+        y += lineHeight;
+        printStdLine(fixUmlauts(entry.color), y);
+
+        _display->display();
+
+        // Debug
+        Serial.print(F("DISPLAY: "));
+        Serial.print(entry.vendor);
+        Serial.print(' ');
+        Serial.print(entry.type);
+        Serial.print(' ');
+        Serial.println(entry.color);
+
+        return; // ✅ wichtig: Rest der Funktion überspringen
+    }
+
+    // ============================================================
+    // 64px DISPLAY: bisherige AutoFit-Logik unverändert
+    // ============================================================
+
     // Basis-Font für Layout-Berechnung
     _display->setFont(DISPLAY_FONT);
     _display->setTextSize(1);
@@ -106,10 +178,6 @@ void MYDISPLAY::show(const FilamentEntry& entry) {
 
     y += lineHeight;
     printLineAutoFit(fixUmlauts(entry.color), y);
-
-    // Optional noch Slot:
-    // y += lineHeight;
-    // printLineAutoFit(fixUmlauts(String("Slot ") + entry.ledIndex), y);
 
     _display->display();
 
