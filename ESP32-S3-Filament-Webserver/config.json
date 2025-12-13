@@ -1,0 +1,12 @@
+{
+  "layout": {
+    "columns": 2,
+    "rows": 5,
+    "itmes": 6
+  },
+  "options": {
+    "darkmode": true,
+    "mqtt": false,
+    "ledCount": 60
+  }
+}

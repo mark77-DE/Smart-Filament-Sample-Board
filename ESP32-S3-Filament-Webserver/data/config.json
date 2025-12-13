@@ -8,7 +8,7 @@
     "darkmode": true,
     "mqtt": false,
     
-    "ledCount": 8,
+    "ledCount": 12,
     "ledPin": 4,
     "ledBrightness": 50,
     "ledColor": [255, 0, 0],

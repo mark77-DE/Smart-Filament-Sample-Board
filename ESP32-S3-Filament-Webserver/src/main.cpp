@@ -55,19 +55,6 @@ String activeUID = "";       // aktuell aktive UID
 
 // ----------------- Hilfsfunktionen -----------------
 
-// ----------------- LED & Display -----------------
-void setLedBrightness(int index, int brightness){
-    uint8_t r = (LED_COLOR_R * brightness) / 255;
-    uint8_t g = (LED_COLOR_G * brightness) / 255;
-    uint8_t b = (LED_COLOR_B * brightness) / 255;
-
-    for(int i=0;i<LED_COUNT;i++){
-        if(i == index) leds.setPixelColor(i,r,g,b);
-        else leds.setPixelColor(i,0);
-    }
-    leds.show();
-}
-
 
 
 
@@ -84,9 +71,6 @@ void activateLed(int index) {
         targetLed = -1;
     }
 
-    leds.show();
-    Serial.print(index);
-    Serial.println(ledStartTime);
 }
 
 
