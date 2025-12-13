@@ -4,25 +4,31 @@
 #include <Wire.h>
 #include <SPI.h>
 #include <Adafruit_PN532.h>
-#include <Adafruit_NeoPixel.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
 #include <ArduinoJson.h>
-#include <LittleFS.h>
 #include "filament_db.h"
 #include "ledctrl.h"
+#include "ledctrl_nfc.h"
 #include "display.h"
-#include "display_config.h"
-#include "my_webserver.h"
-#include "globals.h"
-#include "display_anim.h"
 
+#include <Fonts/FreeMono7pt7b.h>
+#include "my_webserver.h"
+
+#include <LittleFS.h>
+#include "globals.h"
 
 // ----------------- Server & WS -----------------
 AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
 
-// ----------------- OLED ---------------
-
-DisplayType display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET_PIN);
+// ----------------- OLED Settings -----------------
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 32
+#define OLED_RESET -1
+#define OLED_ADDR 0x3C
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 // ----------------- PN532 SPI Settings -----------------
 #define PN532_SCK 18
@@ -32,15 +38,7 @@ DisplayType display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET_PIN);
 #define PN532_IRQ 2
 Adafruit_PN532 nfc(PN532_SCK, PN532_MISO, PN532_MOSI, PN532_CS);
 
-// ----------------- LEDs -----------------
-#define LED_PIN 4
-#define LED_COUNT 8
-Adafruit_NeoPixel leds(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
-#define LED_COLOR_R 255
-#define LED_COLOR_G 0
-#define LED_COLOR_B 0
-#define LED_BRIGHTNESS 32
-
+// ----------------- I2C -----------------
 #define SDA_PIN 21
 #define SCL_PIN 22
 
@@ -49,64 +47,48 @@ int targetLed = -1;
 unsigned long ledStartTime = 0;
 const unsigned long LED_TIMEOUT = 3000;
 bool displayIdleShown = false;
-
 unsigned long lastTagTime = 0;
 unsigned long now = 0;
-
 bool isActive = false;
+
+
+
 
 // ----------------- Globale Variablen -----------------
 String activeUID = "";       // aktuell aktive UID
 
-
 // ----------------- Hilfsfunktionen -----------------
-
-// ----------------- LED & Display -----------------
-void setLedBrightness(int index, int brightness){
-    uint8_t r = (LED_COLOR_R * brightness) / 255;
-    uint8_t g = (LED_COLOR_G * brightness) / 255;
-    uint8_t b = (LED_COLOR_B * brightness) / 255;
-
-    for(int i=0;i<LED_COUNT;i++){
-        if(i == index) leds.setPixelColor(i,r,g,b);
-        else leds.setPixelColor(i,0);
-    }
-    leds.show();
+void showCentered(const String &msg){
+    display.clearDisplay();
+    display.setFont(&FreeMono7pt7b);
+    display.setTextSize(1);
+    int16_t x1, y1; uint16_t w,h;
+    display.getTextBounds(msg,0,0,&x1,&y1,&w,&h);
+    display.setCursor((SCREEN_WIDTH - w)/2,(SCREEN_HEIGHT - h)/2 + 2);
+    display.print(msg);
+    display.display();
 }
 
-
-
-
+// ----------------- LED & Display -----------------
 void activateLed(int index) {
+
+   
     if(targetLed != -1 && targetLed != index){
-        // alte LED ausschalten
-        leds.setPixelColor(targetLed, 0, 0, 0);
+        LEDCTRL::setPixel(targetLed, 0); // alte LED aus
     }
 
     if(index >= 0 && index < LED_COUNT){
-        leds.setPixelColor(index, LED_COLOR_R, LED_COLOR_G, LED_COLOR_B);
+        LEDCTRL::setPixel(index, LED_COLOR);
         targetLed = index;
-        ledStartTime = millis();  // Timer starten
+        ledStartTime = millis();
     } else {
         targetLed = -1;
     }
-
-    leds.show();
-    Serial.print(index);
-    Serial.println(ledStartTime);
 }
-
-
-
 
 void handleUID(const String &uid){
     lastTagTime = now;
     isActive = true; 
-
-    // Idle-Animation stoppen, weil jetzt aktiv etwas angezeigt wird
-    DisplayAnim::stop();
-
-
     FilamentEntry entry;
 
     DynamicJsonDocument doc(256);
@@ -126,12 +108,11 @@ void handleUID(const String &uid){
     } else {
         // Unbekannt → LEDs zurücksetzen
         if(targetLed != -1){
-            leds.setPixelColor(targetLed, 0,0,0);
-            leds.show();
+            LEDCTRL::setPixel(targetLed, 0);
             targetLed = -1;
             ledStartTime = millis();
         }
-        MYDISPLAY::showCentered("UNBEKANNT");
+        showCentered("UNBEKANNT");
 
         // WebUI informieren
         doc["action"] = "unknownUID";
@@ -141,8 +122,6 @@ void handleUID(const String &uid){
     serializeJson(doc, msg);
     ws.textAll(msg);
 }
-
-
 
 // ----------------- Setup -----------------
 void setup(){
@@ -155,32 +134,53 @@ void setup(){
     Wire.begin(SDA_PIN,SCL_PIN);
 
     // ----------------- Filesystem & Webserver -----------------
-    if(!LittleFS.begin()){
+    if(!LittleFS.begin(true)){
         Serial.println("LittleFS mount failed!");
         while(1);
     }
 
     // OLED init
-    if (!initDisplay(display)) {
-    Serial.println("OLED init failed!");
-    while (1);
+    if(!display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR)){
+        Serial.println("OLED init failed!");
+        while(1);
     }
 
-    LEDCTRL::init(&leds);
+    // 1. Config laden
+    loadConfig(); // LED_COUNT und LED_PIN werden gesetzt
+    loadNfcLedConfig();
+    Serial.print("LED_COUNT = "); Serial.println(LED_COUNT);
+    Serial.print("LED_PIN = "); Serial.println(LED_PIN);
+    Serial.print("LED_COLOR = "); Serial.println(LED_COLOR);
+    Serial.print("NFC_LED_COUNT = "); Serial.println(NFC_LED_COUNT);
+    Serial.print("NFC_LED_PIN = "); Serial.println(NFC_LED_PIN);
+    Serial.print("NFC_LED_COLOR = "); Serial.println(NFC_LED_COLOR);
+
+
+
+    // 2. LED Strip initialisieren
+    LEDCTRL::init(LED_COUNT, LED_PIN);
+    LEDCTRL::allOff();
+
+    LEDCTRL_NFC::init(NFC_LED_COUNT, NFC_LED_PIN);
+    LEDCTRL_NFC::allOff();
+
+    // 3. Display & DB init
     MYDISPLAY::init(&display);
     FilamentDB::load();
 
     display.clearDisplay();
+    display.setFont(&FreeMono7pt7b);
+    display.setTextSize(1);
+    display.setTextColor(SSD1306_WHITE);
 
-
-    MYDISPLAY::showCentered("WIFI CONNECTING...");
+    showCentered("WIFI CONNECTING...");
 
     // PN532 init
     nfc.begin();
     uint32_t versiondata = nfc.getFirmwareVersion();
     if(!versiondata){
         Serial.println("PN532 not found!");
-        MYDISPLAY::showCentered("PN532 FEHLT!");
+        showCentered("PN532 FEHLT!");
         while(1);
     }
     nfc.SAMConfig();
@@ -188,34 +188,27 @@ void setup(){
 
     // ----------------- WLAN -----------------
     WiFiManager wifiManager;
-    MYDISPLAY::showCentered("VERBINDUNG...");
+    showCentered("VERBINDUNG...");
     if(!wifiManager.autoConnect("NFC-Setup-AP")){
         ESP.restart();
     }
     Serial.print("IP: "); Serial.println(WiFi.localIP());
-    MYDISPLAY::showCentered(WiFi.localIP().toString());
+    showCentered(WiFi.localIP().toString());
     delay(5000);
-
-    // Erst "SCAN TAG" anzeigen, dann später in die Animation wechseln
-    DisplayAnim::startIdleTextFirst(millis());
-
-    
+    showCentered("SCAN TAG");
 
     // WebSocket starten
-    
     server.addHandler(&ws);
 
     // Webserver starten
     initWebServer(server, ws);
+
+    WiFi.setSleep(false);
 }
 
+// ----------------- Loop -----------------
 void loop(){
     now = millis();
-
-    // Idle-Animation nur laufen lassen, wenn das System nicht aktiv ist
-    if (!isActive) {
-        DisplayAnim::tickIdle(display, now);
-    }
 
     // NFC Lesen
     uint8_t uid[7]; uint8_t uidLength = 0;
@@ -229,27 +222,18 @@ void loop(){
         }
         uidStr.toUpperCase();
         Serial.println("FOUND UID: " + uidStr);
-        handleUID(uidStr);  // <-- NEU: zentrale Funktion
+        handleUID(uidStr);
         nfc.SAMConfig();
     }   
 
     // LED Timeout
     if (now - lastTagTime > LED_TIMEOUT && isActive) {
-        // LED ausschalten
         targetLed = -1;
-        leds.clear();
-        leds.show();
+        LEDCTRL::allOff();   // <-- alles über LEDCTRL
         Serial.println("LED Timeout - alle LEDs aus");
-        Serial.println("Display idle");
-
-
-        DisplayAnim::startIdleTextFirst(now);
-
+        showCentered("SCAN TAG");
         isActive = false;
     }
 
-    
-
-    
     delay(10);
 }

@@ -2,11 +2,12 @@
 #include <LittleFS.h>
 #include <ArduinoJson.h>
 
-static FilamentEntry db[100];   // max 50 Tags
+static FilamentEntry db[100];   // max 100 Einträge
 static int dbCount = 0;
 
 namespace FilamentDB {
 
+// ----------------- Basisfunktionen -----------------
 void getAll(std::vector<FilamentEntry> &list) {
     list.clear();
     for (int i = 0; i < dbCount; i++) {
@@ -23,7 +24,7 @@ bool loadFromFile() {
     File f = LittleFS.open("/filaments.json", "r");
     if (!f) return false;
 
-    JsonDocument doc;
+    StaticJsonDocument<32 * 1024> doc; // ausreichend groß
     DeserializationError err = deserializeJson(doc, f);
     f.close();
 
@@ -34,10 +35,10 @@ bool loadFromFile() {
 
     dbCount = 0;
     for (JsonObject o : doc.as<JsonArray>()) {
-        db[dbCount].uid = o["uid"].as<String>();
-        db[dbCount].vendor = o["vendor"].as<String>();
-        db[dbCount].type = o["type"].as<String>();
-        db[dbCount].color = o["color"].as<String>();
+        db[dbCount].uid      = o["uid"].as<String>();
+        db[dbCount].vendor   = o["vendor"].as<String>();
+        db[dbCount].type     = o["type"].as<String>();
+        db[dbCount].color    = o["color"].as<String>();
         db[dbCount].ledIndex = o["ledIndex"].as<int>();
         dbCount++;
     }
@@ -47,15 +48,15 @@ bool loadFromFile() {
 }
 
 bool saveToFile() {
-    DynamicJsonDocument doc(4096);
+    StaticJsonDocument<32 * 1024> doc;
     JsonArray arr = doc.to<JsonArray>();
 
     for (int i = 0; i < dbCount; i++) {
         JsonObject o = arr.add<JsonObject>();
-        o["uid"] = db[i].uid;
-        o["vendor"] = db[i].vendor;
-        o["type"] = db[i].type;
-        o["color"] = db[i].color;
+        o["uid"]      = db[i].uid;
+        o["vendor"]   = db[i].vendor;
+        o["type"]     = db[i].type;
+        o["color"]    = db[i].color;
         o["ledIndex"] = db[i].ledIndex;
     }
 
@@ -71,19 +72,15 @@ bool saveToFile() {
     return true;
 }
 
-
 void load() {
     if (!LittleFS.exists("/filaments.json")) {
         Serial.println("DB file not found. Start with empty DB.");
-        dbCount = 0;   // keine Voreinträge
-    } else {
-        if (!loadFromFile()) {
-            Serial.println("Error loading DB from file!");
-            dbCount = 0; // leere DB bei Fehler
-        }
+        dbCount = 0;
+    } else if (!loadFromFile()) {
+        Serial.println("Error loading DB from file!");
+        dbCount = 0;
     }
 }
-
 
 bool findByUID(const String &uid, FilamentEntry &entry) {
     for (int i = 0; i < dbCount; i++) {
@@ -99,10 +96,10 @@ bool findByUID(const String &uid, FilamentEntry &entry) {
 
 // Update bestehender Eintrag nach UID
 bool update(const FilamentEntry &entry) {
-    for(int i = 0; i < dbCount; i++) {
-        if(db[i].uid == entry.uid) {
+    for (int i = 0; i < dbCount; i++) {
+        if (db[i].uid == entry.uid) {
             db[i] = entry;
-            return true;
+            return saveToFile();
         }
     }
     return false;
@@ -110,41 +107,42 @@ bool update(const FilamentEntry &entry) {
 
 // Eintrag hinzufügen
 bool add(const FilamentEntry &entry) {
-    if(dbCount >= 50) return false;
+    if (dbCount >= 100) return false;
     db[dbCount++] = entry;
-    saveToFile();
-    return true;
+    return saveToFile();
 }
 
 // Eintrag löschen nach UID
 bool remove(const String &uid) {
-    for(int i = 0; i < dbCount; i++) {
-        if(db[i].uid == uid) {
-            // alle folgenden Einträge nach vorne verschieben
-            for(int j = i; j < dbCount-1; j++) {
-                db[j] = db[j+1];
+    for (int i = 0; i < dbCount; i++) {
+        if (db[i].uid == uid) {
+            for (int j = i; j < dbCount - 1; j++) {
+                db[j] = db[j + 1];
             }
             dbCount--;
-            return true;
+            return saveToFile();
         }
     }
     return false;
 }
 
+// Eintrag löschen nach Index
 bool deleteEntry(int index) {
-    if (index < 0 || index >= dbCount) {
-        return false;
-    }
+    if (index < 0 || index >= dbCount) return false;
 
-    // Eintrag entfernen indem alles nach vorne geschoben wird
     for (int i = index; i < dbCount - 1; i++) {
         db[i] = db[i + 1];
     }
-
     dbCount--;
 
-    // Neue DB speichern
     return saveToFile();
 }
 
-} // namespace
+// Update nach Index
+bool updateAtIndex(int idx, const FilamentEntry &entry) {
+    if (idx < 0 || idx >= dbCount) return false;
+    db[idx] = entry;
+    return saveToFile();
+}
+
+} // namespace FilamentDB
