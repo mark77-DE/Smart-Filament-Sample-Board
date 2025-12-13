@@ -14,5 +14,5 @@ public:
 };
 
 // --- neue Deklaration ---
-void loadConfig();
+void loadLedConfig();
 extern int LED_BRIGHTNESS;

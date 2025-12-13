@@ -3,8 +3,27 @@ const dbDiv = document.getElementById("db");
 const addForm = document.getElementById("addForm");
 const wsStatus = document.getElementById("wsStatus");
 const editToggle = document.getElementById("editToggle");
+
 const ledPinSelect = document.getElementById("ledPin");
 const nfcLedPinSelect = document.getElementById("nfcLedPin");
+
+const ledBrightnessInput = document.getElementById("ledBrightness");
+const nfcLedBrightnessInput = document.getElementById("nfcLedBrightness");
+
+const maxLEDInput = document.getElementById("maxLED");
+const nfcMaxLEDInput = document.getElementById("nfcMaxLED");
+
+const ledColorInput = document.getElementById("ledColor");
+const nfcLedColorInput = document.getElementById("nfcLedColor");
+
+const ledTimeoutInput = document.getElementById("ledTimeout");
+const nfcLedTimeoutInput = document.getElementById("nfcLedTimeout");
+
+const importFileInput = document.getElementById("importFile");
+const importBtn = document.getElementById("importBtn");
+
+
+
 
 let EDIT_MODE = false;
 let CONFIG = null;
@@ -14,19 +33,44 @@ let lastHighlightedRow = null;
 let LAST_CONFIG_JSON = null; // speichert die letzte geladene Config
 
 // -------------------- WebSocket --------------------
+
 const ws = new WebSocket(`ws://${location.host}/ws`);
 
 ws.onopen = () => updateWSStatus(true);
 ws.onclose = () => {
     updateWSStatus(false);
     document.body.innerHTML = `
-        <h2>ESP wird neu gestartet...</h2>
-        <p>Bitte warten und die Seite in 5 Sekunden neu laden.</p>
+        <h2>ESP Verbindung verloren...</h2>
+        <p>Seite wird in 5 Sekunden neu laden.</p>
     `;
     setTimeout(() => location.reload(), 5000);
 };
 ws.onerror = () => updateWSStatus(false);
 ws.onmessage = handleWSMessage;
+
+
+
+function hexToRgb(hex) {
+    if (!hex || hex[0] !== '#' || hex.length !== 7) return [255, 0, 0]; // Default Rot
+    const r = parseInt(hex.substr(1,2), 16);
+    const g = parseInt(hex.substr(3,2), 16);
+    const b = parseInt(hex.substr(5,2), 16);
+    return [r, g, b];
+}
+
+function rgbToHex(rgb) {
+    if (!Array.isArray(rgb) || rgb.length < 3) return "#ff0000"; // Default Rot
+    const r = rgb[0].toString(16).padStart(2,'0');
+    const g = rgb[1].toString(16).padStart(2,'0');
+    const b = rgb[2].toString(16).padStart(2,'0');
+    return `#${r}${g}${b}`;
+}
+
+function updateImportBtnVisibility() {
+    importBtn.style.display = importFileInput.files.length ? "inline-block" : "none";
+}
+
+
 
 function updateWSStatus(connected){
     wsStatus.textContent = connected ? "WebSocket: verbunden" : "WebSocket: getrennt";
@@ -221,6 +265,20 @@ async function loadTable() {
 
     ledPinSelect.value = CONFIG.options.ledPin;
     nfcLedPinSelect.value = CONFIG.options.nfcLedPin;
+
+    ledBrightnessInput.value = CONFIG.options.ledBrightness;
+    nfcLedBrightnessInput.value = CONFIG.options.nfcLedBrightness;
+
+    maxLEDInput.value = CONFIG.options.ledCount;
+    nfcMaxLEDInput.value = CONFIG.options.nfcLedCount;
+
+    ledTimeoutInput.value = CONFIG.options.ledTimeout;
+    nfcLedTimeoutInput.value = CONFIG.options.nfcLedTimeout;
+
+    ledColorInput.value = rgbToHex(CONFIG.options.ledColor);
+    nfcLedColorInput.value = rgbToHex(CONFIG.options.nfcLedColor);
+
+    
 }
 
 
@@ -263,23 +321,27 @@ function activateButtons(){
 async function updateAddFormLEDs(){ const data=await (await fetch("/filaments.json")).json(); const free=[]; for(let i=0;i<CONFIG.options.ledCount;i++){ if(!data.find(e=>Number(e.ledIndex)===i)) free.push(i); } const sel=document.getElementById("ledIndexSelect"); sel.innerHTML=""; free.forEach(v=>{ const opt=document.createElement("option"); opt.value=v; opt.textContent=`LED ${v}`; sel.appendChild(opt); }); }
 
 // -------------------- LED Config --------------------
-document.getElementById("saveLedConfig").addEventListener("click", async () => {
+document.getElementById("saveConfig").addEventListener("click", async () => {
     const ledCount = Number(document.getElementById("maxLED").value);
     const ledPin = Number(document.getElementById("ledPin").value);
     const ledBrightness = Number(document.getElementById("ledBrightness").value);
-    const col = document.getElementById("ledColor").value;
-    const ledColor = [parseInt(col.substr(1,2),16), parseInt(col.substr(3,2),16), parseInt(col.substr(5,2),16)];
+    const ledColor = hexToRgb(document.getElementById("ledColor").value);
 
-    const nfcLedCount = Number(document.getElementById("maxNfcLED").value);
+
+
+    const nfcLedCount = Number(document.getElementById("nfcMaxLED").value);
     const nfcLedPin = Number(document.getElementById("nfcLedPin").value);
     const nfcLedBrightness = Number(document.getElementById("nfcLedBrightness").value);
-    const nfcCol = document.getElementById("ledNfcColor").value;
-    const nfcLedColor = [parseInt(nfcCol.substr(1,2),16), parseInt(nfcCol.substr(3,2),16), parseInt(nfcCol.substr(5,2),16)];
+    const nfcLedColor = hexToRgb(document.getElementById("nfcLedColor").value);
 
-    // Nachricht sofort anzeigen
-    document.body.innerHTML = "<h2>ESP wird neu gestartet...</h2><p>Bitte warten...</p>";
+    console.log("Neue LED Config:", {
+        ledCount, ledPin, ledBrightness, ledColor,
+        nfcLedCount, nfcLedPin, nfcLedBrightness, nfcLedColor
+    });
 
-    // fetch absenden, Fehler ignorieren, weil ESP evtl. sofort rebootet
+    
+
+    
     try {
         await fetch("/api/updateLedConfig", {
             method: "POST",
@@ -293,15 +355,7 @@ document.getElementById("saveLedConfig").addEventListener("click", async () => {
         // ESP schon offline – kein Problem
     }
 
-    // Prüfen, wann ESP wieder online ist
-    const check = setInterval(async () => {
-        try {
-            if ((await fetch("/config.json", {cache:"no-store"})).ok) {
-                clearInterval(check);
-                location.reload();
-            }
-        } catch(e){}
-    }, 2000);
+   
 });
 
 
@@ -316,15 +370,13 @@ async function loadConfig() {
 
     const newConfigJSON = JSON.stringify(json);
 
-    let rebootNeeded = false;
-    if(LAST_CONFIG_JSON && LAST_CONFIG_JSON !== newConfigJSON){
-        rebootNeeded = true; // Config hat sich geändert
-    }
+    
+   
 
     CONFIG = json;
     LAST_CONFIG_JSON = newConfigJSON;
 
-    return rebootNeeded;
+   
 }
 
 
@@ -345,21 +397,18 @@ function updatePinOptions() {
 // Eventlistener hinzufügen
 ledPinSelect.addEventListener("change", updatePinOptions);
 nfcLedPinSelect.addEventListener("change", updatePinOptions);
-
+importFileInput.addEventListener("change", updateImportBtnVisibility);
 
 
 // -------------------- Init --------------------
 async function init() {
-    const rebootNeeded = await loadConfig();
+    await loadConfig();
     await loadTable();
     await updateAddFormLEDs();
     updatePinOptions();
+    updateImportBtnVisibility();
 
-    if(rebootNeeded){
-        // Automatischer Reboot
-        const res = await fetch("/api/reboot", { method: "POST" }).catch(() => {});
-        document.body.innerHTML = "<h2>ESP wird neu gestartet...</h2><p>Bitte kurz warten.</p>";
-    }
+    
 }
 
 

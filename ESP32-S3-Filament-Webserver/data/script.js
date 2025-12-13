@@ -58,7 +58,7 @@ async function loadFilamentTiles() {
         fetch('/filaments.json')
     ]);
 
-    const config = await configRes.json();
+    const CONFIG = await configRes.json();
     const filaments = await filamentsRes.json();
 
     const grid = document.getElementById("filamentGrid");
@@ -95,7 +95,7 @@ async function loadFilamentTiles() {
                 socket.send(JSON.stringify({action: "highlightLED", uid: f.uid}));
             }
             tile.classList.add("active");
-            setTimeout(() => tile.classList.remove("active"), 3000);
+            setTimeout(() => tile.classList.remove("active"), CONFIG.options.ledTimeout);
         };
 
         grid.appendChild(tile);

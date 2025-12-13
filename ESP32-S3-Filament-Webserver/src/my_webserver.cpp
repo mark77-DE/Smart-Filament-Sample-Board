@@ -2,15 +2,20 @@
 #include <ArduinoJson.h>
 #include <LittleFS.h>
 #include "ledctrl.h"
+#include "ledctrl_nfc.h"
 #include <vector>
+#include "display.h"
 
-extern int LED_COUNT;
-extern int LED_BRIGHTNESS;
-extern int targetLed;
-extern void setLedBrightness(int led, int brightness);
-extern String lastScannedUID;
+extern volatile bool rebootPending;
+extern unsigned long rebootAt;
 
-String lastScannedUID = "";
+
+
+
+void showRebootScreen(){
+        // Zeige Reboot-Nachricht an
+        Serial.println("Rebooting...");
+    }
 
 // ----------------- WebSocket Event -----------------
 void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
@@ -197,12 +202,13 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
                     serializeJson(doc["config"], out); // gesamte Struktur speichern
                     f.print(out);
                     f.close();
-                    loadConfig();
+                    loadLedConfig();
+                    loadNfcLedConfig();
                     // LEDCTRL::init erwartet evtl. LED_PIN extern definiert
-                    LEDCTRL::init(LED_COUNT, LED_PIN);
-                    Serial.println("Config imported, ESP will reboot... Please refresh browser in 5s...");
-                    delay(500);
-                    ESP.restart();
+                    
+                    //Serial.println("Config imported, ESP will reboot... Please refresh browser in 5s...");
+                    //delay(500);
+                    //ESP.restart();
 
                 } else {
                     Serial.println("Failed to open /config.json for writing");
@@ -367,6 +373,16 @@ server.on("/api/update", HTTP_POST,
             int newNfcPin           = doc["nfcLedPin"]   | 16;
             int newNfcBrightness    = doc["nfcLedBrightness"] | 50;
 
+            Serial.println("Updating LED Config:");
+            Serial.printf(" LED Count: %d\n", newCount);
+            Serial.printf(" LED Pin: %d\n", newPin);
+            Serial.printf(" LED Brightness: %d\n", newBrightness); 
+            Serial.printf(" NFC LED Count: %d\n", newNfcCount);
+            Serial.printf(" NFC LED Pin: %d\n", newNfcPin);
+            Serial.printf(" NFC LED Brightness: %d\n", newNfcBrightness);
+
+
+
             // Farbe aus dem Request
             JsonArray colorArr      = doc["ledColor"].as<JsonArray>();
             JsonArray colorNfcArr   = doc["ledNfcColor"].as<JsonArray>();
@@ -412,19 +428,32 @@ server.on("/api/update", HTTP_POST,
                 Serial.println("Failed to open /config.json for writing (updateLedConfig)");
             }
 
-            req->send(200, "text/plain", "REBOOTING");
-            delay(500);
-            ESP.restart();
+            loadLedConfig();
+            loadNfcLedConfig();
+
+            
+            req->send(200, "application/json", "{\"status\":\"ok\"}");
+
+            //req->send(200, "text/plain", "REBOOTING");
+            //delay(500);
+            //ESP.restart();
         }
     );
 
+      server.on("/api/reboot", HTTP_POST, [](AsyncWebServerRequest *request){
+        showRebootScreen();
+        rebootPending = true;
+        rebootAt = millis() + 1000;   // 1 Sekunde Zeit fürs Display
 
-    server.on("/api/reboot", HTTP_POST, [](AsyncWebServerRequest *request){
-        request->send(200, "text/plain", "Rebooting...");
-        // Give the response a short delay, dann reboot
-        delay(500);
-        ESP.restart();
+        request->send(200, "text/plain", "Rebooting");
+
     });
+
+
+    
+
+
+  
 
 
 

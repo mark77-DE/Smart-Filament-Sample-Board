@@ -16,6 +16,9 @@
 #include "globals.h"
 #include "display_anim.h"
 
+// Reboot-Steuerung
+volatile bool rebootPending = false;
+unsigned long rebootAt = 0;
 
 // ----------------- Server & WS -----------------
 AsyncWebServer server(80);
@@ -40,8 +43,8 @@ Adafruit_PN532 nfc(PN532_SCK, PN532_MISO, PN532_MOSI, PN532_CS);
 // ----------------- LED & Display Timing -----------------
 int targetLed = -1;
 unsigned long ledStartTime = 0;
-const unsigned long LED_TIMEOUT = 3000;
-bool displayIdleShown = false;
+
+
 unsigned long lastTagTime = 0;
 unsigned long now = 0;
 bool isActive = false;
@@ -138,12 +141,12 @@ void setup(){
 
     // OLED init
     if (!initDisplay(display)) {
-    Serial.println("OLED init failed!");
+        Serial.println("OLED init failed!");
     while (1);
     }
 
     // 1. Config laden
-    loadConfig(); // LED_COUNT und LED_PIN werden gesetzt
+    loadLedConfig(); // LED_COUNT und LED_PIN werden gesetzt
     loadNfcLedConfig();
     Serial.print("LED_COUNT = "); Serial.println(LED_COUNT);
     Serial.print("LED_PIN = "); Serial.println(LED_PIN);
@@ -209,6 +212,11 @@ void setup(){
 // ----------------- Loop -----------------
 void loop(){
     now = millis();
+
+    if (rebootPending && millis() > rebootAt) {
+        ESP.restart();
+    }
+
 
     // Idle-Animation nur laufen lassen, wenn das System nicht aktiv ist
     if (!isActive) {

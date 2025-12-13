@@ -4,9 +4,12 @@
 #include "ledctrl.h"
 
 int LED_COUNT = 0;
-int LED_PIN = 0;
-uint32_t LED_COLOR = 0xFF0000; // Standard: rot
+int LED_PIN = 4;
 int LED_BRIGHTNESS = 50; // default
+int LED_TIMEOUT = 3000;
+
+uint32_t LED_COLOR = 0xFF0000; // Standard: rot
+
 
 
 Adafruit_NeoPixel* LEDCTRL::_leds = nullptr;
@@ -44,7 +47,7 @@ void LEDCTRL::allOff(){
 }
 
 
-void loadConfig() {
+void loadLedConfig() {
     if (!LittleFS.begin()) {
         Serial.println("LittleFS.begin() failed!");
         return;
@@ -70,6 +73,7 @@ void loadConfig() {
     LED_COUNT = doc["options"]["ledCount"] | 8;
     LED_PIN   = doc["options"]["ledPin"] | 5;
     LED_BRIGHTNESS = doc["options"]["ledBrightness"] | 50;
+    LED_TIMEOUT = doc["options"]["ledTimeout"] | 3000;
 
     JsonArray colorArr = doc["options"]["ledColor"];
     if (colorArr.size() == 3) {

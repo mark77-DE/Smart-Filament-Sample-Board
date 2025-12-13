@@ -3,8 +3,10 @@
 #include "ledctrl_nfc.h"
 
 int NFC_LED_COUNT = 0;
-int NFC_LED_PIN = 0;
+int NFC_LED_PIN = 15;
 int NFC_LED_BRIGHTNESS = 50;
+int NFC_LED_TIMEOUT = 3000;
+
 uint32_t NFC_LED_COLOR = 0x00FF00; // Standard grün
 
 Adafruit_NeoPixel* LEDCTRL_NFC::_leds = nullptr;
@@ -54,6 +56,7 @@ void loadNfcLedConfig() {
     NFC_LED_COUNT      = doc["options"]["nfcLedCount"] | 8;
     NFC_LED_PIN        = doc["options"]["nfcLedPin"] | 6;
     NFC_LED_BRIGHTNESS = doc["options"]["nfcLedBrightness"] | 60;
+    NFC_LED_TIMEOUT    = doc["options"]["nfcLedTimeout"] | 3000;
 
     JsonArray c = doc["options"]["nfcLedColor"];
     if (c.size() == 3) {
