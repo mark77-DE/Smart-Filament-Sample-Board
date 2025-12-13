@@ -34,7 +34,4 @@ namespace FilamentDB {
     bool update(const FilamentEntry &entry);
     bool remove(const String &uid);
     bool deleteEntry(int index);
-
-    // neue Methode: Update über Index
-    bool updateAtIndex(int idx, const FilamentEntry &entry);
 }
