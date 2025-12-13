@@ -2,11 +2,20 @@
   "layout": {
     "columns": 2,
     "rows": 5,
-    "itmes": 6
+    "items": 6
   },
   "options": {
     "darkmode": true,
     "mqtt": false,
-    "ledCount": 60
+    
+    "ledCount": 8,
+    "ledPin": 4,
+    "ledBrightness": 50,
+    "ledColor": [255, 0, 0],
+
+    "nfcLedCount": 8,
+    "nfcLedPin": 15,
+    "nfcLedBrightness": 100,
+    "nfcLedColor": [0, 255, 0]
   }
 }

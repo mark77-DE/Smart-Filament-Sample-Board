@@ -51,7 +51,7 @@ function highlightUID(uid) {
     }
 }
 
-// --- Raster-Kacheln laden (config-basiert) ---
+// --- Raster-Kacheln laden (nur belegte LEDs) ---
 async function loadFilamentTiles() {
     const [configRes, filamentsRes] = await Promise.all([
         fetch('/config.json'),
@@ -61,47 +61,37 @@ async function loadFilamentTiles() {
     const config = await configRes.json();
     const filaments = await filamentsRes.json();
 
-    const { columns, rows } = config.layout;
     const grid = document.getElementById("filamentGrid");
     grid.innerHTML = "";
     grid.style.display = 'grid';
-    grid.style.gridTemplateColumns = `repeat(${columns}, 1fr)`;
+    grid.style.gridTemplateColumns = `repeat(auto-fill, minmax(120px, 1fr))`; // dynamisch
     grid.style.gridGap = '10px';
 
-    const totalSlots = columns * rows;
-
-    for(let i = 0; i < totalSlots; i++){
+    filaments.forEach(f => {
         const tile = document.createElement("div");
         tile.className = "tile";
-        tile.dataset.led = i;
+        tile.dataset.uid = f.uid;
+        tile.dataset.led = f.ledIndex;
 
-        const f = filaments.find(f => Number(f.ledIndex) === i);
-        if(f){
-            tile.dataset.uid = f.uid;
+        const vendorSpan = document.createElement("span");
+        vendorSpan.className = "vendor";
+        vendorSpan.textContent = f.vendor;
 
-            const vendorSpan = document.createElement("span");
-            vendorSpan.className = "vendor";
-            vendorSpan.textContent = f.vendor;
+        const colorSpan = document.createElement("span");
+        colorSpan.className = "color";
+        colorSpan.textContent = f.color; // Farbe als Hintergrund
 
-            const colorSpan = document.createElement("span");
-            colorSpan.className = "color";
-            colorSpan.style.backgroundColor = f.color;
+        const typeSpan = document.createElement("span");
+        typeSpan.className = "type";
+        typeSpan.textContent = f.type;
 
-            const typeSpan = document.createElement("span");
-            typeSpan.className = "type";
-            typeSpan.textContent = f.type;
+        tile.appendChild(vendorSpan);
+        tile.appendChild(colorSpan);
+        tile.appendChild(typeSpan);
 
-            tile.appendChild(vendorSpan);
-            tile.appendChild(colorSpan);
-            tile.appendChild(typeSpan);
-        } else {
-            tile.classList.add("free");
-            tile.textContent = "frei";
-        }
-
-        // Klick-Handler für LED
+        // Klick-Handler: LED über WebSocket aktivieren
         tile.onclick = () => {
-            if(f && socket.readyState === WebSocket.OPEN){
+            if (socket.readyState === WebSocket.OPEN) {
                 socket.send(JSON.stringify({action: "highlightLED", uid: f.uid}));
             }
             tile.classList.add("active");
@@ -109,8 +99,11 @@ async function loadFilamentTiles() {
         };
 
         grid.appendChild(tile);
-    }
+    });
 }
+
+
+
 
 // --- Init ---
 loadFilamentTiles();
