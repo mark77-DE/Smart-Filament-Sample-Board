@@ -1,6 +1,3 @@
-#include <ArduinoJson.h>
-#include <FS.h>
-#include <LittleFS.h>
 #include "ledctrl.h"
 
 int LED_COUNT = 0;
