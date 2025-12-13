@@ -29,9 +29,6 @@ AsyncWebSocket ws("/ws");
 // ----------------- OLED ---------------
 
 DisplayType display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET_PIN);
-// ----------------- OLED ---------------
-
-DisplayType display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET_PIN);
 
 // ----------------- PN532 SPI Settings -----------------
 #define PN532_SCK 18
@@ -74,6 +71,8 @@ void setLedBrightness(int index, int brightness){
     }
     leds.show();
 }
+
+
 
 
 void activateLed(int index) {
