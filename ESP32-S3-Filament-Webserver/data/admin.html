@@ -13,6 +13,11 @@
 
   <div id="systemSection">
 
+  <div class="sysGroup">
+    <button id="saveConfig" class="primaryBtn">Save Config</button>
+</div>
+
+
   <!-- System Control -->
   <div class="sysGroup">
     <button id="rebootBtn">Reboot</button>
@@ -32,7 +37,7 @@
       <input type="file" id="importFile" name="file" accept=".json" required hidden>
 
       <!-- Import starten -->
-      <button id="importBtn" type="submit">Import</button>
+      <button id="importBtn" type="submit" hidden>Import</button>
 
     </form>
 
@@ -43,6 +48,7 @@
       <input type="checkbox" id="editToggle">
       <span class="slider"></span>
         edit
+    </label>
   </div>
 
   <div id="wsStatus" class="ws-status ws-disconnected">WebSocket: getrennt</div>
@@ -107,6 +113,9 @@
         <label for="maxLED">Number of LEDs (1–100):</label>
         <input type="number" id="maxLED" name="maxLED" min="1" max="100" value="8">
 
+        <label for="ledBrightness">LED Brightness (0–255):</label>
+        <input type="number" id="ledBrightness" name="ledBrightness" min="0" max="255" value="50">
+
         <label for="ledPin">LED Pin:</label>
         <select id="ledPin" name="ledPin">
             <option value="2">2</option>
@@ -119,10 +128,29 @@
             <option value="17">17</option>
         </select>
 
-        <label for="maxNfcLED">Number of LEDs (1–100):</label>
-        <input type="number" id="maxNfcLED" name="maxNfcLED" min="1" max="16" value="8">
+        <label for="ledColor">LED Color (Hex #RRGGBB):</label>
+        <input type="text" id="ledColor" name="ledColor" value="#ff0000" maxlength="7" pattern="^#([0-9a-fA-F]{6})$">
 
-        <label for="nfcLedPin">NFC LED Pin:</label>
+        <label for="ledTimeout">LED Timeout (ms):</label>
+        <input type="number" id="ledTimeout" name="ledTimeout" min="500" max="30000" value="500">
+
+    
+    </div>
+
+</div>
+
+<div id="nfcLedSettings" class="card">
+    <div class="cardHeader">NFC LED Settings</div>
+    <div class="formGrid">
+
+
+        <label for="nfcMaxLED">Number of LEDs (1–100):</label>
+        <input type="number" id="nfcMaxLED" name="nfcMaxLED" min="1" max="16" value="8">
+
+        <label for="nfcLedBrightness">LED Brightness (0–255):</label>
+        <input type="number" id="nfcLedBrightness" name="nfcLedBrightness" min="0" max="255" value="50">
+
+        <label for="nfcLedPin">LED Pin:</label>
         <select id="nfcLedPin" name="nfcLedPin">
             <option value="2">2</option>
             <option value="4">4</option>
@@ -134,25 +162,20 @@
             <option value="17">17</option>
         </select>
 
-        <label for="ledBrightness">LED Brightness (0–255):</label>
-        <input type="number" id="ledBrightness" name="ledBrightness" min="0" max="255" value="50">
+        
 
-        <label for="ledColor">LED Color (RGB):</label>
-        <input type="color" id="ledColor" name="ledColor" value="#ff0000">
+        <label for="nfcLedColor">LED Color (Hex #RRGGBB):</label>
+        <input type="text" id="nfcLedColor" name="nfcLedColor" value="#ff0000" maxlength="7" pattern="^#([0-9a-fA-F]{6})$">
+
+        <label for="nfcLedTimeout">LED Timeout (ms):</label>
+        <input type="number" id="nfcLedTimeout" name="nfcLedTimeout" min="500" max="30000" value="550">
 
     </div>
 
-    <button id="saveLedConfig" class="primaryBtn">Save LED Config</button>
+    
 </div>
 
 </div>
-
-
-
-
-
-
-
 
 
 <div id="db"></div>

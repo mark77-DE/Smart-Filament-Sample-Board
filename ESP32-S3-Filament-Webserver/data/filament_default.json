@@ -11,11 +11,13 @@
     "ledCount": 8,
     "ledPin": 4,
     "ledBrightness": 50,
+    "ledTimeout": 3000,
     "ledColor": [255, 0, 0],
 
     "nfcLedCount": 8,
     "nfcLedPin": 15,
     "nfcLedBrightness": 100,
+    "nfcLedTimeout": 3000,
     "nfcLedColor": [0, 255, 0]
   },
   "filaments": [
