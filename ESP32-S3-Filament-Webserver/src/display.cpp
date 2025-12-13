@@ -13,7 +13,6 @@ void MYDISPLAY::init(DisplayType* disp) {
 
 // ------------------------------------------------------------
 // Ersetzt Umlaute durch ASCII-Äquivalente
-// (weil viele GFX-Fonts/U8G2-Fonts das sonst nicht sauber können)
 // ------------------------------------------------------------
 static String fixUmlauts(String s) {
     s.replace("ä", "ae");
@@ -28,15 +27,6 @@ static String fixUmlauts(String s) {
 
 // ------------------------------------------------------------
 // Anzeige der 3 Zeilen: vendor / type / color
-// WICHTIG:
-// - NUR hier (also wenn alle drei gleichzeitig angezeigt werden)
-// - NUR bei kleinem Display (<= 32px Höhe) → Standardfont erzwingen
-// - Für große Displays bleibt AutoFit + Kürzen erhalten
-//
-// SEHR WICHTIG:
-// setFont() ist globaler Zustand. Wenn wir auf Standardfont wechseln,
-// MÜSSEN wir danach wieder auf DISPLAY_FONT zurückstellen,
-// sonst wird z.B. "SCAN TAG" später auch klein.
 // ------------------------------------------------------------
 void MYDISPLAY::show(const FilamentEntry& entry) {
     if (!_display) return;
@@ -48,7 +38,7 @@ void MYDISPLAY::show(const FilamentEntry& entry) {
     const bool smallDisplay = (SCREEN_HEIGHT <= 32);
 
     // ------------------------------------------------------------
-    // Baseline-Font für Layout (Zeilenhöhe) bestimmen
+    // Zeilenhöhe bestimmen
     // ------------------------------------------------------------
     int16_t x1 = 0, y1 = 0;
     uint16_t w = 0, h = 0;
@@ -66,30 +56,28 @@ void MYDISPLAY::show(const FilamentEntry& entry) {
         lineHeight = (int16_t)h + 2;
     }
 
-    // Start-Y (oben)
-    int16_t y = 0;
+    // ------------------------------------------------------------
+    // Start-Y:
+    // - 32er Display: oben starten (damit wirklich "oben links")
+    // - 64er Display: wie vorher eine Zeile Abstand nach oben
+    // ------------------------------------------------------------
+    int16_t y = smallDisplay ? 0 : lineHeight;
 
     // ------------------------------------------------------------
-    // Hilfsfunktion: eine Zeile ausgeben, möglichst passend
-    // - Bei smallDisplay: immer Standardfont (mit Kürzen falls nötig)
-    // - Bei großen Displays: altes AutoFit-Verhalten:
-    //   1) DISPLAY_FONT probieren
-    //   2) wenn zu breit oder zu lang → Standardfont
-    //   3) wenn immer noch zu breit → kürzen + "..."
+    // Hilfsfunktion: eine Zeile ausgeben, passend machen
     // ------------------------------------------------------------
     auto printLineAutoFit = [&](const String& rawText, int16_t yLine) {
         String t = fixUmlauts(rawText);
 
-        // ---- Kleines Display: IMMER Standardfont ----
+        // ---- 32er Display: IMMER Standardfont + sauber oben links ----
         if (smallDisplay) {
             _display->setFont(nullptr);
             _display->setTextSize(1);
 
-            // Standardfont: Cursor-Y ist Baseline → wir wollen "oben links"
-            // Daher + STD_FONT_HEIGHT auf yLine
+            // Bei Standardfont ist y die Baseline – damit es optisch oben beginnt,
+            // verschieben wir um STD_FONT_HEIGHT nach unten:
             int16_t yBase = yLine + STD_FONT_HEIGHT;
 
-            // Breite prüfen
             _display->getTextBounds(t, 0, 0, &x1, &y1, &w, &h);
             if (w <= SCREEN_WIDTH) {
                 _display->setCursor(0, yBase);
@@ -116,10 +104,9 @@ void MYDISPLAY::show(const FilamentEntry& entry) {
             return;
         }
 
-        // ---- Großes Display: altes Verhalten beibehalten ----
+        // ---- 64er Display: altes Verhalten beibehalten ----
 
-        // Konfigurierbarer Schwellwert:
-        // Ab DISPLAY_AUTOFIT_THRESHOLD Zeichen direkt auf Standardfont wechseln
+        // Ab DISPLAY_AUTOFIT_THRESHOLD Zeichen direkt auf Standard-Font wechseln
         bool forceFallback =
             (DISPLAY_AUTOFIT_THRESHOLD > 0 && t.length() > DISPLAY_AUTOFIT_THRESHOLD);
 
@@ -136,17 +123,12 @@ void MYDISPLAY::show(const FilamentEntry& entry) {
             }
         }
 
-        // 2) Standardfont (schmaler)
+        // 2) Zweiter Versuch: Standardfont (schmaler) → wie zuvor vertikal "einpassen"
         _display->setFont(nullptr);
         _display->setTextSize(1);
 
-        // Für große Displays wurde lineHeight aus GFX-Font berechnet.
-        // Damit Standardfont nicht "schwebt", zentrieren wir ihn leicht.
-        int16_t yAdjusted = yLine + STD_FONT_HEIGHT;
-        if (lineHeight > STD_FONT_HEIGHT) {
-            int16_t offset = (lineHeight - STD_FONT_HEIGHT) / 2;
-            yAdjusted = (yLine + STD_FONT_HEIGHT) + offset;
-        }
+        // Alte Logik: Standardfont innerhalb der größeren Zeilenhöhe "zentrieren"
+        int16_t yAdjusted = yLine - (lineHeight - STD_FONT_HEIGHT) / 2;
 
         _display->getTextBounds(t, 0, 0, &x1, &y1, &w, &h);
 
@@ -156,7 +138,7 @@ void MYDISPLAY::show(const FilamentEntry& entry) {
             return;
         }
 
-        // 3) Immer noch zu breit → von hinten kürzen und "..." anhängen
+        // 3) Immer noch zu breit → kürzen + "..."
         String base = t;
         String out;
 
@@ -171,13 +153,12 @@ void MYDISPLAY::show(const FilamentEntry& entry) {
             base.remove(base.length() - 1);
         }
 
-        // Falls alles schief geht: nur "..."
         _display->setCursor(0, yAdjusted);
         _display->print("...");
     };
 
     // ------------------------------------------------------------
-    // Zeilen ausgeben (vendor / type / color)
+    // Ausgabe: vendor / type / color
     // ------------------------------------------------------------
     printLineAutoFit(entry.vendor, y);
     y += lineHeight;
@@ -190,8 +171,7 @@ void MYDISPLAY::show(const FilamentEntry& entry) {
     _display->display();
 
     // ------------------------------------------------------------
-    // !!! WICHTIG: Font-State wieder herstellen !!!
-    // Sonst wird danach z.B. "SCAN TAG" (Idle) auch klein gezeichnet.
+    // WICHTIG: Font-State wieder herstellen (für Idle/SCAN TAG)
     // ------------------------------------------------------------
     _display->setFont(DISPLAY_FONT);
     _display->setTextSize(1);
@@ -206,8 +186,7 @@ void MYDISPLAY::show(const FilamentEntry& entry) {
 }
 
 // ------------------------------------------------------------
-// Zentrierte Anzeige (z.B. "UNBEKANNT", "VERBINDUNG...", IP, ...)
-// Bleibt bewusst mit DISPLAY_FONT, damit es optisch konsistent ist.
+// Zentrierte Anzeige (z.B. "UNBEKANNT", IP, etc.)
 // ------------------------------------------------------------
 void MYDISPLAY::showCentered(const String& msg) {
     if (!_display) return;
