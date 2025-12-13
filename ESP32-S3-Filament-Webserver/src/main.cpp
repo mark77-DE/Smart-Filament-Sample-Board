@@ -58,18 +58,10 @@ bool isActive = false;
 String activeUID = "";       // aktuell aktive UID
 
 // ----------------- Hilfsfunktionen -----------------
-void showCentered(const String &msg){
-    display.clearDisplay();
-    display.setFont(&FreeMono7pt7b);
-    display.setTextSize(1);
-    int16_t x1, y1; uint16_t w,h;
-    display.getTextBounds(msg,0,0,&x1,&y1,&w,&h);
-    display.setCursor((SCREEN_WIDTH - w)/2,(SCREEN_HEIGHT - h)/2 + 2);
-    display.print(msg);
-    display.display();
-}
 
-// ----------------- LED & Display -----------------
+
+
+
 void activateLed(int index) {
 
    
@@ -84,6 +76,7 @@ void activateLed(int index) {
     } else {
         targetLed = -1;
     }
+
 }
 
 void handleUID(const String &uid){
