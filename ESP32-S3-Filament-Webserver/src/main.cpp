@@ -79,23 +79,26 @@ void activateLed(int index) {
 
 
 
-void handleUID(const String &uid){
+void handleUID(const String &uid, UidSource source) {
     lastTagTime = now;
-    isActive = true; 
+    isActive = true;
 
-    // Idle-Animation stoppen, weil jetzt aktiv etwas angezeigt wird
+    // Idle-Animation stoppen
     DisplayAnim::stop();
 
-
     FilamentEntry entry;
-
     JsonDocument doc;
     doc["uid"] = uid;
 
-    if(FilamentDB::findByUID(uid, entry)){
-        // Bekannte UID
+    bool isNfc = (source == UidSource::NFC);
+
+    if (FilamentDB::findByUID(uid, entry)) {
         activateLed(entry.ledIndex);
         MYDISPLAY::show(entry);
+
+        if (isNfc) {
+            LEDCTRL_NFC::showSuccess();
+        }
 
         doc["action"] = "knownUID";
         doc["ledIndex"] = entry.ledIndex;
@@ -104,15 +107,18 @@ void handleUID(const String &uid){
         doc["color"] = entry.color;
 
     } else {
-        // Unbekannt → LEDs zurücksetzen
-        if(targetLed != -1){
+        if (targetLed != -1) {
             LEDCTRL::setPixel(targetLed, 0);
             targetLed = -1;
             ledStartTime = millis();
         }
+
         MYDISPLAY::showCentered("UNBEKANNT");
 
-        // WebUI informieren
+        if (isNfc) {
+            LEDCTRL_NFC::showError();
+        }
+
         doc["action"] = "unknownUID";
     }
 
@@ -120,6 +126,7 @@ void handleUID(const String &uid){
     serializeJson(doc, msg);
     ws.textAll(msg);
 }
+
 
 
 
@@ -151,17 +158,22 @@ void setup(){
     Serial.print("LED_COUNT = "); Serial.println(LED_COUNT);
     Serial.print("LED_PIN = "); Serial.println(LED_PIN);
     Serial.print("LED_COLOR = "); Serial.println(LED_COLOR);
+    Serial.print("LED_TIMEOUT = "); Serial.println(LED_TIMEOUT);
+    Serial.print("LED_BRIGHTNESS = "); Serial.println(LED_BRIGHTNESS);
+
     Serial.print("NFC_LED_COUNT = "); Serial.println(NFC_LED_COUNT);
     Serial.print("NFC_LED_PIN = "); Serial.println(NFC_LED_PIN);
-    Serial.print("NFC_LED_COLOR = "); Serial.println(NFC_LED_COLOR);
-
+    Serial.print("NFC_LED_COLOR_Success = "); Serial.println(NFC_LED_COLOR_SUCCESS);
+    Serial.print("NFC_LED_COLOR_ERROR = "); Serial.println(NFC_LED_COLOR_ERROR); 
+    Serial.print("NFC_LED_TIMEOUT = "); Serial.println(NFC_LED_TIMEOUT);
+    Serial.print("NFC_LED_BRIGHTNESS = "); Serial.println(NFC_LED_BRIGHTNESS);
 
 
     // 2. LED Strip initialisieren
-    LEDCTRL::init(LED_COUNT, LED_PIN);
+    LEDCTRL::init(LED_COUNT, LED_PIN, LED_TIMEOUT, LED_BRIGHTNESS);
     LEDCTRL::allOff();
 
-    LEDCTRL_NFC::init(NFC_LED_COUNT, NFC_LED_PIN);
+    LEDCTRL_NFC::init(NFC_LED_COUNT, NFC_LED_PIN, NFC_LED_TIMEOUT, NFC_LED_BRIGHTNESS);
     LEDCTRL_NFC::allOff();
 
     // 3. Display & DB init
@@ -213,6 +225,8 @@ void setup(){
 void loop(){
     now = millis();
 
+    LEDCTRL_NFC::update();
+
     if (rebootPending && millis() > rebootAt) {
         ESP.restart();
     }
@@ -235,7 +249,7 @@ void loop(){
         }
         uidStr.toUpperCase();
         Serial.println("FOUND UID: " + uidStr);
-        handleUID(uidStr);
+        handleUID(uidStr, UidSource::NFC);
         nfc.SAMConfig();
     }   
 
@@ -252,8 +266,6 @@ void loop(){
         isActive = false;
     }
 
+ 
     
-
-    
-    delay(10);
 }
