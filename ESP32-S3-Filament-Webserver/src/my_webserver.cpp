@@ -11,7 +11,6 @@ extern unsigned long rebootAt;
 
 
 
-
 void showRebootScreen(){
         // Zeige Reboot-Nachricht an
         Serial.println("Rebooting...");
@@ -31,7 +30,7 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
     for (size_t i = 0; i < len; i++) msg += (char)data[i];
 
     // ausreichend Platz für WS-Nachrichten
-    DynamicJsonDocument doc(1024); // oder StaticJsonDocument<N> / DynamicJsonDocument<N> je nach UseCase
+    JsonDocument doc;
 
     DeserializationError err = deserializeJson(doc, msg);
     if (err) {
@@ -86,7 +85,7 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
         FilamentDB::getAll(list);
 
         // Dokument-Größe je nach Anzahl der Einträge anpassen
-        DynamicJsonDocument doc(4096);
+        JsonDocument doc;
         JsonArray arr = doc.to<JsonArray>();
 
         for (auto &e : list) {
@@ -125,10 +124,10 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
 
         // alles in ein JSON packen
         // großer Puffer, weil beide Dateien enthalten werden
-        DynamicJsonDocument outDoc(128 * 1024);
+        JsonDocument outDoc;
         
         // config (als Object)
-        DynamicJsonDocument configDoc(8 * 1024);
+        JsonDocument configDoc;
         DeserializationError cerr = deserializeJson(configDoc, configStr);
         if (!cerr) {
             outDoc["config"] = configDoc.as<JsonObject>();
@@ -137,7 +136,7 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
         }
 
         // filaments (als Array)
-        DynamicJsonDocument filamentsDoc(32 * 1024);
+        JsonDocument filamentsDoc;
         DeserializationError ferr = deserializeJson(filamentsDoc, filamentsStr);
         if (!ferr) {
             outDoc["filaments"] = filamentsDoc.as<JsonArray>();
@@ -169,7 +168,7 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
 
             if (index + len != total) return; // noch nicht komplett
 
-            DynamicJsonDocument doc(128 * 1024);
+            JsonDocument doc;
             DeserializationError err = deserializeJson(doc, body);
             if (err) {
                 req->send(400, "text/plain", "JSON parse failed");
@@ -217,7 +216,7 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
         }
     );
 
-    // Update eines Eintrags
+    
     // Update eines Eintrags
 server.on("/api/update", HTTP_POST,
     [](AsyncWebServerRequest *req){ 
@@ -235,7 +234,7 @@ server.on("/api/update", HTTP_POST,
 
         Serial.println("Received body: " + body);
 
-        DynamicJsonDocument doc(1024);
+        JsonDocument doc;
         DeserializationError err = deserializeJson(doc, body);
         if(err){
             Serial.print("update JSON parse failed: ");
@@ -264,6 +263,8 @@ server.on("/api/update", HTTP_POST,
         } else {
             Serial.println("DB update failed: invalid index");
         }
+
+        
     }
 );
 
@@ -284,7 +285,7 @@ server.on("/api/update", HTTP_POST,
             body.concat((const char*)data, len);
             if (index + len != total) return;
 
-            DynamicJsonDocument doc(1024); // oder StaticJsonDocument<N> / DynamicJsonDocument<N> je nach UseCase
+            JsonDocument doc;
 
             DeserializationError err = deserializeJson(doc, body);
             if (err) {
@@ -309,20 +310,24 @@ server.on("/api/update", HTTP_POST,
         }
     );
 
-    server.on("/api/delete", HTTP_POST, [] (AsyncWebServerRequest *request) {
-        if (!request->hasParam("index", true)) {
-            request->send(400, "application/json", "{\"status\":\"error\",\"msg\":\"missing index\"}");
-            return;
-        }
+    server.on("/api/delete", HTTP_POST, [](AsyncWebServerRequest *request) {
+    if (!request->hasParam("uid", true)) {
+        request->send(400, "application/json",
+            "{\"status\":\"error\",\"msg\":\"missing uid\"}");
+        return;
+    }
 
-        int index = request->getParam("index", true)->value().toInt();
+    String uid = request->getParam("uid", true)->value();
 
-        if (FilamentDB::deleteEntry(index)) {
-            request->send(200, "application/json", "{\"status\":\"ok\"}");
-        } else {
-            request->send(500, "application/json", "{\"status\":\"error\",\"msg\":\"delete failed\"}");
-        }
-    });
+    if (!FilamentDB::remove(uid)) {
+        request->send(404, "application/json",
+            "{\"status\":\"error\",\"msg\":\"uid not found\"}");
+        return;
+    }
+
+    request->send(200, "application/json", "{\"status\":\"ok\"}");
+});
+
 
     // Config als JSON ausliefern
     server.on("/config.json", HTTP_GET, [](AsyncWebServerRequest *request){

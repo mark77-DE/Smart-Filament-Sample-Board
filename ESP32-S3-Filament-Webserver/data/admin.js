@@ -22,15 +22,10 @@ const nfcLedTimeoutInput = document.getElementById("nfcLedTimeout");
 const importFileInput = document.getElementById("importFile");
 const importBtn = document.getElementById("importBtn");
 
-
-
-
 let EDIT_MODE = false;
 let CONFIG = null;
 let lastHighlightedRow = null;
 
-
-let LAST_CONFIG_JSON = null; // speichert die letzte geladene Config
 
 // -------------------- WebSocket --------------------
 
@@ -288,6 +283,7 @@ function buildLedDropdown(currentLED, usedLEDs){ let html=`<select data-field="l
 // -------------------- Buttons für Save/Delete --------------------
 function activateButtons(){
     document.querySelectorAll(".saveBtn").forEach(btn=>btn.addEventListener("click", async ()=>{
+        if(!confirm("Eintrag sichern?")) return;
         const idx=Number(btn.dataset.idx); const row=btn.closest(".tableRow");
         const entry={idx};
         row.querySelectorAll("[data-field]").forEach(el=>{
@@ -301,11 +297,11 @@ function activateButtons(){
     document.querySelectorAll(".deleteBtn").forEach(btn => btn.addEventListener("click", async () => {
     if(!confirm("Eintrag wirklich löschen?")) return;
 
-    const idx = Number(btn.dataset.idx); // statt UID
+    const uid = btn.dataset.uid;
     const res = await fetch("/api/delete", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: `index=${idx}`
+        body: `uid=${encodeURIComponent(uid)}`
     });
 
     if(res.ok){ alert("Eintrag gelöscht!"); await loadTable(); await updateAddFormLEDs(); }
@@ -322,6 +318,7 @@ async function updateAddFormLEDs(){ const data=await (await fetch("/filaments.js
 
 // -------------------- LED Config --------------------
 document.getElementById("saveConfig").addEventListener("click", async () => {
+    if(!confirm("Konfiguration sichern?")) return;
     const ledCount = Number(document.getElementById("maxLED").value);
     const ledPin = Number(document.getElementById("ledPin").value);
     const ledBrightness = Number(document.getElementById("ledBrightness").value);
@@ -339,9 +336,7 @@ document.getElementById("saveConfig").addEventListener("click", async () => {
         nfcLedCount, nfcLedPin, nfcLedBrightness, nfcLedColor
     });
 
-    
-
-    
+       
     try {
         await fetch("/api/updateLedConfig", {
             method: "POST",
@@ -368,14 +363,7 @@ async function loadConfig() {
     if(!res.ok) throw new Error("Config konnte nicht geladen werden");
     const json = await res.json();
 
-    const newConfigJSON = JSON.stringify(json);
-
-    
-   
-
     CONFIG = json;
-    LAST_CONFIG_JSON = newConfigJSON;
-
    
 }
 
