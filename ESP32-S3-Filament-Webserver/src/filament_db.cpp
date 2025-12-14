@@ -126,17 +126,7 @@ bool remove(const String &uid) {
     return false;
 }
 
-// Eintrag löschen nach Index
-bool deleteEntry(int index) {
-    if (index < 0 || index >= dbCount) return false;
 
-    for (int i = index; i < dbCount - 1; i++) {
-        db[i] = db[i + 1];
-    }
-    dbCount--;
-
-    return saveToFile();
-}
 
 // Update nach Index
 bool updateAtIndex(int idx, const FilamentEntry &entry) {
@@ -146,3 +136,4 @@ bool updateAtIndex(int idx, const FilamentEntry &entry) {
 }
 
 } // namespace FilamentDB
+

@@ -5,19 +5,6 @@ body {
     padding: 0;
 }
 
-table {
-    border-collapse: collapse;
-    width: 100%;
-}
-
-th, td {
-    border: 1px solid black;
-    padding: 5px;
-    text-align: left;
-}
-
-.active { background-color: yellow; transition: background-color 0.5s; }
-tr.highlight { background-color: #ffe08a; }
 
 /* -------------------- WebSocket Status -------------------- */
 .ws-status {

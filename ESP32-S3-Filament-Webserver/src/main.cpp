@@ -89,7 +89,7 @@ void handleUID(const String &uid){
 
     FilamentEntry entry;
 
-    DynamicJsonDocument doc(256);
+    JsonDocument doc;
     doc["uid"] = uid;
 
     if(FilamentDB::findByUID(uid, entry)){
