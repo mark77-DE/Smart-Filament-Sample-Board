@@ -3,6 +3,7 @@ const dbDiv = document.getElementById("db");
 const addForm = document.getElementById("addForm");
 const wsStatus = document.getElementById("wsStatus");
 const editToggle = document.getElementById("editToggle");
+const debugToggle = document.getElementById("debugToggle");
 
 const ledPinSelect = document.getElementById("ledPin");
 const nfcLedPinSelect = document.getElementById("nfcLedPin");
@@ -236,8 +237,8 @@ async function loadTable() {
     let html = `
         <div id="table">
             <div id="tableHeader">
-                <span id="uidHeader">UID</span>
-                <span id="vendorHeader">Hersteller</span>
+                <span id="uidHeader">Tag UID</span>
+                <span id="vendorHeader">Name</span>
                 <span id="typeHeader">Typ</span>
                 <span id="colorHeader">Farbe</span>
                 <span id="ledHeader">LED</span>
@@ -275,11 +276,13 @@ async function loadTable() {
     activateButtons();
     applyEditMode(); // Buttons / selects im Edit-Modus korrekt setzen
 
+    debugToggle.checked = CONFIG.options.debugMode || false;
+
     ledPinSelect.value = CONFIG.options.ledPin;
     nfcLedPinSelect.value = CONFIG.options.nfcLedPin;
 
-    ledBrightnessInput.value = CONFIG.options.ledBrightness;
-    nfcLedBrightnessInput.value = CONFIG.options.nfcLedBrightness;
+    ledBrightnessInput.value = ledValueToPercent(CONFIG.options.ledBrightness);
+    nfcLedBrightnessInput.value = ledValueToPercent(CONFIG.options.nfcLedBrightness);
 
     maxLEDInput.value = CONFIG.options.ledCount;
     nfcMaxLEDInput.value = CONFIG.options.nfcLedCount;
@@ -339,32 +342,38 @@ document.getElementById("saveConfig").addEventListener("click", async () => {
     if(!confirm("Konfiguration sichern?")) return;
     const ledCount = Number(document.getElementById("maxLED").value);
     const ledPin = Number(document.getElementById("ledPin").value);
-    const ledBrightness = Number(document.getElementById("ledBrightness").value);
+    const ledBrightness = percentToLedValue(Number(document.getElementById("ledBrightness").value));
     const ledColor = hexToRgb(document.getElementById("ledColor").value);
     const ledTimeout = Number(document.getElementById("ledTimeout").value);
+
+    const debugMode = debugToggle.checked;
 
 
 
     const nfcLedCount = Number(document.getElementById("nfcMaxLED").value);
     const nfcLedPin = Number(document.getElementById("nfcLedPin").value);
-    const nfcLedBrightness = Number(document.getElementById("nfcLedBrightness").value);
+    const nfcLedBrightness = percentToLedValue(Number(document.getElementById("nfcLedBrightness").value));
     const nfcLedColorSuccess = hexToRgb(document.getElementById("nfcLedColorSuccess").value);
     const nfcLedColorError = hexToRgb(document.getElementById("nfcLedColorError").value);
     const nfcLedTimeout = Number(document.getElementById("nfcLedTimeout").value);
 
-    console.log("Neue LED Config:", {
-        ledCount, ledPin, ledBrightness, ledColor, ledTimeout,
-        nfcLedCount, nfcLedPin, nfcLedBrightness, nfcLedColorSuccess, nfcLedColorError, nfcLedTimeout
-    });
+    if(debugMode) {
+        console.log("Neue LED Config:", {
+            ledCount, ledPin, ledBrightness, ledColor, ledTimeout,
+            nfcLedCount, nfcLedPin, nfcLedBrightness, nfcLedColorSuccess, nfcLedColorError, nfcLedTimeout,
+            debugMode
+        });
+    }
 
        
     try {
-        await fetch("/api/updateLedConfig", {
+        await fetch("/api/updateConfig", {
             method: "POST",
             headers: {"Content-Type":"application/json"},
             body: JSON.stringify({
                 ledCount, ledPin, ledBrightness, ledColor, ledTimeout,
-                nfcLedCount, nfcLedPin, nfcLedBrightness, nfcLedColorSuccess, nfcLedColorError, nfcLedTimeout
+                nfcLedCount, nfcLedPin, nfcLedBrightness, nfcLedColorSuccess, nfcLedColorError, nfcLedTimeout,
+                debugMode
             })
         });
     } catch(e){
@@ -504,6 +513,18 @@ function initColorPresets() {
   });
 }
 
+
+
+function percentToLedValue(percent) {
+    // clamp zwischen 0 und 100
+    percent = Math.max(0, Math.min(100, percent));
+    return Math.round((percent / 100) * 255);
+}
+
+function ledValueToPercent(value) {
+    value = Math.max(0, Math.min(255, value));
+    return Math.round((value / 255) * 100);
+}
 
 
 

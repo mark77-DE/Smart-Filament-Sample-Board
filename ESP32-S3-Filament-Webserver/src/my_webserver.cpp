@@ -369,7 +369,7 @@ server.on("/api/update", HTTP_POST,
 
 
     // Update LED Config (sicherer Upload-Handler)
-    server.on("/api/updateLedConfig", HTTP_POST,
+    server.on("/api/updateConfig", HTTP_POST,
         [](AsyncWebServerRequest *req){},
         nullptr,
         [](AsyncWebServerRequest *req, uint8_t *data, size_t len, size_t index, size_t total){
@@ -387,7 +387,7 @@ server.on("/api/update", HTTP_POST,
             DeserializationError err = deserializeJson(doc, body);
             if (err) {
                 req->send(400, "text/plain", "JSON Error");
-                Serial.print("updateLedConfig JSON error: ");
+                Serial.print("updateConfig JSON error: ");
                 Serial.println(err.c_str());
                 return;
             }
@@ -402,6 +402,10 @@ server.on("/api/update", HTTP_POST,
             int newNfcBrightness            = doc["nfcLedBrightness"] | 50;
             int newNfcTimeout               = doc["nfcLedTimeout"] | 3000;
 
+            boolean debugMode               = doc["debugMode"] | false;
+            DEBUG_MODE                      = debugMode;
+
+
             Serial.println("Updating LED Config:");
             Serial.printf("   LED Count: %d\n", newCount);
             Serial.printf("   LED Pin: %d\n", newPin);
@@ -413,6 +417,8 @@ server.on("/api/update", HTTP_POST,
             Serial.printf("   NFC LED Brightness: %d\n", newNfcBrightness);
             
             Serial.printf("   NFC LED Timeout: %d\n", newNfcTimeout);
+
+            Serial.printf("   Debug Mode: %s\n", debugMode ? "ON" : "OFF");
 
             Serial.println("--------------------");    
 
@@ -445,6 +451,8 @@ server.on("/api/update", HTTP_POST,
             configDoc["options"]["nfcLedBrightness"] = newNfcBrightness;
             configDoc["options"]["nfcLedTimeout"] = newNfcTimeout;
 
+            configDoc["options"]["debugMode"] = debugMode;
+
 
             // Farbe korrekt kopieren (sichere Prüfung)
             if (colorArr.size() >= 3) {
@@ -471,7 +479,7 @@ server.on("/api/update", HTTP_POST,
                 serializeJson(configDoc, f);
                 f.close();
             } else {
-                Serial.println("Failed to open /config.json for writing (updateLedConfig)");
+                Serial.println("Failed to open /config.json for writing (updateConfig)");
             }
 
             loadLedConfig();

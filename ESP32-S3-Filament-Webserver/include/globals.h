@@ -12,6 +12,8 @@ extern unsigned long ledStartTime;   // Startzeit der LED
 //extern const unsigned long LED_TIMEOUT; // 3s Timeout
 extern bool displayIdleShown;
 
+extern bool DEBUG_MODE;
+
 enum class UidSource {
     NFC,
     WEBIF

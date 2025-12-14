@@ -1,0 +1,187 @@
+Für eine **mehrsprachige Konfigurations-Webseite auf einem ESP (LittleFS, statische HTML/JS/CSS)** hat sich ein klarer, leichtgewichtiger Ansatz bewährt. Ziel ist: **keine doppelten HTML-Dateien**, kein Framework, minimale Logik im ESP.
+
+Im Folgenden das empfohlene Vorgehen, sauber skalierbar und ESP-tauglich.
+
+---
+
+## 1. Grundprinzip (Best Practice)
+
+* **HTML bleibt sprachneutral**
+* **Alle Texte kommen aus Sprachdateien (JSON)**
+* Sprache wird
+
+  * in der Config gespeichert (`config.json`)
+  * oder per Auswahl im WebUI geändert
+* JavaScript ersetzt die Texte zur Laufzeit
+
+👉 Das ist der gleiche Ansatz wie bei professionellen Web-UIs, nur ohne Overhead.
+
+---
+
+## 2. Sprachdateien anlegen (LittleFS)
+
+### `/lang/de.json`
+
+```json
+{
+  "title": "Spot My Filament",
+  "subtitle": "Smart Filament Sample Board",
+  "brightness": "Helligkeit",
+  "save": "Speichern",
+  "language": "Sprache"
+}
+```
+
+### `/lang/en.json`
+
+```json
+{
+  "title": "Spot My Filament",
+  "subtitle": "Smart Filament Sample Board",
+  "brightness": "Brightness",
+  "save": "Save",
+  "language": "Language"
+}
+```
+
+➡️ Erweiterbar auf beliebig viele Sprachen.
+
+---
+
+## 3. HTML: Textstellen markieren (data-i18n)
+
+```html
+<h1 data-i18n="title"></h1>
+<div id="subheadline" data-i18n="subtitle"></div>
+
+<label data-i18n="brightness"></label>
+<button data-i18n="save"></button>
+```
+
+⚠️ **Keine festen Texte mehr im HTML**
+Alles kommt aus den Sprachdateien.
+
+---
+
+## 4. JavaScript: Sprache laden & anwenden
+
+### `i18n.js` (oder in `script.js`)
+
+```js
+let currentLang = "de";
+let translations = {};
+
+async function loadLanguage(lang) {
+    const res = await fetch(`/lang/${lang}.json`);
+    translations = await res.json();
+    currentLang = lang;
+    applyTranslations();
+}
+
+function applyTranslations() {
+    document.querySelectorAll("[data-i18n]").forEach(el => {
+        const key = el.dataset.i18n;
+        if (translations[key]) {
+            el.textContent = translations[key];
+        }
+    });
+}
+```
+
+---
+
+## 5. Sprache aus der Config übernehmen
+
+### Beispiel `config.json`
+
+```json
+{
+  "language": "de",
+  "ledBrightness": 128
+}
+```
+
+### Beim Start:
+
+```js
+async function init() {
+    const res = await fetch("/config.json");
+    const config = await res.json();
+
+    await loadLanguage(config.language || "de");
+}
+
+init();
+```
+
+---
+
+## 6. Sprachumschaltung im WebUI
+
+### HTML
+
+```html
+<select id="languageSelect">
+    <option value="de">Deutsch</option>
+    <option value="en">English</option>
+</select>
+```
+
+### JavaScript
+
+```js
+document.getElementById("languageSelect").addEventListener("change", e => {
+    const lang = e.target.value;
+    loadLanguage(lang);
+
+    // optional: per WebSocket speichern
+    socket.send(JSON.stringify({
+        action: "setLanguage",
+        language: lang
+    }));
+});
+```
+
+Der ESP speichert das in `config.json`.
+
+---
+
+## 7. ESP-Seite (Konzept)
+
+* Empfängt `setLanguage`
+* Speichert `"language": "en"` in der Config
+* Beim nächsten Laden wird automatisch die richtige Sprache geladen
+
+---
+
+## 8. Vorteile dieses Ansatzes
+
+* Nur **eine HTML-Datei**
+* Keine doppelten Layouts
+* Extrem wenig Speicherverbrauch
+* Sehr gut wartbar
+* Ideal für ESP32 / LittleFS
+
+---
+
+## 9. Typische Erweiterungen (optional)
+
+* Fallback auf Englisch, wenn Key fehlt
+* `innerHTML` für Texte mit `<br>` oder `<strong>`
+* Zahlen/Formate je Sprache (später)
+
+---
+
+## Empfehlung für dein Projekt
+
+Für dein **Spot-My-Filament-WebIF** ist das **der richtige Weg**.
+Er passt perfekt zu:
+
+* WebSocket-Logik
+* `config.json`
+* modularer JS-Struktur
+
+Wenn du möchtest, kann ich dir im nächsten Schritt:
+
+* dein **bestehendes HTML komplett i18n-fähig umbauen**
+* oder ein **fertiges `i18n.js` exakt auf dein Projekt zuschneiden**.

@@ -3,33 +3,48 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Filament DB Admin</title>
+    <title>Spot My Filament - Config Page</title>
     <link rel="stylesheet" href="/admin.css">
 </head>
 
 <body>
     <div id="header">
-        <div id="logo"><img src="/logo.png" alt="Logo" class="logo"></div>
-        <div id="headline">Spot My Filament Samples - Configuration</div>
+        <div id="logo">
+            <img src="/logo.png" alt="Logo" class="logo">
+        </div>
+        <div id="headline">
+            Spot My Filament
+            <div id="subheadline">Smart Filament Sample Board</div>
+        </div>
     </div>
 
     <div id="systemSection">
 
-      <div class="sysGroup">
-        <button onclick="window.location.href='/'">
-          Dashboard
-        </button>
-      </div>
-
-      <div class="sysGroup">
-
-        <div id="toggle">
-            <label class="edit-toggle">
-                <input type="checkbox" id="editToggle">
-                <span class="slider"></span> edit
-            </label>
+        <div class="sysGroup">
+            <button onclick="window.location.href='/'">
+                Dashboard
+            </button>
         </div>
-    </div>
+
+        <div class="sysGroup">
+
+            <div id="toggle">
+             <label class="edit-toggle">
+                    <input type="checkbox" id="editToggle">
+                    <span class="slider"></span> edit
+                </label>
+            </div>
+        </div>
+
+        <div class="sysGroup">
+
+            <div id="debug">
+             <label class="debug-toggle">
+                    <input type="checkbox" id="debugToggle">
+                    <span class="slider"></span> debug
+                </label>
+            </div>
+        </div>
 
         <div class="sysGroup">
             <button id="saveConfig" >Save Config</button>
@@ -89,8 +104,8 @@
                 <label for="uid">UID:</label>
                 <input type="text" name="uid" placeholder="UID (z. B. 04:...)" required>
 
-                <label for="vendor">Hersteller:</label>
-                <input type="text" name="vendor" placeholder="Hersteller" required>
+                <label for="vendor">Name:</label>
+                <input type="text" name="vendor" placeholder="Name" required>
 
                 <label for="type">Filament Typ:</label>
                 <select name="type" required>
@@ -132,7 +147,7 @@
                 <label for="maxLED">Number of LEDs (1–100):</label>
                 <input type="number" id="maxLED" name="maxLED" min="1" max="100" value="8">
 
-                <label for="ledBrightness">LED Brightness (0–255):</label>
+                <label for="ledBrightness">Brightness (%):</label>
                 <input type="number" id="ledBrightness" name="ledBrightness" min="0" max="255" value="50">
 
                 <label for="ledPin">LED Pin:</label>
@@ -171,7 +186,7 @@
                 <label for="nfcMaxLED">Number of LEDs (1–100):</label>
                 <input type="number" id="nfcMaxLED" name="nfcMaxLED" min="1" max="16" value="8">
 
-                <label for="nfcLedBrightness">LED Brightness (0–255):</label>
+                <label for="nfcLedBrightness">Brightness (%):</label>
                 <input type="number" id="nfcLedBrightness" name="nfcLedBrightness" min="0" max="255" value="50">
 
                 <label for="nfcLedPin">LED Pin:</label>

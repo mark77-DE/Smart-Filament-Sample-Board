@@ -14,6 +14,11 @@ function connectWS() {
         const msg = JSON.parse(event.data);
         highlightUID(msg.uid);
     };
+
+    socket.onerror = (err) => {
+        console.error("WebSocket-Fehler", err);
+        ws.close();
+    };
 }
 connectWS();
 

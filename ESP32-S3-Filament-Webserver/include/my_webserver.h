@@ -9,6 +9,7 @@
 extern int targetLed;
 extern int LED_COUNT;
 extern int LED_BRIGHTNESS;
+extern bool DEBUG_MODE;
 extern unsigned long lastTagTime;
 extern String lastScannedUID;
 extern void notifyUID(const String &uid);

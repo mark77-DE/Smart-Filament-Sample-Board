@@ -1,44 +1,43 @@
 body {
-    background-color: slategray;
-    color: lightblue
+    background-color: lightgrey;
+    color: darkcyan;
 }
 
 #header {
-    font-size: 2.5rem; /* Größere Schrift für die Hauptüberschrift */
-    color: #333;
-    margin-bottom: 00px;
+    display: flex;
+    align-items: center;  /* vertikal zentrieren */
+    gap: 15px;            /* Abstand zwischen Logo und Headline */
+    padding: 10px 20px;   /* optional, innen Abstand */
+}
+
+#headline {
+    font-size: 24px; /* Haupttextgröße */
+    font-weight: bold;
     text-align: center;
 }
 
-#subheader {
-    font-size: 1.0rem; /* Größere Schrift für die Hauptüberschrift */
-    color: #333;
-    margin-bottom: 20px;
+#subheadline {
+    font-size: 50%; /* halbe Schriftgröße des Elterntexts */
+    font-weight: normal;
     text-align: center;
+    color: #666; /* optional etwas dezenter */
 }
 
-table { 
-    border-collapse: collapse; 
-    width: 100%; 
+.logo {
+    width: 150px;      /* z.B. feste Breite */
+    height: auto;      /* Höhe proportional */
+    
+    margin: 10px auto; /* zentrieren */
 }
 
-th, td { 
-    border: 1px solid black; 
-    padding: 5px; 
-    text-align: left; 
-}
+
 
 .active { 
     background-color: yellow; 
     transition: background-color 0.5s; 
 }
 
-.logo {
-    width: 150px;      /* z.B. feste Breite */
-    height: auto;      /* Höhe proportional */
-    display: block;
-    margin: 10px auto; /* zentrieren */
-}
+
 
 
 #unknown { 
@@ -59,6 +58,7 @@ th, td {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+  width: 180px;
 }
 
 #filamentGrid {
@@ -75,14 +75,16 @@ th, td {
     flex-direction: column;
     justify-content: center;
     align-items: center;
+    border: 2px solid goldenrod;
+    border-radius: 10px;
 }
 
 .tile .color {
     width: 20px;
     height: 20px;
-    border-radius: 50%;
     display: block;
     margin: 5px 0;
+    
 }
 
 .tile.active {
