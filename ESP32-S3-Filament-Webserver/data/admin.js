@@ -153,15 +153,31 @@ async function handleWSMessage(ev){
 
 
 // -------------------- Export / Import --------------------
-document.getElementById("exportAllBtn").addEventListener("click", async ()=>{
-    try{
+document.getElementById("exportAllBtn").addEventListener("click", async () => {
+    try {
         const res = await fetch("/api/exportAll");
-        if(!res.ok) throw new Error("Export fehlgeschlagen");
+        if (!res.ok) throw new Error("Export fehlgeschlagen");
+
         const blob = await res.blob();
         const url = URL.createObjectURL(blob);
-        const a=document.createElement("a"); a.href=url; a.download="filament_package.json"; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-    }catch(err){ alert(err); }
+
+        // Zeitstempel erzeugen
+        const now = new Date();
+        const pad = (n) => n.toString().padStart(2, "0");
+        const timestamp = `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `SpotMyFilament_Backup_${timestamp}.json`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+    } catch (err) {
+        alert(err);
+    }
 });
+
 
 document.getElementById("importAllForm").addEventListener("submit", async e=>{
     e.preventDefault();

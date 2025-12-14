@@ -138,12 +138,22 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
         // filaments (als Array)
         JsonDocument filamentsDoc;
         DeserializationError ferr = deserializeJson(filamentsDoc, filamentsStr);
-        if (!ferr) {
+        if (f1) {
+    String filamentsStr = f1.readString();
+    f1.close();
+    if (filamentsStr.length() > 0) {
+        DeserializationError ferr = deserializeJson(filamentsDoc, filamentsStr);
+        if (!ferr && filamentsDoc.is<JsonArray>()) {
             outDoc["filaments"] = filamentsDoc.as<JsonArray>();
         } else {
-            // falls filaments.json kein korrektes JSON ist, lege leeres Array an
-            outDoc.createNestedArray("filaments");
+            outDoc.createNestedArray("filaments"); // leeres Array
         }
+    } else {
+        outDoc.createNestedArray("filaments"); // leeres Array
+    }
+} else {
+    outDoc.createNestedArray("filaments"); // leeres Array, falls Datei fehlt
+}
 
         String out;
         serializeJsonPretty(outDoc, out);
@@ -179,7 +189,7 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
             req->send(200, "text/plain", "Import OK");
 
             // Filaments speichern
-            if (doc.containsKey("filaments")) {
+            if (doc.containsKey("filaments") && doc["filaments"].is<JsonArray>()) {
                 File f = LittleFS.open("/filaments.json", "w");
                 if (f) {
                     String out;
@@ -191,7 +201,17 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
                 } else {
                     Serial.println("Failed to open /filaments.json for writing");
                 }
+            } else {
+                // keine filaments im Upload, leeres Array speichern
+                File f = LittleFS.open("/filaments.json", "w");
+                if (f) {
+                    f.print("[]");
+                    f.close();
+                    FilamentDB::loadFromFile();
+                    Serial.println("No filaments in upload, empty array created");
+                }
             }
+
 
             // Config speichern
             if (doc.containsKey("config")) {
