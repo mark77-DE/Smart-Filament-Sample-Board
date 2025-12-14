@@ -20,6 +20,8 @@
 volatile bool rebootPending = false;
 unsigned long rebootAt = 0;
 
+bool DEBUG_MODE = false;
+
 // ----------------- Server & WS -----------------
 AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");

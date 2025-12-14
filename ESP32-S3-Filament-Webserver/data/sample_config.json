@@ -7,6 +7,7 @@
   "options": {
     "darkmode": true,
     "mqtt": false,
+    "debugMode": true,
     
     "ledCount": 8,
     "ledPin": 4,
