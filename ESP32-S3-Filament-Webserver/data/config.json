@@ -8,7 +8,7 @@
     "darkmode": true,
     "mqtt": false,
     "debugMode": true,
-    
+
     "ledCount": 8,
     "ledPin": 4,
     "ledBrightness": 50,
@@ -20,6 +20,7 @@
     "nfcLedBrightness": 100,
     "nfcLedTimeout": 4000,
     "nfcLedColorSuccess": [0, 255, 0],
-    "nfcLedColorError": [255, 0, 0]
+    "nfcLedColorError": [255, 0, 0],
+    "nfcLedColorPulse": [0, 51, 170]
   }
 }

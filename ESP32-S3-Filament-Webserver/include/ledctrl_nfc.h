@@ -7,6 +7,7 @@ extern int NFC_LED_BRIGHTNESS;
 extern unsigned long NFC_LED_TIMEOUT;
 extern uint32_t NFC_LED_COLOR_SUCCESS;
 extern uint32_t NFC_LED_COLOR_ERROR;
+extern uint32_t NFC_LED_COLOR_PULSE;
 
 class LEDCTRL_NFC {
 public:

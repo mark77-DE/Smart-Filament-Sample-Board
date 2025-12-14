@@ -17,6 +17,7 @@ const nfcMaxLEDInput = document.getElementById("nfcMaxLED");
 const ledColorInput = document.getElementById("ledColor");
 const nfcLedColorSuccessInput = document.getElementById("nfcLedColorSuccess");
 const nfcLedColorErrorInput = document.getElementById("nfcLedColorError");
+const nfcLedColorPulseInput = document.getElementById("nfcLedColorPulse");
 
 const ledTimeoutInput = document.getElementById("ledTimeout");
 const nfcLedTimeoutInput = document.getElementById("nfcLedTimeout");
@@ -293,12 +294,13 @@ async function loadTable() {
     ledColorInput.value = rgbToHex(CONFIG.options.ledColor);
     nfcLedColorSuccessInput.value = rgbToHex(CONFIG.options.nfcLedColorSuccess);
     nfcLedColorErrorInput.value = rgbToHex(CONFIG.options.nfcLedColorError);
+    nfcLedColorPulseInput.value = rgbToHex(CONFIG.options.nfcLedColorPulse);
 
     
 }
 
 
-function getTypeOptions(selected){ return ["PLA","PLA+","PLA-CF","PETG","PETG-CF","ABS","ASA","TPU","Nylon","Holz"].map(t=>`<option value="${t}" ${t===selected?"selected":""}>${t}</option>`).join(""); }
+function getTypeOptions(selected){ return ["PLA","PLA+","PLA-CF","PLA-Matte","PETG","PETG-CF","ABS","ASA","TPU","Nylon","Holz"].map(t=>`<option value="${t}" ${t===selected?"selected":""}>${t}</option>`).join(""); }
 function buildLedDropdown(currentLED, usedLEDs){ let html=`<select data-field="ledIndex">`; for(let i=0;i<CONFIG.options.ledCount;i++){ if(!usedLEDs.has(i)||i===currentLED) html+=`<option value="${i}" ${i===currentLED?"selected":""}>LED ${i}</option>`;} html+=`</select>`; return html; }
 
 // -------------------- Buttons für Save/Delete --------------------
@@ -356,6 +358,7 @@ document.getElementById("saveConfig").addEventListener("click", async () => {
     const nfcLedColorSuccess = hexToRgb(document.getElementById("nfcLedColorSuccess").value);
     const nfcLedColorError = hexToRgb(document.getElementById("nfcLedColorError").value);
     const nfcLedTimeout = Number(document.getElementById("nfcLedTimeout").value);
+    const nfcLedColorPulse = hexToRgb(document.getElementById("nfcLedColorPulse").value);
 
     if(debugMode) {
         console.log("Neue LED Config:", {
@@ -372,7 +375,7 @@ document.getElementById("saveConfig").addEventListener("click", async () => {
             headers: {"Content-Type":"application/json"},
             body: JSON.stringify({
                 ledCount, ledPin, ledBrightness, ledColor, ledTimeout,
-                nfcLedCount, nfcLedPin, nfcLedBrightness, nfcLedColorSuccess, nfcLedColorError, nfcLedTimeout,
+                nfcLedCount, nfcLedPin, nfcLedBrightness, nfcLedColorSuccess, nfcLedColorError, nfcLedTimeout, nfcLedColorPulse,
                 debugMode
             })
         });

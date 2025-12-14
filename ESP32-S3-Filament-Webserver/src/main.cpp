@@ -166,7 +166,8 @@ void setup(){
     Serial.print("NFC_LED_COUNT = "); Serial.println(NFC_LED_COUNT);
     Serial.print("NFC_LED_PIN = "); Serial.println(NFC_LED_PIN);
     Serial.print("NFC_LED_COLOR_Success = "); Serial.println(NFC_LED_COLOR_SUCCESS);
-    Serial.print("NFC_LED_COLOR_ERROR = "); Serial.println(NFC_LED_COLOR_ERROR); 
+    Serial.print("NFC_LED_COLOR_ERROR = "); Serial.println(NFC_LED_COLOR_ERROR);
+    Serial.print("NFC_LED_COLOR_PULSE = "); Serial.println(NFC_LED_COLOR_PULSE); 
     Serial.print("NFC_LED_TIMEOUT = "); Serial.println(NFC_LED_TIMEOUT);
     Serial.print("NFC_LED_BRIGHTNESS = "); Serial.println(NFC_LED_BRIGHTNESS);
 

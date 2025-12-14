@@ -428,6 +428,7 @@ server.on("/api/update", HTTP_POST,
             JsonArray colorArr          = doc["ledColor"].as<JsonArray>();
             JsonArray colorNfcArrSuc    = doc["nfcLedColorSuccess"].as<JsonArray>();
             JsonArray colorNfcArrErr    = doc["nfcLedColorError"].as<JsonArray>();
+            JsonArray colorNfcArrPulse  = doc["nfcLedColorPulse"].as<JsonArray>();
 
             // Config.json laden
             JsonDocument configDoc;
@@ -471,6 +472,12 @@ server.on("/api/update", HTTP_POST,
                 JsonArray col = configDoc["options"]["nfcLedColorError"].to<JsonArray>();
                 col.clear();
                 for (int i = 0; i < 3; i++) col.add(colorNfcArrErr[i].as<int>());
+            }
+
+            if (colorNfcArrPulse.size() >= 3) {
+                JsonArray col = configDoc["options"]["nfcLedColorPulse"].to<JsonArray>();
+                col.clear();
+                for (int i = 0; i < 3; i++) col.add(colorNfcArrPulse[i].as<int>());
             }
 
             // zurückschreiben

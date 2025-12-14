@@ -113,6 +113,7 @@
                     <option value="PLA">PLA</option>
                     <option value="PLA+">PLA+</option>
                     <option value="PLA-CF">PLA-CF</option>
+                    <option value="PLA-Matte">PLA-Matte</option>
                     <option value="PETG">PETG</option>
                     <option value="PETG-CF">PETG-CF</option>
                     <option value="ABS">ABS</option>
@@ -217,6 +218,12 @@
 
                 <label for="nfcLedTimeout">LED Timeout (ms):</label>
                 <input type="number" id="nfcLedTimeout" name="nfcLedTimeout" min="500" max="30000" value="550">
+
+                <label for="nfcLedColorPulse" title="Format: #RRGGBB">LED Color (Standby-Effekt):</label>
+                <div class="hexField">
+                    <input type="text" id="nfcLedColorPulse" name="nfcLedColorPulse" value="#0033aa" maxlength="7" pattern="^#([0-9a-fA-F]{6})$" title="Format: #RRGGBB" >
+                    <div class="colorPresets" data-target="nfcLedColorPulse"></div>
+                </div>
 
             </div>
 
