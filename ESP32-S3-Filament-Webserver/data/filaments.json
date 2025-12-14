@@ -1,0 +1,9 @@
+[
+  {
+    "uid": "00:11:22:33:44:55:66",
+    "vendor": "change me",
+    "type": "PLA",
+    "color": "red",
+    "ledIndex": 0
+  }
+]
