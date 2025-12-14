@@ -53,7 +53,7 @@
 
 #ifndef DISPLAY_TYPE
   // Default, falls nichts per build_flag gesetzt wird:
-  #define DISPLAY_TYPE DISPLAY_TYPE_SSD1306
+  #define DISPLAY_TYPE DISPLAY_TYPE_SH1106
 #endif
 
 

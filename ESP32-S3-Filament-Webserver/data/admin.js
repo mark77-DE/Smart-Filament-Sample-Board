@@ -409,6 +409,104 @@ nfcLedPinSelect.addEventListener("change", updatePinOptions);
 importFileInput.addEventListener("change", updateImportBtnVisibility);
 
 
+// -------------------- Color Presets (HEX) --------------------
+const PRESET_COLORS = [
+  "#ff0000", // Rot
+  "#00ff00", // Grün
+  "#0000ff", // Blau
+  "#ffff00", // Gelb
+  "#ff7a00", // Orange (schön satt)
+  "#ff00ff", // Magenta
+  "#00ffff"  // Cyan
+];
+
+function normalizeHex(v) {
+  if (!v) return "";
+  v = String(v).trim().toLowerCase();
+  // nur exakt #RRGGBB akzeptieren
+  return /^#([0-9a-f]{6})$/.test(v) ? v : "";
+}
+
+function autoFixHex(input) {
+  let v = String(input.value).trim();
+
+  // exakt 6 Hex-Zeichen ohne #
+  if (/^[0-9a-fA-F]{6}$/.test(v)) {
+    input.value = "#" + v.toLowerCase();
+    return;
+  }
+
+  // # + 6 Hex-Zeichen → nur normalisieren
+  if (/^#([0-9a-fA-F]{6})$/.test(v)) {
+    input.value = v.toLowerCase();
+  }
+}
+
+
+function clearActive(container) {
+  container.querySelectorAll(".colorSwatch.active").forEach(el => el.classList.remove("active"));
+}
+
+function updateActiveForInput(container, input) {
+  const current = normalizeHex(input.value);
+  clearActive(container);
+
+  if (!current) return; // ungültig => nichts markieren
+
+  const match = container.querySelector(`.colorSwatch[data-hex="${current}"]`);
+  if (match) match.classList.add("active"); // nur markieren, wenn es ein Preset ist
+}
+
+function initColorPresets() {
+  document.querySelectorAll(".colorPresets").forEach((container) => {
+    const targetId = container.dataset.target;
+    const input = document.getElementById(targetId);
+    if (!input) return;
+
+    container.innerHTML = "";
+
+    PRESET_COLORS.forEach((hex) => {
+      const hexNorm = hex.toLowerCase();
+
+      const sw = document.createElement("div");
+      sw.className = "colorSwatch";
+      sw.style.backgroundColor = hexNorm;
+      sw.title = hexNorm;
+      sw.dataset.hex = hexNorm;
+
+      sw.addEventListener("click", () => {
+        input.value = hexNorm;
+
+        // Highlight setzen
+        updateActiveForInput(container, input);
+
+        // optional: Events triggern
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+        input.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+
+      container.appendChild(sw);
+    });
+
+        input.addEventListener("input", () => {
+            autoFixHex(input);                
+            updateActiveForInput(container, input);
+        });
+
+        input.addEventListener("change", () => {
+            autoFixHex(input);                 
+            updateActiveForInput(container, input);
+        });
+
+
+    // Initial markieren, falls Startwert ein Preset ist
+    updateActiveForInput(container, input);
+  });
+}
+
+
+
+
 // -------------------- Init --------------------
 async function init() {
     await loadConfig();
@@ -416,6 +514,7 @@ async function init() {
     await updateAddFormLEDs();
     updatePinOptions();
     updateImportBtnVisibility();
+    initColorPresets();
 
     
 }

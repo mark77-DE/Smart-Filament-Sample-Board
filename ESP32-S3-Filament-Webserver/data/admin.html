@@ -147,8 +147,11 @@
                     <option value="17">17</option>
                 </select>
 
-                <label for="ledColor">LED Color (Hex #RRGGBB):</label>
-                <input type="text" id="ledColor" name="ledColor" value="#ff0000" maxlength="7" pattern="^#([0-9a-fA-F]{6})$">
+                <label for="ledColor" title="Format: #RRGGBB">LED Color:</label>
+                <div class="hexField">
+                    <input type="text" id="ledColor" name="ledColor" value="#ff0000" maxlength="7" pattern="^#([0-9a-fA-F]{6})$" title="Format: #RRGGBB" placeholder="#RRGGBB">
+                    <div class="colorPresets" data-target="ledColor"></div>
+                </div>
 
                 <label for="ledTimeout">LED Timeout (ms):</label>
                 <input type="number" id="ledTimeout" name="ledTimeout" min="500" max="30000" value="500">
@@ -185,10 +188,17 @@
 
 
 
-                <label for="nfcLedColorSuccess">LED Color (Hex #RRGGBB):</label>
-                <input type="text" id="nfcLedColorSuccess" name="nfcLedColorSuccess" value="#ff0000" maxlength="7" pattern="^#([0-9a-fA-F]{6})$">
-                <label for="nfcLedColorError">LED Color (Hex #RRGGBB):</label>
-                <input type="text" id="nfcLedColorError" name="nfcLedColorError" value="#ff0000" maxlength="7" pattern="^#([0-9a-fA-F]{6})$">
+                <label for="nfcLedColorSuccess" title="Format: #RRGGBB">LED Color (Normal):</label>
+                <div class="hexField">
+                    <input type="text" id="nfcLedColorSuccess" name="nfcLedColorSuccess" value="#ff0000" maxlength="7" pattern="^#([0-9a-fA-F]{6})$" title="Format: #RRGGBB" placeholder="#RRGGBB">
+                    <div class="colorPresets" data-target="nfcLedColorSuccess"></div>
+                </div>
+
+                <label for="nfcLedColorError" title="Format: #RRGGBB">LED Color (Error):</label>
+                <div class="hexField">
+                    <input type="text" id="nfcLedColorError" name="nfcLedColorError" value="#ff0000" maxlength="7" pattern="^#([0-9a-fA-F]{6})$" title="Format: #RRGGBB" placeholder="#RRGGBB">
+                    <div class="colorPresets" data-target="nfcLedColorError"></div>
+                </div>
 
                 <label for="nfcLedTimeout">LED Timeout (ms):</label>
                 <input type="number" id="nfcLedTimeout" name="nfcLedTimeout" min="500" max="30000" value="550">
