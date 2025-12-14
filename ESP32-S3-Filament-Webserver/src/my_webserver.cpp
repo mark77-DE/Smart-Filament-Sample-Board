@@ -5,6 +5,7 @@
 #include "ledctrl_nfc.h"
 #include <vector>
 #include "display.h"
+#include "globals.h"
 
 extern volatile bool rebootPending;
 extern unsigned long rebootAt;
@@ -44,7 +45,7 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
         const char *action = doc["action"];
         if (strcmp(action, "highlightLED") == 0) {
             String uid = doc["uid"].as<String>();
-            handleUID(uid); // zentrale handleUID()
+            handleUID(uid, UidSource::WEBIF); // zentrale handleUID()
         }
     }
 }
@@ -382,7 +383,7 @@ server.on("/api/update", HTTP_POST,
 
             if (index + len != total) return;
 
-            StaticJsonDocument<512> doc;
+            JsonDocument doc;
             DeserializationError err = deserializeJson(doc, body);
             if (err) {
                 req->send(400, "text/plain", "JSON Error");
@@ -391,29 +392,39 @@ server.on("/api/update", HTTP_POST,
                 return;
             }
 
-            int newCount            = doc["ledCount"] | 8;
-            int newPin              = doc["ledPin"]   | 4;
-            int newBrightness       = doc["ledBrightness"] | 50;
-            int newNfcCount         = doc["nfcLedCount"] | 8;
-            int newNfcPin           = doc["nfcLedPin"]   | 16;
-            int newNfcBrightness    = doc["nfcLedBrightness"] | 50;
+            int newCount                    = doc["ledCount"] | 8;
+            int newPin                      = doc["ledPin"]   | 4;
+            int newBrightness               = doc["ledBrightness"] | 50;
+            int newTimeout                  = doc["ledTimeout"] | 3000;
+
+            int newNfcCount                 = doc["nfcLedCount"] | 8;
+            int newNfcPin                   = doc["nfcLedPin"]   | 16;
+            int newNfcBrightness            = doc["nfcLedBrightness"] | 50;
+            int newNfcTimeout               = doc["nfcLedTimeout"] | 3000;
 
             Serial.println("Updating LED Config:");
-            Serial.printf(" LED Count: %d\n", newCount);
-            Serial.printf(" LED Pin: %d\n", newPin);
-            Serial.printf(" LED Brightness: %d\n", newBrightness); 
-            Serial.printf(" NFC LED Count: %d\n", newNfcCount);
-            Serial.printf(" NFC LED Pin: %d\n", newNfcPin);
-            Serial.printf(" NFC LED Brightness: %d\n", newNfcBrightness);
+            Serial.printf("   LED Count: %d\n", newCount);
+            Serial.printf("   LED Pin: %d\n", newPin);
+            Serial.printf("   LED Brightness: %d\n", newBrightness); 
+            Serial.printf("   LED Timeout: %d\n", newTimeout);
+
+            Serial.printf("   NFC LED Count: %d\n", newNfcCount);
+            Serial.printf("   NFC LED Pin: %d\n", newNfcPin);
+            Serial.printf("   NFC LED Brightness: %d\n", newNfcBrightness);
+            
+            Serial.printf("   NFC LED Timeout: %d\n", newNfcTimeout);
+
+            Serial.println("--------------------");    
 
 
 
             // Farbe aus dem Request
-            JsonArray colorArr      = doc["ledColor"].as<JsonArray>();
-            JsonArray colorNfcArr   = doc["ledNfcColor"].as<JsonArray>();
+            JsonArray colorArr          = doc["ledColor"].as<JsonArray>();
+            JsonArray colorNfcArrSuc    = doc["nfcLedColorSuccess"].as<JsonArray>();
+            JsonArray colorNfcArrErr    = doc["nfcLedColorError"].as<JsonArray>();
 
             // Config.json laden
-            StaticJsonDocument<1024> configDoc;
+            JsonDocument configDoc;
             File f = LittleFS.open("/config.json", "r");
             if (f) {
                 DeserializationError rerr = deserializeJson(configDoc, f);
@@ -427,9 +438,13 @@ server.on("/api/update", HTTP_POST,
             configDoc["options"]["ledCount"] = newCount;
             configDoc["options"]["ledPin"]   = newPin;
             configDoc["options"]["ledBrightness"] = newBrightness;
-            configDoc["options"]["ledNfcCount"] = newNfcCount;
+            configDoc["options"]["ledTimeout"] = newTimeout;
+
+            configDoc["options"]["nfcLedCount"] = newNfcCount;
             configDoc["options"]["nfcLedPin"]   = newNfcPin;
-            configDoc["options"]["ledNfcBrightness"] = newNfcBrightness;
+            configDoc["options"]["nfcLedBrightness"] = newNfcBrightness;
+            configDoc["options"]["nfcLedTimeout"] = newNfcTimeout;
+
 
             // Farbe korrekt kopieren (sichere Prüfung)
             if (colorArr.size() >= 3) {
@@ -438,10 +453,16 @@ server.on("/api/update", HTTP_POST,
                 for (int i = 0; i < 3; i++) col.add(colorArr[i].as<int>());
             }
 
-            if (colorNfcArr.size() >= 3) {
-                JsonArray col = configDoc["options"]["ledNfcColor"].to<JsonArray>();
+            if (colorNfcArrSuc.size() >= 3) {
+                JsonArray col = configDoc["options"]["nfcLedColorSuccess"].to<JsonArray>();
                 col.clear();
-                for (int i = 0; i < 3; i++) col.add(colorNfcArr[i].as<int>());
+                for (int i = 0; i < 3; i++) col.add(colorNfcArrSuc[i].as<int>());
+            }
+
+            if (colorNfcArrErr.size() >= 3) {
+                JsonArray col = configDoc["options"]["nfcLedColorError"].to<JsonArray>();
+                col.clear();
+                for (int i = 0; i < 3; i++) col.add(colorNfcArrErr[i].as<int>());
             }
 
             // zurückschreiben

@@ -14,7 +14,8 @@ const maxLEDInput = document.getElementById("maxLED");
 const nfcMaxLEDInput = document.getElementById("nfcMaxLED");
 
 const ledColorInput = document.getElementById("ledColor");
-const nfcLedColorInput = document.getElementById("nfcLedColor");
+const nfcLedColorSuccessInput = document.getElementById("nfcLedColorSuccess");
+const nfcLedColorErrorInput = document.getElementById("nfcLedColorError");
 
 const ledTimeoutInput = document.getElementById("ledTimeout");
 const nfcLedTimeoutInput = document.getElementById("nfcLedTimeout");
@@ -287,7 +288,8 @@ async function loadTable() {
     nfcLedTimeoutInput.value = CONFIG.options.nfcLedTimeout;
 
     ledColorInput.value = rgbToHex(CONFIG.options.ledColor);
-    nfcLedColorInput.value = rgbToHex(CONFIG.options.nfcLedColor);
+    nfcLedColorSuccessInput.value = rgbToHex(CONFIG.options.nfcLedColorSuccess);
+    nfcLedColorErrorInput.value = rgbToHex(CONFIG.options.nfcLedColorError);
 
     
 }
@@ -339,17 +341,20 @@ document.getElementById("saveConfig").addEventListener("click", async () => {
     const ledPin = Number(document.getElementById("ledPin").value);
     const ledBrightness = Number(document.getElementById("ledBrightness").value);
     const ledColor = hexToRgb(document.getElementById("ledColor").value);
+    const ledTimeout = Number(document.getElementById("ledTimeout").value);
 
 
 
     const nfcLedCount = Number(document.getElementById("nfcMaxLED").value);
     const nfcLedPin = Number(document.getElementById("nfcLedPin").value);
     const nfcLedBrightness = Number(document.getElementById("nfcLedBrightness").value);
-    const nfcLedColor = hexToRgb(document.getElementById("nfcLedColor").value);
+    const nfcLedColorSuccess = hexToRgb(document.getElementById("nfcLedColorSuccess").value);
+    const nfcLedColorError = hexToRgb(document.getElementById("nfcLedColorError").value);
+    const nfcLedTimeout = Number(document.getElementById("nfcLedTimeout").value);
 
     console.log("Neue LED Config:", {
-        ledCount, ledPin, ledBrightness, ledColor,
-        nfcLedCount, nfcLedPin, nfcLedBrightness, nfcLedColor
+        ledCount, ledPin, ledBrightness, ledColor, ledTimeout,
+        nfcLedCount, nfcLedPin, nfcLedBrightness, nfcLedColorSuccess, nfcLedColorError, nfcLedTimeout
     });
 
        
@@ -358,8 +363,8 @@ document.getElementById("saveConfig").addEventListener("click", async () => {
             method: "POST",
             headers: {"Content-Type":"application/json"},
             body: JSON.stringify({
-                ledCount, ledPin, ledBrightness, ledColor,
-                nfcLedCount, nfcLedPin, nfcLedBrightness, nfcLedColor
+                ledCount, ledPin, ledBrightness, ledColor, ledTimeout,
+                nfcLedCount, nfcLedPin, nfcLedBrightness, nfcLedColorSuccess, nfcLedColorError, nfcLedTimeout
             })
         });
     } catch(e){

@@ -11,11 +11,14 @@
     "ledCount": 8,
     "ledPin": 4,
     "ledBrightness": 50,
+    "ledTimeout": 2000,
     "ledColor": [255, 0, 0],
 
     "nfcLedCount": 8,
     "nfcLedPin": 15,
     "nfcLedBrightness": 100,
-    "nfcLedColor": [0, 255, 0]
+    "nfcLedTimeout": 4000,
+    "nfcLedColorSuccess": [0, 255, 0],
+    "nfcLedColorError": [255, 0, 0]
   }
 }

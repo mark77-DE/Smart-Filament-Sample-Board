@@ -14,9 +14,11 @@ uint32_t LED_COLOR = 0xFF0000; // Standard: rot
 
 Adafruit_NeoPixel* LEDCTRL::_leds = nullptr;
 
-void LEDCTRL::init(int count, int pin){
+void LEDCTRL::init(int count, int pin, int timeout, int brightness){
     LED_COUNT = count;
     LED_PIN = pin;
+    LED_BRIGHTNESS = brightness;
+    LED_TIMEOUT = timeout;
 
     if(_leds) delete _leds; // evtl. alten Strip löschen
     _leds = new Adafruit_NeoPixel(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
@@ -61,7 +63,7 @@ void loadLedConfig() {
     }
 
     // <-- hier ändern -->
-    DynamicJsonDocument doc(2048); // korrekt: DynamicJsonDocument mit Größe
+    JsonDocument doc;
     DeserializationError err = deserializeJson(doc, f);
     f.close();
 
@@ -87,5 +89,13 @@ void loadLedConfig() {
         LED_COLOR = Adafruit_NeoPixel::Color(255, 0, 0);
     }
 
-    
+    LEDCTRL::init(LED_COUNT, LED_PIN, LED_TIMEOUT, LED_BRIGHTNESS);
+
+    Serial.println("LED Config loaded");
+    Serial.print("  LED_COUNT = "); Serial.println(LED_COUNT);
+    Serial.print("  LED_PIN = "); Serial.println(LED_PIN);
+    Serial.print("  LED_BRIGHTNESS = "); Serial.println(LED_BRIGHTNESS);
+    Serial.print("  LED_TIMEOUT = "); Serial.println(LED_TIMEOUT);
+    Serial.print("  LED_COLOR = "); Serial.println(LED_COLOR, HEX);
+
 }
