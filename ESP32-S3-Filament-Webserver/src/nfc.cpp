@@ -1,70 +1,107 @@
 #include "nfc.h"
 #include "ledctrl_nfc.h"
 
+// ============================================================================
+// Debug
+// ============================================================================
 #ifdef NFC_DEBUG
   #define DBG(...) do { Serial.printf("[NFC][t=%lu] ", millis()); Serial.printf(__VA_ARGS__); } while (0)
 #else
   #define DBG(...) do {} while (0)
 #endif
 
-// schwache Default-Hooks
-__attribute__((weak)) void NFC_OnPreempt(const String&){ }
-__attribute__((weak)) void NFC_OnActive(){ }
+// ============================================================================
+// Schwache Default-Hooks (können in der Applikation überschrieben werden)
+// ============================================================================
+__attribute__((weak)) void NFC_OnPreempt(const String&) { }
+__attribute__((weak)) void NFC_OnActive() { }
 
+// ============================================================================
+// Lokaler PN532-Zugriff
+// ============================================================================
 static Adafruit_PN532* _nfc = nullptr;
 
+// Quelle des UID-Triggers (wird in handleUID genutzt, Definition liegt extern)
 enum class UidSource : uint8_t;
 extern void handleUID(const String& uidStr, UidSource src);
 
-// Guards/State
-static bool          s_prevTagPresent  = false;
-static bool          s_holdActive      = false;
-static String        s_holdUid;                 // letzte getriggerte UID (für Debounce in idle)
-static unsigned long s_lastTriggerMs   = 0;
-static unsigned long s_lastSeenMs      = 0;
-static bool          s_lockActive      = false; // blockt retrigger bis idle
+// ============================================================================
+// Guards / State
+// ============================================================================
+// Edge-/Hold-Tracking
+static bool          s_prevTagPresent  = false;   // Präsenz-Status des letzten Ticks
+static bool          s_holdActive      = false;   // wir sind „im Hold“ (selbes Tag)
+static String        s_holdUid;                   // letzte getriggerte UID (für Debounce in Idle)
+static unsigned long s_lastTriggerMs   = 0;       // letzter handleUID()-Zeitpunkt
+static unsigned long s_lastSeenMs      = 0;       // letzte Roh-Erkennung (ms)
 
-// NEU: welche UID „besitzt“ den laufenden Effekt?
-static String        s_busyUid;                 // gültig solange LEDs nicht idle sind
+// Sperre gegen Retrigger während Effekt läuft
+static bool          s_lockActive      = false;   // blockt (same uid) retrigger bis LEDs idle
 
-// Debug-Throttle
+// Welche UID „besitzt“ aktuell den LED-Controller (solange nicht idle)?
+static String        s_busyUid;
+
+// Debug-Throttle für Roh-Logs
 static bool          s_prevRaw         = false;
 static unsigned long s_lastRaw1LogMs   = 0;
-static constexpr uint16_t RAW1_PERIOD_MS        = 300;
+static constexpr uint16_t RAW1_PERIOD_MS        = 300; // min. alle 300 ms „raw=1“-Log
 
-// Tuning
-static constexpr uint16_t RETRIGGER_DEBOUNCE_MS = 250; // Unterdrückt Doppel-Trigger derselben UID, wenn die LEDs idle sind (z. B. direkt nach Timeout).
-static constexpr uint16_t HOLD_GRACE_MS         = 250; // „Klebezeit“ gegen kurze Erkennungslücken, damit ein gehaltenes Tag nicht ständig falling/rising erzeugt.
-static constexpr uint16_t PREEMPT_MIN_GAP_MS    = 300; // Preemption-Schutz: Neues Tag darf einen laufenden Effekt nur überfahren, wenn seit dem letzten Trigger mindestens diese Zeit vergangen ist.
+// ============================================================================
+// Tuning-Parameter
+// ============================================================================
+// Unterdrückt Doppel-Trigger derselben UID, wenn die LEDs idle sind
+// (z. B. direkt nach einem Timeout).
+static constexpr uint16_t RETRIGGER_DEBOUNCE_MS = 300;
+
+// „Klebezeit“ gegen kurze Erkennungslücken, damit ein gehaltenes Tag
+// nicht ständig falling/rising erzeugt.
+static constexpr uint16_t HOLD_GRACE_MS         = 300;
+
+// Preemption-Schutz: Neues Tag darf einen laufenden Effekt nur überfahren,
+// wenn seit dem letzten Trigger mindestens diese Zeit vergangen ist.
+static constexpr uint16_t PREEMPT_MIN_GAP_MS    = 350;
 
 namespace NFC {
 
+// ============================================================================
+// Initialisierung der PN532-Hardware
+// ============================================================================
 void init(Adafruit_PN532* nfc) {
   _nfc = nfc;
   _nfc->begin();
 
-  uint32_t version = _nfc->getFirmwareVersion();
+  const uint32_t version = _nfc->getFirmwareVersion();
   if (!version) {
     Serial.println(F("[NFC] getFirmwareVersion FAILED (wiring?)"));
   } else {
-    Serial.print(F("[NFC] PN532 FW ")); Serial.print((version>>24)&0xFF);
-    Serial.print('.');                  Serial.print((version>>16)&0xFF);
+    Serial.print(F("[NFC] PN532 FW ")); Serial.print((version >> 24) & 0xFF);
+    Serial.print('.');                  Serial.print((version >> 16) & 0xFF);
     Serial.print(F(" chip=0x"));        Serial.println(version & 0xFFFF, HEX);
   }
 
+  // Normalmodus
   _nfc->SAMConfig();
   Serial.println(F("[NFC] init done"));
-  #ifdef NFC_DEBUG
-    DBG("Debug enabled\n");
-  #endif
+#ifdef NFC_DEBUG
+  DBG("Debug enabled\n");
+#endif
 }
 
+// ============================================================================
+// Einmaliger Block-Leser (Debug/Tools): Gibt UID als String zurück oder "".
+// ============================================================================
 String checkTag() {
   if (!_nfc) return "";
-  uint8_t uid[7]; uint8_t len = 0;
+  uint8_t uid[7];
+  uint8_t len = 0;
+
   if (_nfc->readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &len)) {
     String s;
-    for (uint8_t i=0;i<len;i++){ if(i) s+=':'; if(uid[i]<0x10) s+='0'; s+=String(uid[i],HEX); }
+    for (uint8_t i = 0; i < len; i++) {
+      if (i) s += ':';
+      if (uid[i] < 0x10) s += '0';
+      s += String(uid[i], HEX);
+    }
     s.toUpperCase();
     Serial.print(F("[NFC] Found UID: ")); Serial.println(s);
     return s;
@@ -72,6 +109,9 @@ String checkTag() {
   return "";
 }
 
+// ============================================================================
+// Interner Helper: Hold-Zustand beenden
+// ============================================================================
 static inline void onHoldEnded() {
   s_holdActive     = false;
   s_holdUid        = String();
@@ -79,6 +119,9 @@ static inline void onHoldEnded() {
   DBG("HoldEnded\n");
 }
 
+// ============================================================================
+// Reset aller Guards (z. B. bei globalem Reset/Neustart sinnvoll)
+// ============================================================================
 void resetGuard() {
   s_prevTagPresent = false;
   s_lastSeenMs     = 0;
@@ -90,6 +133,14 @@ void resetGuard() {
   DBG("resetGuard\n");
 }
 
+// ============================================================================
+// tick(..)
+// Nicht-blockierender NFC-Poll + Guards + Trigger-Entscheidung.
+// - now            : aktuelle Zeit (millis())
+// - isActive       : wird auf true gesetzt, wenn ein Tag präsent ist
+// - lastTagTime    : Zeitpunkt der letzten Präsenz (für äußere Timeouts)
+// - tagPresentOut  : gibt den (gegraceten) Präsenzstatus an den Aufrufer zurück
+// ============================================================================
 void tick(unsigned long now,
           bool& isActive,
           unsigned long& lastTagTime,
@@ -97,44 +148,58 @@ void tick(unsigned long now,
 {
   if (!_nfc) { tagPresentOut = false; return; }
 
-  // 1) Roh lesen
-  bool tagPresentRaw = false;
-  uint8_t uid[7] = {0};
-  uint8_t uidLength = 0;
-  String uidStr;
+  // --------------------------------------------------------------------------
+  // 1) Roh lesen (non-blocking Pattern)
+  // --------------------------------------------------------------------------
+  bool     tagPresentRaw = false;
+  uint8_t  uid[7]        = {0};
+  uint8_t  uidLength     = 0;
+  String   uidStr;
 
   _nfc->startPassiveTargetIDDetection(PN532_MIFARE_ISO14443A);
   if (_nfc->readDetectedPassiveTargetID(uid, &uidLength) && uidLength > 0) {
     tagPresentRaw = true;
-    uidStr.reserve(uidLength*3);
-    for (uint8_t i=0;i<uidLength;i++){
-      if(uid[i]<0x10) uidStr+='0';
-      uidStr+=String(uid[i],HEX);
-      if(i!=uidLength-1) uidStr+=':';
+
+    uidStr.reserve(uidLength * 3);
+    for (uint8_t i = 0; i < uidLength; i++) {
+      if (uid[i] < 0x10) uidStr += '0';
+      uidStr += String(uid[i], HEX);
+      if (i != uidLength - 1) uidStr += ':';
     }
     uidStr.toUpperCase();
     s_lastSeenMs = now;
 
-    if (!s_prevRaw) { DBG("raw=1 uid=%s (rise)\n", uidStr.c_str()); s_lastRaw1LogMs = now; }
-    else if (now - s_lastRaw1LogMs >= RAW1_PERIOD_MS) { DBG("raw=1 uid=%s\n", uidStr.c_str()); s_lastRaw1LogMs = now; }
+    // raw=1 throttle: auf Flankenlog + periodisch
+    if (!s_prevRaw) {
+      DBG("raw=1 uid=%s (rise)\n", uidStr.c_str());
+      s_lastRaw1LogMs = now;
+    } else if (now - s_lastRaw1LogMs >= RAW1_PERIOD_MS) {
+      DBG("raw=1 uid=%s\n", uidStr.c_str());
+      s_lastRaw1LogMs = now;
+    }
   } else {
+    // raw=0 nur bei 1→0
     if (s_prevRaw) DBG("raw=0 (fall)\n");
   }
   s_prevRaw = tagPresentRaw;
 
-  // 2) Grace
+  // --------------------------------------------------------------------------
+  // 2) Grace („Sticky Presence“) gegen kurze Lücken
+  // --------------------------------------------------------------------------
   bool tagPresent = tagPresentRaw;
   if (!tagPresent && s_holdActive && (now - s_lastSeenMs) < HOLD_GRACE_MS) {
     tagPresent = true;
     DBG("graceHold (dt=%lu < %u)\n", now - s_lastSeenMs, (unsigned)HOLD_GRACE_MS);
   }
 
-  // 3) Präsenz an LEDs
+  // --------------------------------------------------------------------------
+  // 3) Präsenz-Information zuerst an den LED-Controller (steuert den Timeout)
+  // --------------------------------------------------------------------------
   LEDCTRL_NFC::tagPresenceTick(tagPresent);
 
-  // 3.1) Lock & busyUid freigeben sobald idle
+  // 3.1) Lock & busyUid freigeben, sobald LEDs idle sind
   if (!LEDCTRL_NFC::isIdle()) {
-    // busy aktiv
+    // Effekt läuft -> busy bleibt gesetzt
   } else {
     if (s_lockActive || s_busyUid.length()) {
       s_lockActive = false;
@@ -143,13 +208,15 @@ void tick(unsigned long now,
     }
   }
 
-  // 4) Rising-Edge
+  // --------------------------------------------------------------------------
+  // 4) Rising-Edge: jetzt entscheiden, ob wir handleUID() auslösen
+  // --------------------------------------------------------------------------
   if (tagPresent && !s_prevTagPresent) {
     const bool ledIdle   = LEDCTRL_NFC::isIdle();
-    const bool haveFresh = tagPresentRaw;
+    const bool haveFresh = tagPresentRaw; // nur mit frischer UID triggern
 
+    // LEDs NICHT idle → Preemption-Logik (neue UID darf evtl. „überfahren“)
     if (!ledIdle) {
-      // Während laufendem Effekt: nur preempt, wenn andere UID UND Gap ok
       if (haveFresh) {
         if (uidStr == s_busyUid) {
           DBG("RISING ignored (led not idle, same busy uid)\n");
@@ -162,24 +229,31 @@ void tick(unsigned long now,
             DBG("RISING PREEMPT new uid=%s (led not idle)\n", uidStr.c_str());
             NFC_OnPreempt(uidStr);
             handleUID(uidStr, (UidSource)0 /* NFC */);
+
             s_holdActive    = true;
             s_holdUid       = uidStr;
-            s_busyUid       = uidStr;        // << Besitzer des Effekts
+            s_busyUid       = uidStr;        // << neuer „Besitzer“ des Effekts
             s_lastTriggerMs = now;
             s_lockActive    = true;          // gegen „same uid“ retrigger
+
+            // Der SAMConfig()-Call wird im Projekt oft als „sanfter Kick“ genutzt,
+            // um den Reader in den gewohnten Pollingzustand zu versetzen.
             _nfc->SAMConfig();
-            lastTagTime = now; isActive = true;
+
+            lastTagTime = now;
+            isActive    = true;
           }
         }
       } else {
         DBG("RISING ignored (led not idle, no fresh uid)\n");
       }
+
       s_prevTagPresent = tagPresent;
       tagPresentOut    = tagPresent;
       return;
     }
 
-    // LEDs idle → normaler Pfad
+    // LEDs idle → regulärer Trigger-Pfad
     if (haveFresh) {
       const bool sameHoldSameUid = s_holdActive && (s_holdUid == uidStr);
       const bool tooFast         = (now - s_lastTriggerMs) < RETRIGGER_DEBOUNCE_MS;
@@ -189,13 +263,17 @@ void tick(unsigned long now,
       } else {
         DBG("RISING uid=%s dtSinceLastTrig=%lu\n", uidStr.c_str(), now - s_lastTriggerMs);
         handleUID(uidStr, (UidSource)0 /* NFC */);
+
         s_holdActive    = true;
         s_holdUid       = uidStr;
-        s_busyUid       = uidStr;          // << Besitzer setzen
+        s_busyUid       = uidStr;          // << Besitzer setzen (bis idle)
         s_lastTriggerMs = now;
         s_lockActive    = true;
+
         _nfc->SAMConfig();
-        lastTagTime = now; isActive = true;
+
+        lastTagTime = now;
+        isActive    = true;
         DBG("handleUID fired\n");
       }
     } else {
@@ -203,16 +281,26 @@ void tick(unsigned long now,
     }
   }
 
-  // 5) Alive
-  if (tagPresent) { lastTagTime = now; isActive = true; NFC_OnActive(); }
+  // --------------------------------------------------------------------------
+  // 5) Keep-Alive für äußere Logik (Display, etc.)
+  // --------------------------------------------------------------------------
+  if (tagPresent) {
+    lastTagTime = now;
+    isActive    = true;
+    NFC_OnActive();
+  }
 
-  // 6) Falling
+  // --------------------------------------------------------------------------
+  // 6) Falling-Edge → Hold & Debounce freigeben
+  // --------------------------------------------------------------------------
   if (!tagPresent && s_prevTagPresent) {
     DBG("FALLING (dtSinceLastSeen=%lu)\n", now - s_lastSeenMs);
     onHoldEnded();
   }
 
+  // --------------------------------------------------------------------------
   // 7) Abschluss
+  // --------------------------------------------------------------------------
   s_prevTagPresent = tagPresent;
   tagPresentOut    = tagPresent;
 }

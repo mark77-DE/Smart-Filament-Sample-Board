@@ -1,7 +1,7 @@
 #include "my_webserver.h"
 #include <ArduinoJson.h>
 #include <LittleFS.h>
-#include "ledctrl.h"
+#include "ledctrl_filament.h"
 #include "ledctrl_nfc.h"
 #include <vector>
 #include "display.h"
@@ -224,7 +224,7 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
                     f.close();
                     loadLedConfig();
                     loadNfcLedConfig();
-                    // LEDCTRL::init erwartet evtl. LED_PIN extern definiert
+                    // LEDCTRL_FILAMENT::init erwartet evtl. LED_PIN extern definiert
                     
                     //Serial.println("Config imported, ESP will reboot... Please refresh browser in 5s...");
                     //delay(500);
