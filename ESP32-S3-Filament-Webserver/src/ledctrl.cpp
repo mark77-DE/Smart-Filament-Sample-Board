@@ -2,6 +2,7 @@
 #include <FS.h>
 #include <LittleFS.h>
 #include "ledctrl.h"
+#include "neopixel_guard.h"
 
 int LED_COUNT = 0;
 int LED_PIN = 4;
@@ -36,7 +37,7 @@ void LEDCTRL::setPixel(int index, uint32_t color){
     if(index < 0 || index >= LED_COUNT) return;
 
     _leds->setPixelColor(index, color);
-    _leds->show();
+    neopixelShowSafe(_leds);
 }
 
 void LEDCTRL::allOff(){
@@ -45,7 +46,7 @@ void LEDCTRL::allOff(){
     for(int i=0;i<LED_COUNT;i++){
         _leds->setPixelColor(i, 0);
     }
-    _leds->show();
+    neopixelShowSafe(_leds);
 }
 
 

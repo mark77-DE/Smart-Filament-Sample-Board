@@ -402,6 +402,18 @@ server.on("/api/update", HTTP_POST,
             int newNfcBrightness            = doc["nfcLedBrightness"] | 50;
             int newNfcTimeout               = doc["nfcLedTimeout"] | 3000;
 
+            // --- NEU: Success Blink Optionen (NFC) ---
+            bool newNfcSuccessBlinkEnabled  = doc["nfcLedSuccessBlinkEnabled"] | true;
+            int  newNfcSuccessBlinkCount    = doc["nfcLedSuccessBlinkCount"]   | 3;
+            int  newNfcSuccessBlinkMs       = doc["nfcLedSuccessBlinkMs"]      | 150;
+
+            // Sanity / Grenzen (damit nichts kaputt konfiguriert werden kann)
+            if (newNfcSuccessBlinkCount < 0) newNfcSuccessBlinkCount = 0;
+            if (newNfcSuccessBlinkCount > 10) newNfcSuccessBlinkCount = 10;
+
+            if (newNfcSuccessBlinkMs < 20) newNfcSuccessBlinkMs = 20;
+            if (newNfcSuccessBlinkMs > 2000) newNfcSuccessBlinkMs = 2000;
+
             boolean debugMode               = doc["debugMode"] | false;
             DEBUG_MODE                      = debugMode;
 
@@ -417,6 +429,10 @@ server.on("/api/update", HTTP_POST,
             Serial.printf("   NFC LED Brightness: %d\n", newNfcBrightness);
             
             Serial.printf("   NFC LED Timeout: %d\n", newNfcTimeout);
+
+            Serial.printf("   NFC Success Blink Enabled: %s\n", newNfcSuccessBlinkEnabled ? "ON" : "OFF");
+            Serial.printf("   NFC Success Blink Count: %d\n", newNfcSuccessBlinkCount);
+            Serial.printf("   NFC Success Blink Ms: %d\n", newNfcSuccessBlinkMs);
 
             Serial.printf("   Debug Mode: %s\n", debugMode ? "ON" : "OFF");
 
@@ -451,6 +467,11 @@ server.on("/api/update", HTTP_POST,
             configDoc["options"]["nfcLedPin"]   = newNfcPin;
             configDoc["options"]["nfcLedBrightness"] = newNfcBrightness;
             configDoc["options"]["nfcLedTimeout"] = newNfcTimeout;
+
+            // --- NEU: Success Blink Optionen speichern ---
+            configDoc["options"]["nfcLedSuccessBlinkEnabled"] = newNfcSuccessBlinkEnabled;
+            configDoc["options"]["nfcLedSuccessBlinkCount"]   = newNfcSuccessBlinkCount;
+            configDoc["options"]["nfcLedSuccessBlinkMs"]      = newNfcSuccessBlinkMs;
 
             configDoc["options"]["debugMode"] = debugMode;
 

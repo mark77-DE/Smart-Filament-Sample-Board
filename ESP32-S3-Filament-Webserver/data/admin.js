@@ -22,6 +22,10 @@ const nfcLedColorPulseInput = document.getElementById("nfcLedColorPulse");
 const ledTimeoutInput = document.getElementById("ledTimeout");
 const nfcLedTimeoutInput = document.getElementById("nfcLedTimeout");
 
+const nfcLedSuccessBlinkEnabledInput = document.getElementById("nfcLedSuccessBlinkEnabled");
+const nfcLedSuccessBlinkCountInput   = document.getElementById("nfcLedSuccessBlinkCount");
+const nfcLedSuccessBlinkMsInput      = document.getElementById("nfcLedSuccessBlinkMs");
+
 const importFileInput = document.getElementById("importFile");
 const importBtn = document.getElementById("importBtn");
 
@@ -296,6 +300,19 @@ async function loadTable() {
     nfcLedColorErrorInput.value = rgbToHex(CONFIG.options.nfcLedColorError);
     nfcLedColorPulseInput.value = rgbToHex(CONFIG.options.nfcLedColorPulse);
 
+    // --- Success Blink UI ---
+    nfcLedSuccessBlinkEnabledInput.checked = CONFIG.options.nfcLedSuccessBlinkEnabled ?? true;
+    nfcLedSuccessBlinkCountInput.value     = CONFIG.options.nfcLedSuccessBlinkCount   ?? 3;
+    nfcLedSuccessBlinkMsInput.value        = CONFIG.options.nfcLedSuccessBlinkMs      ?? 150;
+
+    const syncBlinkUi = () => {
+        const en = !!nfcLedSuccessBlinkEnabledInput.checked;
+        nfcLedSuccessBlinkCountInput.disabled = !en;
+        nfcLedSuccessBlinkMsInput.disabled    = !en;
+    };
+    nfcLedSuccessBlinkEnabledInput.onchange = syncBlinkUi;
+    syncBlinkUi();
+
     
 }
 
@@ -359,6 +376,10 @@ document.getElementById("saveConfig").addEventListener("click", async () => {
     const nfcLedColorError = hexToRgb(document.getElementById("nfcLedColorError").value);
     const nfcLedTimeout = Number(document.getElementById("nfcLedTimeout").value);
     const nfcLedColorPulse = hexToRgb(document.getElementById("nfcLedColorPulse").value);
+    const nfcLedSuccessBlinkEnabled = document.getElementById("nfcLedSuccessBlinkEnabled").checked;
+    const nfcLedSuccessBlinkCount   = Number(document.getElementById("nfcLedSuccessBlinkCount").value);
+    const nfcLedSuccessBlinkMs      = Number(document.getElementById("nfcLedSuccessBlinkMs").value);
+
 
     if(debugMode) {
         console.log("Neue LED Config:", {
@@ -376,6 +397,7 @@ document.getElementById("saveConfig").addEventListener("click", async () => {
             body: JSON.stringify({
                 ledCount, ledPin, ledBrightness, ledColor, ledTimeout,
                 nfcLedCount, nfcLedPin, nfcLedBrightness, nfcLedColorSuccess, nfcLedColorError, nfcLedTimeout, nfcLedColorPulse,
+                nfcLedSuccessBlinkEnabled, nfcLedSuccessBlinkCount, nfcLedSuccessBlinkMs,
                 debugMode
             })
         });

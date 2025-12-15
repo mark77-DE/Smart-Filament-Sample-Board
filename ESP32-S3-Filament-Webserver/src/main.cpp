@@ -4,7 +4,6 @@
 #include <Wire.h>
 #include <SPI.h>
 #include <Adafruit_PN532.h>
-#include <Adafruit_NeoPixel.h>
 #include <ArduinoJson.h>
 #include <LittleFS.h>
 #include "filament_db.h"
@@ -15,6 +14,7 @@
 #include "my_webserver.h"
 #include "globals.h"
 #include "display_anim.h"
+#include "nfc.h"
 
 // Reboot-Steuerung
 volatile bool rebootPending = false;
@@ -189,14 +189,21 @@ void setup(){
     MYDISPLAY::showCentered("WIFI CONNECTING...");
 
     // PN532 init
-    nfc.begin();
-    uint32_t versiondata = nfc.getFirmwareVersion();
-    if(!versiondata){
+    NFC::init(&nfc);                   // macht begin() + SAMConfig()
+
+    // Optional: Firmware anzeigen (Diagnose)
+    uint32_t version = nfc.getFirmwareVersion();
+    if (!version) {
         Serial.println("PN532 not found!");
         MYDISPLAY::showCentered("PN532 FEHLT!");
-        while(1);
+        while (1) { delay(100); }
+    } else {
+        Serial.print("PN532 FW "); Serial.print((version>>24)&0xFF);
+        Serial.print('.');        Serial.print((version>>16)&0xFF);
+        Serial.print(" chip=0x"); Serial.println(version & 0xFFFF, HEX);
     }
-    nfc.SAMConfig();
+
+    // IRQ-Pin bei I2C: INPUT (schadet nicht), bei SPI meist egal
     pinMode(PN532_IRQ, INPUT);
 
     // ----------------- WLAN -----------------
@@ -224,51 +231,40 @@ void setup(){
     WiFi.setSleep(false);
 }
 
-// ----------------- Loop -----------------
-void loop(){
+
+
+void loop() {
     now = millis();
 
-    LEDCTRL_NFC::update();
+    // 1) NFC + Guards + LED-Trigger (liefert tagPresent)
+    bool tagPresent = false;
+    NFC::tick(now, isActive, lastTagTime, tagPresent);
 
-    if (rebootPending && millis() > rebootAt) {
+    // 2) Reboot
+    if (rebootPending && now > rebootAt) {
         ESP.restart();
     }
 
-
-    // Idle-Animation nur laufen lassen, wenn das System nicht aktiv ist
+    // 3) Display-Idle nur wenn inaktiv
     if (!isActive) {
         DisplayAnim::tickIdle(display, now);
     }
 
-    // NFC Lesen
-    uint8_t uid[7]; uint8_t uidLength = 0;
-    nfc.startPassiveTargetIDDetection(PN532_MIFARE_ISO14443A);
-    if(nfc.readDetectedPassiveTargetID(uid, &uidLength) && uidLength > 0){
-        String uidStr;
-        for(uint8_t i=0;i<uidLength;i++){
-            if(uid[i]<0x10) uidStr += "0";
-            uidStr += String(uid[i], HEX);
-            if(i != uidLength-1) uidStr += ":";
-        }
-        uidStr.toUpperCase();
-        Serial.println("FOUND UID: " + uidStr);
-        handleUID(uidStr, UidSource::NFC);
-        nfc.SAMConfig();
-    }   
+    // 4) KEIN externes LED-Timeout mehr! (LEDCTRL_NFC macht das intern)
+    //    -> Keine Aufrufe von LEDCTRL_NFC::allOff() hier.
 
-    // LED Timeout
-    if (now - lastTagTime > LED_TIMEOUT && isActive) {
-        targetLed = -1;
-        LEDCTRL::allOff();   // <-- alles über LEDCTRL
-        Serial.println("LED Timeout - alle LEDs aus");
-        Serial.println("Display idle");
+    // 5) LEDs am Ende ticken lassen
+    LEDCTRL_NFC::update();
 
-
+    // 6) Einfacher Übergangserkenner: !idle → idle => Display auf Idle
+    static bool prevIdle = false;
+    const bool idleNow = LEDCTRL_NFC::isIdle();
+    if (idleNow && !prevIdle) {
+        // LEDs sind in Idle übergegangen -> Display auch
         DisplayAnim::startIdleTextFirst(now);
-
         isActive = false;
     }
-
- 
-    
+    prevIdle = idleNow;
 }
+
+

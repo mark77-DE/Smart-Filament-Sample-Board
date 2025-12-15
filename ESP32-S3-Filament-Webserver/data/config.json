@@ -21,6 +21,9 @@
     "nfcLedTimeout": 4000,
     "nfcLedColorSuccess": [0, 255, 0],
     "nfcLedColorError": [255, 0, 0],
-    "nfcLedColorPulse": [0, 51, 170]
+    "nfcLedColorPulse": [0, 51, 170],
+    "nfcLedSuccessBlinkEnabled": true,
+    "nfcLedSuccessBlinkCount": 3,
+    "nfcLedSuccessBlinkMs": 150
   }
 }
