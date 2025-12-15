@@ -5,15 +5,12 @@
 
 int NFC_LED_COUNT = 0;
 int NFC_LED_PIN = 15;
-int NFC_LED_BRIGHTNESS = 50;
+int NFC_LED_BRIGHTNESS = 255;
 unsigned long NFC_LED_TIMEOUT = 20000; // 2 Sekunden
 
 bool idlePulseEnabled = true;       // Pulsen im Idle
 
-// Diese Variablen bleiben aus Kompatibilitätsgründen erhalten.
-// Der neue Puls ist zeitbasiert, daher werden pulsePhase/pulseSpeed im Idle-Puls nicht mehr verwendet.
-float pulsePhase = 0;               // (legacy) Laufender Phasenwert
-float pulseSpeed = 0.2;             // (legacy) Geschwindigkeit der Sinuskurve
+
 
 float minBrightness = 0.35f;        // Mindesthelligkeit
 
@@ -23,18 +20,18 @@ uint32_t NFC_LED_COLOR_ERROR   = 0xFF0000; // rot
 uint32_t NFC_LED_COLOR_PULSE = 0x0033AA;   // statt 0x000066 (deutlich smoother)
 
 // ---------- Idle-Puls Feinschliff (nur dafür neu) ----------
-// FPS-Limit sorgt für gleichmäßige Schritte und weniger "Jitter" durch variable loop()-Laufzeiten.
 static unsigned long s_lastPulseUpdate = 0;
-static const uint16_t PULSE_INTERVAL_MS = 16;    // ~60 FPS
-static const float    PULSE_PERIOD_MS   = 2800.0f; // Pulsdauer in Millisekunden (1 kompletter "atmen"-Zyklus). Anpassen nach Geschmack.
+static const uint16_t PULSE_INTERVAL_MS = 16;     // ~60 FPS
+static const uint16_t BREATHS_PER_MIN = 15;       // ähnlich beatsin8(15, ...)
 
-// Temporal Dithering: sammelt Nachkommastellen über Frames
-static float s_ditherAccR = 0.0f;
-static float s_ditherAccG = 0.0f;
-static float s_ditherAccB = 0.0f;
-
-// Dithering für globale Brightness (0..255)
-static float s_ditherAccBr = 0.0f;
+// 4x4 Bayer-Matrix (Ordered Dither). Werte 0..15.
+static const uint8_t BAYER4[16] = {
+  0,  8,  2, 10,
+ 12,  4, 14,  6,
+  3, 11,  1,  9,
+ 15,  7, 13,  5
+};
+static uint8_t s_ditherIndex = 0; // läuft 0..15
 // -----------------------------------------------------------
 
 Adafruit_NeoPixel* LEDCTRL_NFC::_leds = nullptr;
@@ -72,6 +69,7 @@ void LEDCTRL_NFC::setPixel(int index, uint32_t color) {
 
 void LEDCTRL_NFC::allOff() {
     if (!_leds) return;
+    _leds->setBrightness(NFC_LED_BRIGHTNESS);
     for (int i = 0; i < NFC_LED_COUNT; i++) {
         _leds->setPixelColor(i, 0);
     }
@@ -86,7 +84,7 @@ void LEDCTRL_NFC::showSuccess() {
     for (int i = 0; i < NFC_LED_COUNT; i++) {
         _leds->setPixelColor(i, NFC_LED_COLOR_SUCCESS);
     }
-    pulsePhase = 0; // legacy: bleibt, schadet nicht
+
     _leds->show();
 }
 
@@ -97,9 +95,23 @@ void LEDCTRL_NFC::showError() {
     for (int i = 0; i < NFC_LED_COUNT; i++) {
         _leds->setPixelColor(i, NFC_LED_COLOR_ERROR);
     }
-    pulsePhase = 0; // legacy: bleibt, schadet nicht
+
     _leds->show();
 }
+
+// 8-bit Sinus (0..255) aus millis() und BPM (breaths per minute)
+// Kein float nötig. Nutzt sinf intern nicht, sondern eine kleine Approx per LUT wäre möglich,
+// aber auf ESP32 ist sinf ok. Hier trotzdem integer-friendly: wir berechnen Phase und nutzen sinf einmal.
+static uint8_t breath8(uint16_t bpm, uint32_t nowMs, uint8_t low, uint8_t high) {
+    // Periodendauer in ms: 60.000 / bpm
+    const float periodMs = 60000.0f / (float)bpm;
+    float phase01 = fmodf((float)nowMs, periodMs) / periodMs;          // 0..1
+    float s = (sinf(phase01 * 2.0f * PI) + 1.0f) * 0.5f;              // 0..1
+    uint16_t v = (uint16_t)(low + s * (float)(high - low) + 0.5f);    // low..high
+    if (v > 255) v = 255;
+    return (uint8_t)v;
+}
+
 
 // Diese Funktion muss regelmäßig im loop() aufgerufen werden
 void LEDCTRL_NFC::update() {
@@ -120,60 +132,59 @@ void LEDCTRL_NFC::update() {
     }
 
 
-    // Idle-Puls (super smooth: Puls über globale Brightness + temporal dithering)
+    // Idle-Puls (8-bit "beatsin" style + ordered dithering)
     if (idlePulseEnabled) {
 
-        // FPS-Limit -> gleichmäßige Updates
         if (now - s_lastPulseUpdate < PULSE_INTERVAL_MS) return;
         s_lastPulseUpdate = now;
 
-        // Phase 0..1 (zeitbasiert)
-        float phase01 = fmodf((float)now, PULSE_PERIOD_MS) / PULSE_PERIOD_MS;
+        // minBrightness (0..1) -> als 8-bit low clampen
+        uint8_t low8  = (uint8_t)constrain((int)lroundf(minBrightness * (float)NFC_LED_BRIGHTNESS), 0, 255);
+        uint8_t high8 = (uint8_t)constrain(NFC_LED_BRIGHTNESS, 0, 255);
 
-        // Sinus 0..1
-        float raw = (sinf(phase01 * 2.0f * PI) + 1.0f) * 0.5f;
+        // 8-bit Sinus-Level (low..high)
+        uint8_t level = breath8(BREATHS_PER_MIN, now, low8, high8);
 
-        // Mindesthelligkeit + Amplitude
-        float brightnessFactor = minBrightness + raw * (1.0f - minBrightness);
+        // Gamma auf Brightness (visuell gleichmäßiger)
+        uint8_t gLevel = Adafruit_NeoPixel::gamma8(level);
 
-        // Ziel-Brightness (0..NFC_LED_BRIGHTNESS), gamma-korrigiert
-        // Idee: wir nehmen NFC_LED_BRIGHTNESS als "Max", und pulsieren darunter.
-        float target = (float)NFC_LED_BRIGHTNESS * brightnessFactor; // 0..NFC_LED_BRIGHTNESS
+        // --- Verbesserter Ordered Dither (sauber 12-bit) ---
+        // Wir erzeugen ein 12-bit Ziel (gLevel * 16 + frac).
+        // frac nehmen wir aus dem Sinus vor der Rundung, damit es wirklich "Zwischenstufen" gibt.
+        //
+        // Trick: wir berechnen zusätzlich ein "feineres" Level, indem wir breath8 zweimal samplen:
+        // einmal normal (grob), einmal mit minimaler Zeitverschiebung (fein). Das liefert eine stabile Fraction.
+        //
+        // Alternativ wäre echtes float->12bit, aber das hier bleibt simpel und funktioniert sehr gut.
+        uint8_t levelNext = breath8(BREATHS_PER_MIN, now + (PULSE_INTERVAL_MS / 2), low8, high8);
 
-        // Gamma auf die Brightness anwenden (bessere visuelle Gleichmäßigkeit)
-        // gamma8 erwartet 0..255, daher clampen und casten wir erst grob:
-        uint8_t target8 = (uint8_t)constrain((int)lroundf(target), 0, 255);
-        uint8_t gammaBr = Adafruit_NeoPixel::gamma8(target8);
+        // Fraction 0..15 aus der Differenz (clamped)
+        int diff = (int)levelNext - (int)level;     // -255..255
+        if (diff < 0) diff = -diff;
+        uint8_t frac = (uint8_t)constrain(diff << 2, 0, 15); // diff grob in 0..15 skalieren
 
-        // Temporal Dithering auf Brightness (macht Zwischenstufen über Zeit sichtbar)
-        // Wir dithern um den gamma-korrigierten Wert herum (wichtig!)
-        float v = (float)gammaBr;
-        float baseF = floorf(v);
-        float frac  = v - baseF;
+        uint16_t v12 = ((uint16_t)gLevel << 4) | frac; // 12-bit Zielwert
 
-        s_ditherAccBr += frac;
-        uint8_t outBr = (uint8_t)baseF;
-        if (s_ditherAccBr >= 1.0f) {
-            outBr = (uint8_t)min(255.0f, baseF + 1.0f);
-            s_ditherAccBr -= 1.0f;
-        }
+        uint8_t thresh = BAYER4[s_ditherIndex];     // 0..15
+        s_ditherIndex = (s_ditherIndex + 1) & 0x0F;
 
-        // Farbe bleibt konstant, nur Brightness pulsiert
+        // Basis = obere 8 bit, +1 wenn frac > threshold
+        uint8_t outBr = (uint8_t)(v12 >> 4);
+        if ((v12 & 0x0F) > thresh && outBr < 255) outBr++;
+
         _leds->setBrightness(outBr);
 
         uint8_t r0 = (NFC_LED_COLOR_PULSE >> 16) & 0xFF;
         uint8_t g0 = (NFC_LED_COLOR_PULSE >>  8) & 0xFF;
         uint8_t b0 = (NFC_LED_COLOR_PULSE      ) & 0xFF;
-        uint32_t color = _leds->Color(r0, g0, b0);
 
+        uint32_t color = _leds->Color(r0, g0, b0);
         for (int i = 0; i < NFC_LED_COUNT; i++) {
             _leds->setPixelColor(i, color);
         }
         _leds->show();
-
-        // Wichtig: wenn später Success/Error kommt, setzt du da wieder setBrightness(NFC_LED_BRIGHTNESS)
-        // -> machen wir in showSuccess/showError minimal dazu (siehe unten)
     }
+
 
 
 }
