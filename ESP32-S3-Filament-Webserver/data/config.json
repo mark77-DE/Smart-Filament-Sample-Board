@@ -14,6 +14,8 @@
     "ledBrightness": 50,
     "ledTimeout": 2000,
     "ledColor": [255, 0, 0],
+    "ledColorError": [255, 32, 32],
+    "ledColorPulse": [0, 64, 160],
 
     "nfcLedCount": 8,
     "nfcLedPin": 15,
@@ -21,6 +23,9 @@
     "nfcLedTimeout": 4000,
     "nfcLedColorSuccess": [0, 255, 0],
     "nfcLedColorError": [255, 0, 0],
-    "nfcLedColorPulse": [0, 51, 170]
+    "nfcLedColorPulse": [0, 51, 170],
+    "nfcLedSuccessBlinkEnabled": true,
+    "nfcLedSuccessBlinkCount": 3,
+    "nfcLedSuccessBlinkMs": 150
   }
 }

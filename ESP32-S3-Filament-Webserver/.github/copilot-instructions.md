@@ -9,7 +9,7 @@ This is an ESP32-S3 embedded system project called "Spot My Filament" - a smart 
 
 ### Key Components
 1. **Hardware Drivers** (encapsulated in `include/`)
-   - `ledctrl.h` - NeoPixel LED strip control (static methods)
+   - `ledctrl_filament.h` - NeoPixel LED strip control (static methods)
    - `display.h` - OLED display (Adafruit_SSD1306)
    - `nfc.h` - PN532 NFC reader
    - `filament_db.h` - In-memory filament database
@@ -58,7 +58,7 @@ NFC Tag Scan → handleUID() → FilamentDB::findByUID()
 ## Project-Specific Patterns
 
 ### Namespace vs Class Conventions
-- **Drivers use static class methods**: `LEDCTRL::init()`, `MYDISPLAY::show()` 
+- **Drivers use static class methods**: `LEDCTRL_FILAMENT::init()`, `MYDISPLAY::show()` 
 - **Database is namespace**: `FilamentDB::loadFromFile()`, `FilamentDB::findByUID()`
 - Exception: `NFC` is namespace with pointer injection pattern
 
@@ -67,7 +67,7 @@ NFC Tag Scan → handleUID() → FilamentDB::findByUID()
 2. LittleFS mount
 3. OLED init
 4. `loadConfig()` - sets LED globals
-5. `LEDCTRL::init(LED_COUNT, LED_PIN)` - must have counts before init
+5. `LEDCTRL_FILAMENT::init(LED_COUNT, LED_PIN)` - must have counts before init
 6. `FilamentDB::load()` 
 7. NFC SAM config + firmware check
 8. WiFiManager AP connection

@@ -4,17 +4,17 @@
 #include <Wire.h>
 #include <SPI.h>
 #include <Adafruit_PN532.h>
-#include <Adafruit_NeoPixel.h>
 #include <ArduinoJson.h>
 #include <LittleFS.h>
 #include "filament_db.h"
-#include "ledctrl.h"
+#include "ledctrl_filament.h"
 #include "ledctrl_nfc.h"
 #include "display.h"
 #include "display_config.h"
 #include "my_webserver.h"
 #include "globals.h"
 #include "display_anim.h"
+#include "nfc.h"
 
 // Reboot-Steuerung
 volatile bool rebootPending = false;
@@ -27,7 +27,6 @@ AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
 
 // ----------------- OLED ---------------
-
 DisplayType display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET_PIN);
 
 // ----------------- PN532 SPI Settings -----------------
@@ -45,31 +44,21 @@ Adafruit_PN532 nfc(PN532_SCK, PN532_MISO, PN532_MOSI, PN532_CS);
 // ----------------- LED & Display Timing -----------------
 int targetLed = -1;
 unsigned long ledStartTime = 0;
-
-
 unsigned long lastTagTime = 0;
 unsigned long now = 0;
 bool isActive = false;
 
-
-
-
 // ----------------- Globale Variablen -----------------
 String activeUID = "";       // aktuell aktive UID
 
-
 // ----------------- Hilfsfunktionen -----------------
-
-
-
-
 void activateLed(int index) {
     if(targetLed != -1 && targetLed != index){
-        LEDCTRL::setPixel(targetLed, 0); // alte LED aus
+        LEDCTRL_FILAMENT::setPixel(targetLed, 0); // alte LED aus
     }
 
     if(index >= 0 && index < LED_COUNT){
-        LEDCTRL::setPixel(index, LED_COLOR);
+        LEDCTRL_FILAMENT::setPixel(index, LED_COLOR);
         targetLed = index;
         ledStartTime = millis();
     } else {
@@ -77,9 +66,6 @@ void activateLed(int index) {
     }
 
 }
-
-
-
 
 void handleUID(const String &uid, UidSource source) {
     lastTagTime = now;
@@ -92,35 +78,52 @@ void handleUID(const String &uid, UidSource source) {
     JsonDocument doc;
     doc["uid"] = uid;
 
-    bool isNfc = (source == UidSource::NFC);
+    const bool isNfc = (source == UidSource::NFC);
 
     if (FilamentDB::findByUID(uid, entry)) {
+        // --- BEKANNTES TAG ---
+
+        // Deinen Zielpixel aktivieren (deine bestehende Logik)
         activateLed(entry.ledIndex);
+
+        // Display mit Filament-Infos
         MYDISPLAY::show(entry);
 
+        // NFC-Feedback (grün mit optionalem Blink → solid → Timeout ab Entfernung)
         if (isNfc) {
             LEDCTRL_NFC::showSuccess();
         }
 
-        doc["action"] = "knownUID";
+        // Event fürs Websocket
+        doc["action"]   = "knownUID";
         doc["ledIndex"] = entry.ledIndex;
-        doc["vendor"] = entry.vendor;
-        doc["type"] = entry.type;
-        doc["color"] = entry.color;
+        doc["vendor"]   = entry.vendor;
+        doc["type"]     = entry.type;
+        doc["color"]    = entry.color;
 
     } else {
+        // --- UNBEKANNTES TAG ---
+
+        // Falls vorher ein Zielpixel gesetzt war: ausmachen & zurücksetzen
         if (targetLed != -1) {
-            LEDCTRL::setPixel(targetLed, 0);
+            LEDCTRL_FILAMENT::setPixel(targetLed, 0);
             targetLed = -1;
             ledStartTime = millis();
         }
 
+        // Display-Hinweis
         MYDISPLAY::showCentered("UNBEKANNT");
 
         if (isNfc) {
+            // Rotes Fehlerfeedback am NFC-Ring
             LEDCTRL_NFC::showError();
+
+            // NEU: Filament-Stripe erst BLINKEN lassen,
+            // danach (wenn Timeout nicht abgelaufen) automatisch errorAll()
+            LEDCTRL_FILAMENT::errorBlink();
         }
 
+        // Event fürs Websocket
         doc["action"] = "unknownUID";
     }
 
@@ -130,9 +133,8 @@ void handleUID(const String &uid, UidSource source) {
 }
 
 
-
-
-// ----------------- Setup -----------------
+// ----------------------------- Setup -----------------------------
+// -----------------------------------------------------------------
 void setup(){
     Serial.begin(115200);
     while(!Serial);
@@ -142,7 +144,7 @@ void setup(){
 
     Wire.begin(SDA_PIN,SCL_PIN);
 
-    // ----------------- Filesystem & Webserver -----------------
+    //Filesystem & Webserver
     if(!LittleFS.begin(true)){
         Serial.println("LittleFS mount failed!");
         while(1);
@@ -173,8 +175,8 @@ void setup(){
 
 
     // 2. LED Strip initialisieren
-    LEDCTRL::init(LED_COUNT, LED_PIN, LED_TIMEOUT, LED_BRIGHTNESS);
-    LEDCTRL::allOff();
+    LEDCTRL_FILAMENT::init(LED_COUNT, LED_PIN, LED_TIMEOUT, LED_BRIGHTNESS);
+    LEDCTRL_FILAMENT::allOff();
 
     LEDCTRL_NFC::init(NFC_LED_COUNT, NFC_LED_PIN, NFC_LED_TIMEOUT, NFC_LED_BRIGHTNESS);
     LEDCTRL_NFC::allOff();
@@ -182,24 +184,28 @@ void setup(){
     // 3. Display & DB init
     MYDISPLAY::init(&display);
     FilamentDB::load();
-
     display.clearDisplay();
-
-
     MYDISPLAY::showCentered("WIFI CONNECTING...");
 
     // PN532 init
-    nfc.begin();
-    uint32_t versiondata = nfc.getFirmwareVersion();
-    if(!versiondata){
+    NFC::init(&nfc);  // macht begin() + SAMConfig()
+
+    // Optional: Firmware anzeigen (Diagnose)
+    uint32_t version = nfc.getFirmwareVersion();
+    if (!version) {
         Serial.println("PN532 not found!");
         MYDISPLAY::showCentered("PN532 FEHLT!");
-        while(1);
+        while (1) { delay(100); }
+    } else {
+        Serial.print("PN532 FW "); Serial.print((version>>24)&0xFF);
+        Serial.print('.');        Serial.print((version>>16)&0xFF);
+        Serial.print(" chip=0x"); Serial.println(version & 0xFFFF, HEX);
     }
-    nfc.SAMConfig();
+
+    // IRQ-Pin bei I2C: INPUT (schadet nicht), bei SPI meist egal
     pinMode(PN532_IRQ, INPUT);
 
-    // ----------------- WLAN -----------------
+    // WLAN
     WiFiManager wifiManager;
     MYDISPLAY::showCentered("VERBINDUNG...");
     if(!wifiManager.autoConnect("NFC-Setup-AP")){
@@ -212,8 +218,6 @@ void setup(){
     // Erst "SCAN TAG" anzeigen, dann später in die Animation wechseln
     DisplayAnim::startIdleTextFirst(millis());
 
-    
-
     // WebSocket starten
     
     server.addHandler(&ws);
@@ -224,51 +228,69 @@ void setup(){
     WiFi.setSleep(false);
 }
 
-// ----------------- Loop -----------------
-void loop(){
-    now = millis();
 
-    LEDCTRL_NFC::update();
+void loop() {
+  // ---------------------------------------------------------------------------
+  // 0) Zeitbasis
+  // ---------------------------------------------------------------------------
+  now = millis();
 
-    if (rebootPending && millis() > rebootAt) {
-        ESP.restart();
-    }
+  // ---------------------------------------------------------------------------
+  // 1) NFC-Polling + Guards + LED-Trigger
+  //    -> NFC::tick() erkennt Tags, triggert handleUID() beim Auflegen (Rising),
+  //       setzt isActive/lastTagTime und versorgt LEDCTRL_NFC intern mit Präsenz.
+  // ---------------------------------------------------------------------------
+  bool tagPresent = false;
+  NFC::tick(now, isActive, lastTagTime, tagPresent);
 
+  // ---------------------------------------------------------------------------
+  // 1b) Präsenz auch an den FILAMENT-Controller geben
+  //     -> dessen Timeout startet erst, wenn der Tag entfernt wurde.
+  // ---------------------------------------------------------------------------
+  LEDCTRL_FILAMENT::tagPresenceTick(tagPresent);
 
-    // Idle-Animation nur laufen lassen, wenn das System nicht aktiv ist
-    if (!isActive) {
-        DisplayAnim::tickIdle(display, now);
-    }
+  // ---------------------------------------------------------------------------
+  // 2) Reboot (falls angefordert)
+  // ---------------------------------------------------------------------------
+  if (rebootPending && now > rebootAt) {
+    ESP.restart();
+  }
 
-    // NFC Lesen
-    uint8_t uid[7]; uint8_t uidLength = 0;
-    nfc.startPassiveTargetIDDetection(PN532_MIFARE_ISO14443A);
-    if(nfc.readDetectedPassiveTargetID(uid, &uidLength) && uidLength > 0){
-        String uidStr;
-        for(uint8_t i=0;i<uidLength;i++){
-            if(uid[i]<0x10) uidStr += "0";
-            uidStr += String(uid[i], HEX);
-            if(i != uidLength-1) uidStr += ":";
-        }
-        uidStr.toUpperCase();
-        Serial.println("FOUND UID: " + uidStr);
-        handleUID(uidStr, UidSource::NFC);
-        nfc.SAMConfig();
-    }   
+  // ---------------------------------------------------------------------------
+  // 3) Display-Idle-Animation nur wenn nicht aktiv
+  // ---------------------------------------------------------------------------
+  if (!isActive) {
+    DisplayAnim::tickIdle(display, now);
+  }
 
-    // LED Timeout
-    if (now - lastTagTime > LED_TIMEOUT && isActive) {
-        targetLed = -1;
-        LEDCTRL::allOff();   // <-- alles über LEDCTRL
-        Serial.println("LED Timeout - alle LEDs aus");
-        Serial.println("Display idle");
+  // ---------------------------------------------------------------------------
+  // 4) LED-Controller: Filament (Auto-Off erst nach Tag-Entfernung)
+  // ---------------------------------------------------------------------------
+  LEDCTRL_FILAMENT::update();
 
+  // ---------------------------------------------------------------------------
+  // 5) LED-Controller: NFC (Blink -> Solid -> Timeout nach Entfernung)
+  // ---------------------------------------------------------------------------
+  LEDCTRL_NFC::update();
 
-        DisplayAnim::startIdleTextFirst(now);
+  // ---------------------------------------------------------------------------
+  // 6) Übergang „aktiv → Idle“ (NFC-Controller bestimmt's)
+  // ---------------------------------------------------------------------------
+  static bool prevIdle = false;
+  const bool idleNow = LEDCTRL_NFC::isIdle();
+  if (idleNow && !prevIdle) {
+    // LEDs sind in Idle übergegangen -> Display mitnehmen
+    DisplayAnim::startIdleTextFirst(now);
+    isActive = false;
+  }
+  prevIdle = idleNow;
 
-        isActive = false;
-    }
-
- 
-    
+  // ---------------------------------------------------------------------------
+  // 7) (Optional) yield()
+  // ---------------------------------------------------------------------------
+  yield();
 }
+
+
+
+

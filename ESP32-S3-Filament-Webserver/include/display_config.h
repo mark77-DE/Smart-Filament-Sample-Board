@@ -10,19 +10,19 @@
 //Standby Text
 #define IDLE_TEXT_STRING "SCAN TAG"
 
-// Idle-Animation-Konfiguration Zeit in ms zwischen Frames (Animation)
-#define IDLE_ANIM_FRAME_DELAY 42    
+// Idle-Animation-Konfiguration Zeit in ms zwischen Frames (Animation) Default: 42
+#define IDLE_ANIM_FRAME_DELAY 30    
 
 //Anzeigedauer Standy-Text
 #define IDLE_TEXT_DURATION 5000
 
 // Delay zwischen den Buchstaben in ms (SCAN TAG Schriftzug)
-#define IDLE_TEXT_CHAR_DELAY 75 
+#define IDLE_TEXT_CHAR_DELAY 65 
 
 //Blink-Intervall für den Cursor "_"
-#define IDLE_TEXT_CURSOR_BLINK_INTERVAL 400
+#define IDLE_TEXT_CURSOR_BLINK_INTERVAL 500
 
-// Cropping-Modus bei 32er Displays 1= Zentriert
+// Cropping-Modus bei kleinen 32er Displays 1= Zentriert
 #define FRAME_CROP_MODE_CENTER 1
 
 // -----------------------------
@@ -30,8 +30,7 @@
 // -----------------------------
 // Ab wie vielen Zeichen auf die Standard-Font (nullptr) gewechselt wird.
 // 0 = Autofit nur per Pixelbreite, kein Wechsel nur wegen Länge.
-#define DISPLAY_AUTOFIT_THRESHOLD 12
-
+#define DISPLAY_AUTOFIT_THRESHOLD 0
 
 // -----------------------------
 // FONT Einstellungen
@@ -42,7 +41,6 @@
 #define DISPLAY_FONT &FreeSans9pt7b
 //#define DISPLAY_FONT      &FreeMono7pt7b
 //#define DISPLAY_FONT nullptr   // <- wenn du die Standard-Schrift nutzen willst
-
 
 // -----------------------------
 // Display-Typ wählen
@@ -55,7 +53,6 @@
   // Default, falls nichts per build_flag gesetzt wird:
   #define DISPLAY_TYPE DISPLAY_TYPE_SH1106
 #endif
-
 
 // -----------------------------
 // Display-Konfiguration
