@@ -174,11 +174,20 @@ static inline void dbgState(const char* where, LedState s) {
 // Public API
 // ============================================================================
 
-void LEDCTRL_NFC::init(int count, int pin, int timeout_ms, int brightness) {
+void LEDCTRL_NFC::init(int count, int pin, int timeout_ms, int brightness,
+                       uint32_t colorSuccess, uint32_t colorError, uint32_t colorPulse,
+                       bool successBlinkEnabled, int successBlinkCount, int successBlinkMs) {
+
   NFC_LED_COUNT       = max(0, count);
   NFC_LED_PIN         = pin;
   NFC_LED_TIMEOUT     = (unsigned long)max(0, timeout_ms);
   NFC_LED_BRIGHTNESS  = constrain(brightness, 0, 255);
+  NFC_LED_COLOR_SUCCESS = colorSuccess;
+  NFC_LED_COLOR_ERROR   = colorError;
+  NFC_LED_COLOR_PULSE   = colorPulse;
+  NFC_LED_SUCCESS_BLINK_ENABLED = successBlinkEnabled;
+  NFC_LED_SUCCESS_BLINK_COUNT   = min<uint8_t>(successBlinkCount, MAX_BLINK_COUNT);
+  NFC_LED_SUCCESS_BLINK_MS      = successBlinkMs;
 
   // Vorherigen Strip aufräumen
   if (_leds) {
@@ -448,84 +457,84 @@ bool LEDCTRL_NFC::isIdle() {
 // ============================================================================
 // Konfiguration laden
 // ============================================================================
-void loadNfcLedConfig() {
-  Serial.println(F("Load NFC LED Config"));
+// void loadNfcLedConfig() {
+//   Serial.println(F("Load NFC LED Config"));
 
-  if (!LittleFS.begin()) {
-    Serial.println(F("LittleFS.begin failed -> defaults"));
-    LEDCTRL_NFC::init(NFC_LED_COUNT, NFC_LED_PIN, (int)NFC_LED_TIMEOUT, NFC_LED_BRIGHTNESS);
-    return;
-  }
+//   if (!LittleFS.begin()) {
+//     Serial.println(F("LittleFS.begin failed -> defaults"));
+//     LEDCTRL_NFC::init(NFC_LED_COUNT, NFC_LED_PIN, (int)NFC_LED_TIMEOUT, NFC_LED_BRIGHTNESS);
+//     return;
+//   }
 
-  File f = LittleFS.open("/config.json", "r");
-  if (!f) {
-    Serial.println(F("No /config.json -> defaults"));
-    LEDCTRL_NFC::init(NFC_LED_COUNT, NFC_LED_PIN, (int)NFC_LED_TIMEOUT, NFC_LED_BRIGHTNESS);
-    return;
-  }
+//   File f = LittleFS.open("/config.json", "r");
+//   if (!f) {
+//     Serial.println(F("No /config.json -> defaults"));
+//     LEDCTRL_NFC::init(NFC_LED_COUNT, NFC_LED_PIN, (int)NFC_LED_TIMEOUT, NFC_LED_BRIGHTNESS);
+//     return;
+//   }
 
-  JsonDocument doc;
-  DeserializationError err = deserializeJson(doc, f);
-  f.close();
-  if (err) {
-    Serial.println(F("Config parse failed -> defaults"));
-    LEDCTRL_NFC::init(NFC_LED_COUNT, NFC_LED_PIN, (int)NFC_LED_TIMEOUT, NFC_LED_BRIGHTNESS);
-    return;
-  }
+//   JsonDocument doc;
+//   DeserializationError err = deserializeJson(doc, f);
+//   f.close();
+//   if (err) {
+//     Serial.println(F("Config parse failed -> defaults"));
+//     LEDCTRL_NFC::init(NFC_LED_COUNT, NFC_LED_PIN, (int)NFC_LED_TIMEOUT, NFC_LED_BRIGHTNESS);
+//     return;
+//   }
 
-  // Basisparameter
-  NFC_LED_COUNT       = doc["options"]["nfcLedCount"]      | NFC_LED_COUNT;
-  NFC_LED_PIN         = doc["options"]["nfcLedPin"]        | NFC_LED_PIN;
-  NFC_LED_BRIGHTNESS  = doc["options"]["nfcLedBrightness"] | NFC_LED_BRIGHTNESS;
-  NFC_LED_TIMEOUT     = doc["options"]["nfcLedTimeout"]    | NFC_LED_TIMEOUT;
+//   // Basisparameter
+//   NFC_LED_COUNT       = doc["options"]["nfcLedCount"]      | NFC_LED_COUNT;
+//   NFC_LED_PIN         = doc["options"]["nfcLedPin"]        | NFC_LED_PIN;
+//   NFC_LED_BRIGHTNESS  = doc["options"]["nfcLedBrightness"] | NFC_LED_BRIGHTNESS;
+//   NFC_LED_TIMEOUT     = doc["options"]["nfcLedTimeout"]    | NFC_LED_TIMEOUT;
 
-  // Blink-Feature
-  NFC_LED_SUCCESS_BLINK_ENABLED = doc["options"]["nfcLedSuccessBlinkEnabled"] | NFC_LED_SUCCESS_BLINK_ENABLED;
+//   // Blink-Feature
+//   NFC_LED_SUCCESS_BLINK_ENABLED = doc["options"]["nfcLedSuccessBlinkEnabled"] | NFC_LED_SUCCESS_BLINK_ENABLED;
 
-  // Blink-Count clamp [0..10]
-  if (doc["options"]["nfcLedSuccessBlinkCount"].is<long>()) {
-    int v = doc["options"]["nfcLedSuccessBlinkCount"].as<int>();
-    if (v <= 0) {
-      NFC_LED_SUCCESS_BLINK_COUNT = 0;                 // 0 => kein Blinken
-    } else if (v > (int)MAX_BLINK_COUNT) {
-      NFC_LED_SUCCESS_BLINK_COUNT = MAX_BLINK_COUNT;   // Obergrenze 10
-    } else {
-      NFC_LED_SUCCESS_BLINK_COUNT = (uint8_t)v;
-    }
-  }
+//   // Blink-Count clamp [0..10]
+//   if (doc["options"]["nfcLedSuccessBlinkCount"].is<long>()) {
+//     int v = doc["options"]["nfcLedSuccessBlinkCount"].as<int>();
+//     if (v <= 0) {
+//       NFC_LED_SUCCESS_BLINK_COUNT = 0;                 // 0 => kein Blinken
+//     } else if (v > (int)MAX_BLINK_COUNT) {
+//       NFC_LED_SUCCESS_BLINK_COUNT = MAX_BLINK_COUNT;   // Obergrenze 10
+//     } else {
+//       NFC_LED_SUCCESS_BLINK_COUNT = (uint8_t)v;
+//     }
+//   }
 
-  // Blink-Intervall (clamp auf Mindestwert)
-  NFC_LED_SUCCESS_BLINK_MS = doc["options"]["nfcLedSuccessBlinkMs"] | NFC_LED_SUCCESS_BLINK_MS;
-  if ((int)NFC_LED_SUCCESS_BLINK_MS <= 0) NFC_LED_SUCCESS_BLINK_MS = MIN_BLINK_MS;
-  else if (NFC_LED_SUCCESS_BLINK_MS < MIN_BLINK_MS) NFC_LED_SUCCESS_BLINK_MS = MIN_BLINK_MS;
+//   // Blink-Intervall (clamp auf Mindestwert)
+//   NFC_LED_SUCCESS_BLINK_MS = doc["options"]["nfcLedSuccessBlinkMs"] | NFC_LED_SUCCESS_BLINK_MS;
+//   if ((int)NFC_LED_SUCCESS_BLINK_MS <= 0) NFC_LED_SUCCESS_BLINK_MS = MIN_BLINK_MS;
+//   else if (NFC_LED_SUCCESS_BLINK_MS < MIN_BLINK_MS) NFC_LED_SUCCESS_BLINK_MS = MIN_BLINK_MS;
 
-  // Farben
-  if (doc["options"]["nfcLedColorSuccess"].is<JsonArray>()) {
-    JsonArray c = doc["options"]["nfcLedColorSuccess"];
-    if (c.size() == 3) {
-      NFC_LED_COLOR_SUCCESS = ((uint32_t)c[0].as<int>() << 16) |
-                              ((uint32_t)c[1].as<int>() << 8)  |
-                              ((uint32_t)c[2].as<int>());
-    }
-  }
-  if (doc["options"]["nfcLedColorError"].is<JsonArray>()) {
-    JsonArray e = doc["options"]["nfcLedColorError"];
-    if (e.size() == 3) {
-      NFC_LED_COLOR_ERROR = ((uint32_t)e[0].as<int>() << 16) |
-                            ((uint32_t)e[1].as<int>() << 8)  |
-                            ((uint32_t)e[2].as<int>());
-    }
-  }
-  if (doc["options"]["nfcLedColorPulse"].is<JsonArray>()) {
-    JsonArray p = doc["options"]["nfcLedColorPulse"];
-    if (p.size() == 3) {
-      NFC_LED_COLOR_PULSE = ((uint32_t)p[0].as<int>() << 16) |
-                            ((uint32_t)p[1].as<int>() << 8)  |
-                            ((uint32_t)p[2].as<int>());
-    }
-  }
+//   // Farben
+//   if (doc["options"]["nfcLedColorSuccess"].is<JsonArray>()) {
+//     JsonArray c = doc["options"]["nfcLedColorSuccess"];
+//     if (c.size() == 3) {
+//       NFC_LED_COLOR_SUCCESS = ((uint32_t)c[0].as<int>() << 16) |
+//                               ((uint32_t)c[1].as<int>() << 8)  |
+//                               ((uint32_t)c[2].as<int>());
+//     }
+//   }
+//   if (doc["options"]["nfcLedColorError"].is<JsonArray>()) {
+//     JsonArray e = doc["options"]["nfcLedColorError"];
+//     if (e.size() == 3) {
+//       NFC_LED_COLOR_ERROR = ((uint32_t)e[0].as<int>() << 16) |
+//                             ((uint32_t)e[1].as<int>() << 8)  |
+//                             ((uint32_t)e[2].as<int>());
+//     }
+//   }
+//   if (doc["options"]["nfcLedColorPulse"].is<JsonArray>()) {
+//     JsonArray p = doc["options"]["nfcLedColorPulse"];
+//     if (p.size() == 3) {
+//       NFC_LED_COLOR_PULSE = ((uint32_t)p[0].as<int>() << 16) |
+//                             ((uint32_t)p[1].as<int>() << 8)  |
+//                             ((uint32_t)p[2].as<int>());
+//     }
+//   }
 
-  // Anwenden
-  LEDCTRL_NFC::init(NFC_LED_COUNT, NFC_LED_PIN, (int)NFC_LED_TIMEOUT, NFC_LED_BRIGHTNESS);
-  Serial.println(F("NFC LED Config loaded"));
-}
+//   // Anwenden
+//   LEDCTRL_NFC::init(NFC_LED_COUNT, NFC_LED_PIN, (int)NFC_LED_TIMEOUT, NFC_LED_BRIGHTNESS);
+//   Serial.println(F("NFC LED Config loaded"));
+// }

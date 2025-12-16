@@ -1,9 +1,4 @@
 {
-  "layout": {
-    "columns": 2,
-    "rows": 5,
-    "items": 6
-  },
   "options": {
     "darkmode": true,
     "mqtt": false,
@@ -13,8 +8,8 @@
     "ledPin": 4,
     "ledBrightness": 50,
     "ledTimeout": 2000,
-    "ledColor": [255, 0, 0],
-    "ledColorError": [255, 32, 32],
+    "ledColor": [0, 255, 0],
+    "ledColorError": [255, 0, 255],
     "ledColorPulse": [0, 64, 160],
 
     "nfcLedCount": 8,

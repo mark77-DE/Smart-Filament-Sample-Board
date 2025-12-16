@@ -15,6 +15,9 @@
 #include "globals.h"
 #include "display_anim.h"
 #include "nfc.h"
+#include "config.h"
+
+
 
 // Reboot-Steuerung
 volatile bool rebootPending = false;
@@ -139,16 +142,14 @@ void setup(){
     Serial.begin(115200);
     while(!Serial);
 
-    Serial.println("Firmware Version: " FIRMWARE_VERSION);
-    Serial.println("Git Hash: " GIT_HASH);
+    Serial.printf("Firmware Version: %s\n", FIRMWARE_VERSION);
+    Serial.printf("Git Hash: %s\n", GIT_HASH);
+
+    
 
     Wire.begin(SDA_PIN,SCL_PIN);
 
-    //Filesystem & Webserver
-    if(!LittleFS.begin(true)){
-        Serial.println("LittleFS mount failed!");
-        while(1);
-    }
+    
 
     // OLED init
     if (!initDisplay(display)) {
@@ -157,28 +158,19 @@ void setup(){
     }
 
     // 1. Config laden
-    loadLedConfig(); // LED_COUNT und LED_PIN werden gesetzt
-    loadNfcLedConfig();
-    Serial.print("LED_COUNT = "); Serial.println(LED_COUNT);
-    Serial.print("LED_PIN = "); Serial.println(LED_PIN);
-    Serial.print("LED_COLOR = "); Serial.println(LED_COLOR);
-    Serial.print("LED_TIMEOUT = "); Serial.println(LED_TIMEOUT);
-    Serial.print("LED_BRIGHTNESS = "); Serial.println(LED_BRIGHTNESS);
-
-    Serial.print("NFC_LED_COUNT = "); Serial.println(NFC_LED_COUNT);
-    Serial.print("NFC_LED_PIN = "); Serial.println(NFC_LED_PIN);
-    Serial.print("NFC_LED_COLOR_Success = "); Serial.println(NFC_LED_COLOR_SUCCESS);
-    Serial.print("NFC_LED_COLOR_ERROR = "); Serial.println(NFC_LED_COLOR_ERROR);
-    Serial.print("NFC_LED_COLOR_PULSE = "); Serial.println(NFC_LED_COLOR_PULSE); 
-    Serial.print("NFC_LED_TIMEOUT = "); Serial.println(NFC_LED_TIMEOUT);
-    Serial.print("NFC_LED_BRIGHTNESS = "); Serial.println(NFC_LED_BRIGHTNESS);
+    loadConfig();
+    
 
 
     // 2. LED Strip initialisieren
-    LEDCTRL_FILAMENT::init(LED_COUNT, LED_PIN, LED_TIMEOUT, LED_BRIGHTNESS);
+    LEDCTRL_FILAMENT::init(LED_COUNT, LED_PIN, LED_TIMEOUT, LED_BRIGHTNESS, LED_COLOR, LED_COLOR_ERROR, LED_COLOR_PULSE);
+    
     LEDCTRL_FILAMENT::allOff();
 
-    LEDCTRL_NFC::init(NFC_LED_COUNT, NFC_LED_PIN, NFC_LED_TIMEOUT, NFC_LED_BRIGHTNESS);
+    LEDCTRL_NFC::init(NFC_LED_COUNT, NFC_LED_PIN, NFC_LED_TIMEOUT, NFC_LED_BRIGHTNESS,
+                      NFC_LED_COLOR_SUCCESS, NFC_LED_COLOR_ERROR, NFC_LED_COLOR_PULSE,
+                      NFC_LED_SUCCESS_BLINK_ENABLED, NFC_LED_SUCCESS_BLINK_COUNT, NFC_LED_SUCCESS_BLINK_MS);
+
     LEDCTRL_NFC::allOff();
 
     // 3. Display & DB init
