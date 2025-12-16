@@ -6,6 +6,8 @@
 #include <vector>
 #include "display.h"
 #include "globals.h"
+#include "filament_db.h"
+#include "config.h"
 
 extern volatile bool rebootPending;
 extern unsigned long rebootAt;
@@ -103,58 +105,19 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
         request->send(200, "application/json", json);
     });
 
+
     // --- Export ALL (filaments + config) ---
-    server.on("/api/exportAll", HTTP_GET, [](AsyncWebServerRequest *req){
-        // filaments.json
-        File f1 = LittleFS.open("/filaments.json", "r");
-        if (!f1) {
-            req->send(404, "text/plain", "filaments.json not found");
-            return;
-        }
-        String filamentsStr = f1.readString();
-        f1.close();
+    server.on("/api/exportAll", HTTP_GET, [](AsyncWebServerRequest *req) {
 
-        // config.json
-        File f2 = LittleFS.open("/config.json", "r");
-        if (!f2) {
-            req->send(404, "text/plain", "config.json not found");
-            return;
-        }
-        String configStr = f2.readString();
-        f2.close();
-
-        // alles in ein JSON packen
-        // großer Puffer, weil beide Dateien enthalten werden
         JsonDocument outDoc;
-        
-        // config (als Object)
-        JsonDocument configDoc;
-        DeserializationError cerr = deserializeJson(configDoc, configStr);
-        if (!cerr) {
-            outDoc["config"] = configDoc.as<JsonObject>();
-        } else {
-            outDoc.createNestedObject("config");
-        }
 
-        // filaments (als Array)
-        JsonDocument filamentsDoc;
-        DeserializationError ferr = deserializeJson(filamentsDoc, filamentsStr);
-        if (f1) {
-    String filamentsStr = f1.readString();
-    f1.close();
-    if (filamentsStr.length() > 0) {
-        DeserializationError ferr = deserializeJson(filamentsDoc, filamentsStr);
-        if (!ferr && filamentsDoc.is<JsonArray>()) {
-            outDoc["filaments"] = filamentsDoc.as<JsonArray>();
-        } else {
-            outDoc.createNestedArray("filaments"); // leeres Array
-        }
-    } else {
-        outDoc.createNestedArray("filaments"); // leeres Array
-    }
-} else {
-    outDoc.createNestedArray("filaments"); // leeres Array, falls Datei fehlt
-}
+        // config
+        JsonObject cfg = outDoc["config"].to<JsonObject>();
+        loadConfigAsJson(cfg);
+
+        // filaments
+        JsonArray fils = outDoc["filaments"].to<JsonArray>();
+        loadFilamentsAsJson(fils);
 
         String out;
         serializeJsonPretty(outDoc, out);
@@ -163,82 +126,35 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
 
     // --- Import ALL ---
     server.on("/api/importAll", HTTP_POST,
-        [](AsyncWebServerRequest *req){
-            // ACK sofort (Upload beginnt)
-            req->send(200, "text/plain", "Upload started");
-        },
-        nullptr,
-        [](AsyncWebServerRequest *req, uint8_t *data, size_t len, size_t index, size_t total){
-            static String body;
-            if (index == 0) {
-                body = "";
-                if (total > 0) body.reserve(total);
-            }
-            // sichere Concatenation
-            body.concat((const char*)data, len);
+    [](AsyncWebServerRequest *req){ req->send(200, "text/plain", "Upload started"); },
+    nullptr,
+    [](AsyncWebServerRequest *req, uint8_t *data, size_t len, size_t index, size_t total){
+        static String body;
+        if (index == 0) { body = ""; if (total > 0) body.reserve(total); }
+        body.concat((const char*)data, len);
+        if (index + len != total) return;
 
-            if (index + len != total) return; // noch nicht komplett
-
-            JsonDocument doc;
-            DeserializationError err = deserializeJson(doc, body);
-            if (err) {
-                req->send(400, "text/plain", "JSON parse failed");
-                Serial.print("importAll JSON parse failed: ");
-                Serial.println(err.c_str());
-                return;
-            }
-            req->send(200, "text/plain", "Import OK");
-
-            // Filaments speichern
-            if (doc.containsKey("filaments") && doc["filaments"].is<JsonArray>()) {
-                File f = LittleFS.open("/filaments.json", "w");
-                if (f) {
-                    String out;
-                    serializeJson(doc["filaments"], out);
-                    f.print(out);
-                    f.close();
-                    FilamentDB::loadFromFile(); // DB neu laden
-                    Serial.println("Filaments imported");
-                } else {
-                    Serial.println("Failed to open /filaments.json for writing");
-                }
-            } else {
-                // keine filaments im Upload, leeres Array speichern
-                File f = LittleFS.open("/filaments.json", "w");
-                if (f) {
-                    f.print("[]");
-                    f.close();
-                    FilamentDB::loadFromFile();
-                    Serial.println("No filaments in upload, empty array created");
-                }
-            }
-
-
-            // Config speichern
-            if (doc.containsKey("config")) {
-                File f = LittleFS.open("/config.json", "w");
-                if (f) {
-                    String out;
-                    serializeJson(doc["config"], out); // gesamte Struktur speichern
-                    f.print(out);
-                    f.close();
-                    loadLedConfig();
-                    loadNfcLedConfig();
-                    // LEDCTRL_FILAMENT::init erwartet evtl. LED_PIN extern definiert
-                    
-                    //Serial.println("Config imported, ESP will reboot... Please refresh browser in 5s...");
-                    //delay(500);
-                    //ESP.restart();
-
-                } else {
-                    Serial.println("Failed to open /config.json for writing");
-                }
-            }
+        DynamicJsonDocument doc(8192);
+        DeserializationError err = deserializeJson(doc, body);
+        if (err) {
+            req->send(400, "text/plain", "JSON parse failed");
+            Serial.println("importAll JSON parse failed");
+            return;
         }
-    );
+
+        if (doc.containsKey("config") && doc["config"].is<JsonObject>())
+            importConfigJson(doc["config"].as<JsonObject>());
+
+        //if (doc.containsKey("filaments") && doc["filaments"].is<JsonArray>())
+        //    importFilamentsJson(doc["filaments"].as<JsonArray>());
+
+        req->send(200, "text/plain", "Import OK");
+    }
+);
+
 
     
-    // Update eines Eintrags
+    // Update eines Filament Eintrags
 server.on("/api/update", HTTP_POST,
     [](AsyncWebServerRequest *req){ 
         req->send(200, "text/plain", "Processing"); 
@@ -370,157 +286,51 @@ server.on("/api/update", HTTP_POST,
 
     // Update LED Config (sicherer Upload-Handler)
     server.on("/api/updateConfig", HTTP_POST,
-        [](AsyncWebServerRequest *req){},
-        nullptr,
-        [](AsyncWebServerRequest *req, uint8_t *data, size_t len, size_t index, size_t total){
-            static String body;
-            if (index == 0) {
-                body = "";
-                if (total > 0) body.reserve(total);
-            }
-            // previous buggy code used String((char*)data).substring(0,len) -> unsafe
-            body.concat((const char*)data, len);
-
-            if (index + len != total) return;
-
-            JsonDocument doc;
-            DeserializationError err = deserializeJson(doc, body);
-            if (err) {
-                req->send(400, "text/plain", "JSON Error");
-                Serial.print("updateConfig JSON error: ");
-                Serial.println(err.c_str());
-                return;
-            }
-
-            int newCount                    = doc["ledCount"] | 8;
-            int newPin                      = doc["ledPin"]   | 4;
-            int newBrightness               = doc["ledBrightness"] | 50;
-            int newTimeout                  = doc["ledTimeout"] | 3000;
-
-            int newNfcCount                 = doc["nfcLedCount"] | 8;
-            int newNfcPin                   = doc["nfcLedPin"]   | 16;
-            int newNfcBrightness            = doc["nfcLedBrightness"] | 50;
-            int newNfcTimeout               = doc["nfcLedTimeout"] | 3000;
-
-            // --- NEU: Success Blink Optionen (NFC) ---
-            bool newNfcSuccessBlinkEnabled  = doc["nfcLedSuccessBlinkEnabled"] | true;
-            int  newNfcSuccessBlinkCount    = doc["nfcLedSuccessBlinkCount"]   | 3;
-            int  newNfcSuccessBlinkMs       = doc["nfcLedSuccessBlinkMs"]      | 150;
-
-            // Sanity / Grenzen (damit nichts kaputt konfiguriert werden kann)
-            if (newNfcSuccessBlinkCount < 0) newNfcSuccessBlinkCount = 0;
-            if (newNfcSuccessBlinkCount > 10) newNfcSuccessBlinkCount = 10;
-
-            if (newNfcSuccessBlinkMs < 20) newNfcSuccessBlinkMs = 20;
-            if (newNfcSuccessBlinkMs > 2000) newNfcSuccessBlinkMs = 2000;
-
-            boolean debugMode               = doc["debugMode"] | false;
-            DEBUG_MODE                      = debugMode;
-
-
-            Serial.println("Updating LED Config:");
-            Serial.printf("   LED Count: %d\n", newCount);
-            Serial.printf("   LED Pin: %d\n", newPin);
-            Serial.printf("   LED Brightness: %d\n", newBrightness); 
-            Serial.printf("   LED Timeout: %d\n", newTimeout);
-
-            Serial.printf("   NFC LED Count: %d\n", newNfcCount);
-            Serial.printf("   NFC LED Pin: %d\n", newNfcPin);
-            Serial.printf("   NFC LED Brightness: %d\n", newNfcBrightness);
-            
-            Serial.printf("   NFC LED Timeout: %d\n", newNfcTimeout);
-
-            Serial.printf("   NFC Success Blink Enabled: %s\n", newNfcSuccessBlinkEnabled ? "ON" : "OFF");
-            Serial.printf("   NFC Success Blink Count: %d\n", newNfcSuccessBlinkCount);
-            Serial.printf("   NFC Success Blink Ms: %d\n", newNfcSuccessBlinkMs);
-
-            Serial.printf("   Debug Mode: %s\n", debugMode ? "ON" : "OFF");
-
-            Serial.println("--------------------");    
-
-
-
-            // Farbe aus dem Request
-            JsonArray colorArr          = doc["ledColor"].as<JsonArray>();
-            JsonArray colorNfcArrSuc    = doc["nfcLedColorSuccess"].as<JsonArray>();
-            JsonArray colorNfcArrErr    = doc["nfcLedColorError"].as<JsonArray>();
-            JsonArray colorNfcArrPulse  = doc["nfcLedColorPulse"].as<JsonArray>();
-
-            // Config.json laden
-            JsonDocument configDoc;
-            File f = LittleFS.open("/config.json", "r");
-            if (f) {
-                DeserializationError rerr = deserializeJson(configDoc, f);
-                if (rerr) {
-                    Serial.print("Failed to parse existing config.json: ");
-                    Serial.println(rerr.c_str());
-                }
-                f.close();
-            }
-
-            configDoc["options"]["ledCount"] = newCount;
-            configDoc["options"]["ledPin"]   = newPin;
-            configDoc["options"]["ledBrightness"] = newBrightness;
-            configDoc["options"]["ledTimeout"] = newTimeout;
-
-            configDoc["options"]["nfcLedCount"] = newNfcCount;
-            configDoc["options"]["nfcLedPin"]   = newNfcPin;
-            configDoc["options"]["nfcLedBrightness"] = newNfcBrightness;
-            configDoc["options"]["nfcLedTimeout"] = newNfcTimeout;
-
-            // --- NEU: Success Blink Optionen speichern ---
-            configDoc["options"]["nfcLedSuccessBlinkEnabled"] = newNfcSuccessBlinkEnabled;
-            configDoc["options"]["nfcLedSuccessBlinkCount"]   = newNfcSuccessBlinkCount;
-            configDoc["options"]["nfcLedSuccessBlinkMs"]      = newNfcSuccessBlinkMs;
-
-            configDoc["options"]["debugMode"] = debugMode;
-
-
-            // Farbe korrekt kopieren (sichere Prüfung)
-            if (colorArr.size() >= 3) {
-                JsonArray col = configDoc["options"]["ledColor"].to<JsonArray>();
-                col.clear();
-                for (int i = 0; i < 3; i++) col.add(colorArr[i].as<int>());
-            }
-
-            if (colorNfcArrSuc.size() >= 3) {
-                JsonArray col = configDoc["options"]["nfcLedColorSuccess"].to<JsonArray>();
-                col.clear();
-                for (int i = 0; i < 3; i++) col.add(colorNfcArrSuc[i].as<int>());
-            }
-
-            if (colorNfcArrErr.size() >= 3) {
-                JsonArray col = configDoc["options"]["nfcLedColorError"].to<JsonArray>();
-                col.clear();
-                for (int i = 0; i < 3; i++) col.add(colorNfcArrErr[i].as<int>());
-            }
-
-            if (colorNfcArrPulse.size() >= 3) {
-                JsonArray col = configDoc["options"]["nfcLedColorPulse"].to<JsonArray>();
-                col.clear();
-                for (int i = 0; i < 3; i++) col.add(colorNfcArrPulse[i].as<int>());
-            }
-
-            // zurückschreiben
-            f = LittleFS.open("/config.json", "w");
-            if (f) {
-                serializeJson(configDoc, f);
-                f.close();
-            } else {
-                Serial.println("Failed to open /config.json for writing (updateConfig)");
-            }
-
-            loadLedConfig();
-            loadNfcLedConfig();
-
-            
-            req->send(200, "application/json", "{\"status\":\"ok\"}");
-
-            //req->send(200, "text/plain", "REBOOTING");
-            //delay(500);
-            //ESP.restart();
+    [](AsyncWebServerRequest *req){},  // keine GET-Handler nötig
+    nullptr,                            // kein Body-Upload-Handler für Chunked POST
+    [](AsyncWebServerRequest *req, uint8_t *data, size_t len, size_t index, size_t total) {
+        static String body;
+        if (index == 0) {
+            body = "";
+            if (total > 0) body.reserve(total);
         }
-    );
+        body.concat((const char*)data, len);
+
+        if (index + len != total) return; // noch nicht alles empfangen
+
+        // --- JSON parsen ---
+        StaticJsonDocument<2048> doc; // Größe anpassen
+        DeserializationError err = deserializeJson(doc, body);
+        if (err) {
+            req->send(400, "text/plain", "JSON Error");
+            Serial.print("updateConfig JSON error: ");
+            Serial.println(err.c_str());
+            return;
+        }
+
+        // --- Update CONFIG ---
+        if (!updateConfigFromJson(doc)) {
+            req->send(400, "text/plain", "Invalid JSON structure");
+            return;
+        }
+
+        // --- Debug Ausgabe optional ---
+        if (CONFIG.debugMode) {
+            Serial.println("Updated CONFIG:");
+            Serial.printf("LED: count=%d, pin=%d, brightness=%d, timeout=%d, color=0x%06X\n",
+                          CONFIG.led.count, CONFIG.led.pin, CONFIG.led.brightness, CONFIG.led.timeout, CONFIG.led.color);
+            Serial.printf("NFC: count=%d, pin=%d, brightness=%d, timeout=%d, success=0x%06X, error=0x%06X, pulse=0x%06X\n",
+                          CONFIG.nfc.count, CONFIG.nfc.pin, CONFIG.nfc.brightness, CONFIG.nfc.timeout,
+                          CONFIG.nfc.colorSuccess, CONFIG.nfc.colorError, CONFIG.nfc.colorPulse);
+            Serial.printf("NFC Blink: enabled=%d, count=%d, ms=%d\n",
+                          CONFIG.nfc.successBlinkEnabled, CONFIG.nfc.successBlinkCount, CONFIG.nfc.successBlinkMs);
+            Serial.printf("Debug Mode: %s\n", CONFIG.debugMode ? "ON" : "OFF");
+        }
+
+        req->send(200, "application/json", "{\"status\":\"ok\"}");
+    }
+);
+
 
       server.on("/api/reboot", HTTP_POST, [](AsyncWebServerRequest *request){
         showRebootScreen();

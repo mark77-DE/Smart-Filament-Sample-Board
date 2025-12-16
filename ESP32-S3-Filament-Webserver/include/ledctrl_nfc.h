@@ -27,7 +27,7 @@ extern uint16_t NFC_LED_SUCCESS_BLINK_MS;      // Blink-Intervall in ms (min. 25
 // ----------------------------------------------------------------------------
 // Lädt die Optionen aus /config.json und ruft danach LEDCTRL_NFC::init() auf.
 // ----------------------------------------------------------------------------
-void loadNfcLedConfig();
+//void loadNfcLedConfig();
 
 
 // ============================================================================
@@ -41,13 +41,22 @@ void loadNfcLedConfig();
 class LEDCTRL_NFC {
 public:
   // --------------------------------------------------------------------------
-  // Initialisierung der Hardware und interner Zustände.
-  // count      : Anzahl LEDs
-  // pin        : Daten-Pin
-  // timeout_ms : Timeout (ms) nach Tag-Entfernung bis Idle
-  // brightness : 0..255 (wird intern geklemmt)
+  /**
+   * @brief Strip initialisieren und internen Zustand zurücksetzen.
+   * @param count         Anzahl Pixel
+   * @param pin           GPIO-Pin
+   * @param timeout_ms    Timeout in Millisekunden (wirkt erst ab Tag-Entfernung)
+   * @param brightness    Helligkeit [0..255]
+   * @param colorSuccess  Standardfarbe 0xRRGGBB
+   * @param colorError    Fehlerfarbe 0xRRGGBB
+   * @param colorPulse    Idle-Pulse-Farbe 0xRRGGBB
+   * @param successBlinkEnabled  True = Success blinkt zunächst
+   * @param successBlinkCount    Anzahl Blink-Zyklen
+   * @param successBlinkMs       Blink-Intervall in ms
+   */
   // --------------------------------------------------------------------------
-  static void init(int count, int pin, int timeout_ms, int brightness);
+  static void init(int count, int pin, int timeout_ms, int brightness, uint32_t colorSuccess, uint32_t colorError, uint32_t colorPulse,
+                   bool successBlinkEnabled, int successBlinkCount, int successBlinkMs);
 
   // --------------------------------------------------------------------------
   // Muss zyklisch aus loop() aufgerufen werden.

@@ -23,10 +23,6 @@ extern uint32_t LED_COLOR_ERROR;  // 0xRRGGBB
 // Farbe für den Idle-Breath-Pulse
 extern uint32_t LED_COLOR_PULSE;  // 0xRRGGBB
 
-// Konfiguration laden (liest Filesystem) und danach init(...) aufrufen
-void loadLedConfig();
-
-
 // ============================================================================
 // LEDCTRL_FILAMENT – Steuerung für den Filament-LED-Strip
 //  - Unterstützt: Einzelpixel setzen, Fehler-Blink/Solid, Idle-Breath
@@ -44,8 +40,11 @@ public:
    * @param pin         GPIO-Pin
    * @param timeout_ms  Timeout in Millisekunden (wirkt erst ab Tag-Entfernung)
    * @param brightness  Helligkeit [0..255]
+   * @param color       Standardfarbe 0xRRGGBB
+   * @param colorError  Fehlerfarbe 0xRRGGBB
+   * @param colorPulse  Idle-Pulse-Farbe 0xRRGGBB
    */
-  static void init(int count, int pin, int timeout_ms, int brightness);
+  static void init(int count, int pin, int timeout_ms, int brightness, uint32_t color, uint32_t colorError, uint32_t colorPulse);
 
   /**
    * @brief In der main-Loop zyklisch aufrufen.

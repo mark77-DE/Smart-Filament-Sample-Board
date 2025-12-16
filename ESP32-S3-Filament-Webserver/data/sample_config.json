@@ -1,9 +1,4 @@
 {
-  "layout": {
-    "columns": 2,
-    "rows": 5,
-    "items": 6
-  },
   "options": {
     "darkmode": true,
     "mqtt": false,

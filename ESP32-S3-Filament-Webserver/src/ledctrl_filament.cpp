@@ -159,11 +159,14 @@ static void renderIdlePulseFrame(Adafruit_NeoPixel* s,
 // ============================================================================
 // Public API
 // ============================================================================
-void LEDCTRL_FILAMENT::init(int count, int pin, int timeout_ms, int brightness) {
+void LEDCTRL_FILAMENT::init(int count, int pin, int timeout_ms, int brightness, u_int32_t color, uint32_t colorError, uint32_t colorPulse) {
   LED_COUNT      = max(0, count);
   LED_PIN        = pin;
   LED_TIMEOUT    = max(0, timeout_ms);
   LED_BRIGHTNESS = constrain(brightness, 0, 255);
+  LED_COLOR      = color;
+  LED_COLOR_ERROR= colorError; 
+  LED_COLOR_PULSE= colorPulse;
 
   // vorhandenen Strip sauber freigeben
   if (_leds) {
@@ -199,7 +202,7 @@ void LEDCTRL_FILAMENT::init(int count, int pin, int timeout_ms, int brightness) 
   _ditherPhase     = 0;
   _idleBlockUntil  = 0;
 
-  FILDBG("init: count=%d pin=%d bright=%d timeout=%d\n", LED_COUNT, LED_PIN, LED_BRIGHTNESS, LED_TIMEOUT);
+  FILDBG("init: count=%d pin=%d bright=%d timeout=%d color=%d error=%d pulse=%d\n", LED_COUNT, LED_PIN, LED_BRIGHTNESS, LED_TIMEOUT, LED_COLOR, LED_COLOR_ERROR, LED_COLOR_PULSE);
 }
 
 void LEDCTRL_FILAMENT::setPixel(int index, uint32_t color) {
@@ -430,77 +433,3 @@ Adafruit_NeoPixel* LEDCTRL_FILAMENT::rawStrip() {
   return _leds;
 }
 
-// ============================================================================
-// Config laden
-// ============================================================================
-void loadLedConfig() {
-  // versucht zuerst /config.json, sonst /filament_default.json
-  if (!LittleFS.begin()) {
-    Serial.println(F("LittleFS.begin() failed!"));
-    return;
-  }
-
-  String filename = LittleFS.exists("/config.json") ? "/config.json" : "/filament_default.json";
-  File f = LittleFS.open(filename, "r");
-  if (!f) {
-    Serial.println("Failed to open " + filename);
-    return;
-  }
-
-  JsonDocument doc;
-  DeserializationError err = deserializeJson(doc, f);
-  f.close();
-  if (err) {
-    Serial.println(String("JSON parse failed: ") + err.c_str());
-    return;
-  }
-
-  LED_COUNT      = doc["options"]["ledCount"]      | LED_COUNT;
-  LED_PIN        = doc["options"]["ledPin"]        | LED_PIN;
-  LED_BRIGHTNESS = doc["options"]["ledBrightness"] | LED_BRIGHTNESS;
-  LED_TIMEOUT    = doc["options"]["ledTimeout"]    | LED_TIMEOUT;
-
-  // LED_COLOR (Standardfarbe für normale Pixel)
-  if (doc["options"]["ledColor"].is<JsonArray>()) {
-    JsonArray c = doc["options"]["ledColor"];
-    if (c.size() == 3) {
-      const uint8_t r = (uint8_t)c[0].as<int>();
-      const uint8_t g = (uint8_t)c[1].as<int>();
-      const uint8_t b = (uint8_t)c[2].as<int>();
-      LED_COLOR = ((uint32_t)r << 16) | ((uint32_t)g << 8) | (uint32_t)b;
-    }
-  }
-
-  // LED_COLOR_ERROR (eigene Fehlerfarbe)
-  if (doc["options"]["ledColorError"].is<JsonArray>()) {
-    JsonArray e = doc["options"]["ledColorError"];
-    if (e.size() == 3) {
-      const uint8_t r = (uint8_t)e[0].as<int>();
-      const uint8_t g = (uint8_t)e[1].as<int>();
-      const uint8_t b = (uint8_t)e[2].as<int>();
-      LED_COLOR_ERROR = ((uint32_t)r << 16) | ((uint32_t)g << 8) | (uint32_t)b;
-    }
-  }
-
-  // LED_COLOR_PULSE (Idle)
-  if (doc["options"]["ledColorPulse"].is<JsonArray>()) {
-    JsonArray p = doc["options"]["ledColorPulse"];
-    if (p.size() == 3) {
-      const uint8_t r = (uint8_t)p[0].as<int>();
-      const uint8_t g = (uint8_t)p[1].as<int>();
-      const uint8_t b = (uint8_t)p[2].as<int>();
-      LED_COLOR_PULSE = ((uint32_t)r << 16) | ((uint32_t)g << 8) | (uint32_t)b;
-    }
-  }
-
-  LEDCTRL_FILAMENT::init(LED_COUNT, LED_PIN, LED_TIMEOUT, LED_BRIGHTNESS);
-
-  Serial.println(F("LED Config loaded"));
-  Serial.print(F("  LED_COUNT = "));         Serial.println(LED_COUNT);
-  Serial.print(F("  LED_PIN = "));           Serial.println(LED_PIN);
-  Serial.print(F("  LED_BRIGHTNESS = "));    Serial.println(LED_BRIGHTNESS);
-  Serial.print(F("  LED_TIMEOUT = "));       Serial.println(LED_TIMEOUT);
-  Serial.print(F("  LED_COLOR = 0x"));       Serial.println(LED_COLOR, HEX);
-  Serial.print(F("  LED_COLOR_ERROR = 0x")); Serial.println(LED_COLOR_ERROR, HEX);
-  Serial.print(F("  LED_COLOR_PULSE = 0x")); Serial.println(LED_COLOR_PULSE, HEX);
-}
