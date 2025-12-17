@@ -69,17 +69,17 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
         request->send(LittleFS, "/script.js", "application/javascript");
     });
 
-    server.on("/admin.css", HTTP_GET, [](AsyncWebServerRequest *request){
-        request->send(LittleFS, "/admin.css", "text/css");
+    server.on("/settings.css", HTTP_GET, [](AsyncWebServerRequest *request){
+        request->send(LittleFS, "/settings.css", "text/css");
     });
 
-    server.on("/admin.js", HTTP_GET, [](AsyncWebServerRequest *request){
-        request->send(LittleFS, "/admin.js", "application/javascript");
+    server.on("/settings.js", HTTP_GET, [](AsyncWebServerRequest *request){
+        request->send(LittleFS, "/settings.js", "application/javascript");
     });
 
     // Admin page
-    server.on("/admin", HTTP_GET, [](AsyncWebServerRequest *request){
-        request->send(LittleFS, "/admin.html", "text/html");
+    server.on("/settings", HTTP_GET, [](AsyncWebServerRequest *request){
+        request->send(LittleFS, "/settings.html", "text/html");
     });
 
     // Filament-Liste als JSON
@@ -358,10 +358,10 @@ server.on("/api/update", HTTP_POST,
     ws.onEvent(onWsEvent);
     server.addHandler(&ws);
 
-    server.serveStatic("/admin.js", LittleFS, "/admin.js")
+    server.serveStatic("/settings.js", LittleFS, "/settings.js")
           .setCacheControl("max-age=86400");
 
-    server.serveStatic("/admin.css", LittleFS, "/admin.css")
+    server.serveStatic("/settings.css", LittleFS, "/settings.css")
           .setCacheControl("max-age=86400");
 
     server.begin();
