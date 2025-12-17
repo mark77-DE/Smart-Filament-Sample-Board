@@ -145,8 +145,8 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
         if (doc.containsKey("config") && doc["config"].is<JsonObject>())
             importConfigJson(doc["config"].as<JsonObject>());
 
-        //if (doc.containsKey("filaments") && doc["filaments"].is<JsonArray>())
-        //    importFilamentsJson(doc["filaments"].as<JsonArray>());
+        if (doc.containsKey("filaments") && doc["filaments"].is<JsonArray>())
+            importFilamentsJson(doc["filaments"].as<JsonArray>());
 
         req->send(200, "text/plain", "Import OK");
     }

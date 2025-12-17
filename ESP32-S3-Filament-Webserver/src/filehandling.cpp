@@ -5,6 +5,7 @@
 #include "ledctrl_filament.h"
 #include "ledctrl_nfc.h"
 #include "filament_db.h"
+#include "filehandling.h"
 
 AppConfig CONFIG;
 
@@ -412,8 +413,12 @@ bool importConfigJson(JsonObject src) {
         
     }
 
+
+    // --- Filamente importieren ---
+    
+
     // config speichern
-    DynamicJsonDocument doc(8192);
+    JsonDocument doc;
 JsonObject root = doc.to<JsonObject>();
 JsonObject options = root.createNestedObject("options");
 
@@ -494,7 +499,7 @@ bool loadFilaments() {
 
 
 bool saveFilamentsToFile() {
-    StaticJsonDocument<32*1024> doc;
+    JsonDocument doc;
     JsonArray arr = FilamentDB::toJsonArray(doc);  // direkt aus Namespace
 
     File f = LittleFS.open("/filaments.json", "w");
@@ -506,5 +511,52 @@ bool saveFilamentsToFile() {
     size_t written = serializeJson(doc, f);
     f.close();
     Serial.printf("DB saved. bytes=%u entries=%d\n", (unsigned)written, FilamentDB::getAllCount());
+    return true;
+}
+
+
+
+
+
+bool importFilamentsJson(JsonArray src) {
+
+    if (src.isNull()) {
+        if (CONFIG.debugMode) {
+            Serial.println("importFilamentsJson: src is null");
+        }
+        return false;
+    }
+
+    if (src.size() == 0) {
+        if (CONFIG.debugMode) {
+            Serial.println("importFilamentsJson: empty array");
+        }
+        return false;
+    }
+
+    if (CONFIG.debugMode) {
+        Serial.printf("Importing %u filaments...\n", src.size());
+    }
+
+    // 1. In DB laden (überschreibt intern die bestehende DB)
+    bool ok = FilamentDB::loadFromJsonArray(src);
+    if (!ok) {
+        Serial.println("importFilamentsJson: FilamentDB load failed");
+        return false;
+    }
+
+    // 2. Persistieren
+    if (!saveFilamentsToFile()) {
+        Serial.println("importFilamentsJson: saving filaments failed");
+        return false;
+    }
+
+    if (CONFIG.debugMode) {
+        Serial.printf(
+            "Filaments imported successfully. Count=%d\n",
+            FilamentDB::getAllCount()
+        );
+    }
+
     return true;
 }

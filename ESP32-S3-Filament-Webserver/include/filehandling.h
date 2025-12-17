@@ -124,6 +124,16 @@ bool importConfigJson(JsonObject src);
 
 // --------------------------------------------------------------------------
 /**
+ * @brief Importiert Filamente aus einem JSON-Objekt
+ * @param src  Quell-JsonObject
+ * @return true bei Erfolg, false bei Fehler
+ */
+// --------------------------------------------------------------------------
+bool importFilamentsJson(JsonArray src);
+
+
+// --------------------------------------------------------------------------
+/**
  * @brief Lädt die Filament-Datenbank in ein externes Array
  * @param dst         Ziel-Array
  * @param maxEntries  Maximale Anzahl Einträge
