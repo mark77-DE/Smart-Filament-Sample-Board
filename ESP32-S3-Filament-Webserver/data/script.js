@@ -108,9 +108,6 @@ async function loadFilamentTiles() {
 
     const grid = document.getElementById("filamentGrid");
     grid.innerHTML = "";
-    grid.style.display = 'grid';
-    grid.style.gridTemplateColumns = `repeat(auto-fill, minmax(120px, 1fr))`; // dynamisch
-    grid.style.gridGap = '10px';
 
     filaments.forEach(f => {
         const tile = document.createElement("div");
