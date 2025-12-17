@@ -1,29 +1,69 @@
-const socket = new WebSocket(`ws://${location.host}/ws`);
+
 const activeTimers = {}; // UID -> TimeoutID
 const lastScanTimes = {}; // UID -> timestamp
 const DEBOUNCE_MS = 2000; // 2 Sekunden Entprellzeit
 
+let socket = null;
+let reconnectTimer = null;
+const RECONNECT_DELAY = 2000; // 2 Sekunden
+
+let wsStatus = false;
+
+const wsStatusElement = document.getElementById("wsStatus");
+
+
+
 // --- WebSocket-Verbindung ---
 function connectWS() {
-    socket.onopen = () => console.log("WS verbunden!");
+    if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) {
+        // Bereits verbunden oder verbindend
+        return;
+    }
+
+    socket = new WebSocket(`ws://${location.host}/ws`);
+
+    socket.onopen = () => {
+        console.log("WS verbunden!");
+        if (reconnectTimer) {
+            clearTimeout(reconnectTimer);
+            reconnectTimer = null;
+        }
+        updateWSStatus(true);
+    };
+
     socket.onclose = () => {
         console.log("WS getrennt, versuche erneut in 2s...");
-        setTimeout(connectWS, 2000);
-    };
-    socket.onmessage = (event) => {
-        const msg = JSON.parse(event.data);
-        highlightUID(msg.uid);
+        updateWSStatus(false);
+        reconnectTimer = setTimeout(connectWS, RECONNECT_DELAY);
     };
 
     socket.onerror = (err) => {
         console.error("WebSocket-Fehler", err);
-        socket.close();
+        socket.close(); // löst onclose aus
+    };
+
+    socket.onmessage = (event) => {
+        const msg = JSON.parse(event.data);
+        highlightUID(msg.uid);
+        
     };
 }
+
+// sofort verbinden
 connectWS();
+
+
+function updateWSStatus(connected) {
+    if (!wsStatusElement) return;
+    wsStatusElement.textContent = connected ? "verbunden" : "getrennt";
+    wsStatusElement.classList.toggle("ws-connected", connected);
+    wsStatusElement.classList.toggle("ws-disconnected", !connected);
+    wsStatus = connected;
+}
 
 // --- Highlight-Funktion ---
 function highlightUID(uid) {
+    
     const now = Date.now();
 
     if(lastScanTimes[uid] && now - lastScanTimes[uid] < DEBOUNCE_MS) return;
@@ -43,7 +83,7 @@ function highlightUID(uid) {
 
     // Passende Kachel suchen
     const tile = Array.from(tiles).find(t => t.dataset.uid === uid);
-    if(tile){
+    if(tile) {
         tile.classList.add("active");
         activeTimers[uid] = setTimeout(() => tile.classList.remove("active"), 10000);
     } else {
@@ -98,9 +138,10 @@ async function loadFilamentTiles() {
         tile.onclick = () => {
             if (socket.readyState === WebSocket.OPEN) {
                 socket.send(JSON.stringify({action: "highlightLED", uid: f.uid}));
+                tile.classList.add("active");
+                setTimeout(() => tile.classList.remove("active"), CONFIG.options.ledTimeout);
             }
-            tile.classList.add("active");
-            setTimeout(() => tile.classList.remove("active"), CONFIG.options.ledTimeout);
+            
         };
 
         grid.appendChild(tile);

@@ -113,3 +113,14 @@ button {
 #style_head_uid, #style_uid, #style_head_led, #style_led {
     display: none;
 }
+
+.ws-connected {
+    color: green;
+    font-weight: bold;
+    display: none;
+}
+
+.ws-disconnected {
+    color: red;
+    font-weight: bold;
+}
