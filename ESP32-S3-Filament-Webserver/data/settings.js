@@ -36,10 +36,10 @@ let lastHighlightedRow = null;
 
 // -------------------- WebSocket --------------------
 
-const ws = new WebSocket(`ws://${location.host}/ws`);
+const socket = new WebSocket(`ws://${location.host}/ws`);
 
-ws.onopen = () => updateWSStatus(true);
-ws.onclose = () => {
+socket.onopen = () => updateWSStatus(true);
+socket.onclose = () => {
     updateWSStatus(false);
     document.body.innerHTML = `
         <h2>ESP Verbindung verloren...</h2>
@@ -47,8 +47,8 @@ ws.onclose = () => {
     `;
     setTimeout(() => location.reload(), 5000);
 };
-ws.onerror = () => updateWSStatus(false);
-ws.onmessage = handleWSMessage;
+socket.onerror = () => updateWSStatus(false);
+socket.onmessage = handleWSMessage;
 
 
 

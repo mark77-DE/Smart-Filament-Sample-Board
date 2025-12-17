@@ -17,7 +17,7 @@ function connectWS() {
 
     socket.onerror = (err) => {
         console.error("WebSocket-Fehler", err);
-        ws.close();
+        socket.close();
     };
 }
 connectWS();
