@@ -120,7 +120,7 @@
                     <option value="ASA">ASA</option>
                     <option value="TPU">TPU</option>
                     <option value="Nylon">Nylon</option>
-                    <option value="Holz">Holz-Filament</option>
+                    <option value="Holz">Holz</option>
                 </select>
 
                 <label for="color">Farbe:</label>
@@ -167,6 +167,18 @@
                 <div class="hexField">
                     <input type="text" id="ledColor" name="ledColor" value="#ff0000" maxlength="7" pattern="^#([0-9a-fA-F]{6})$" title="Format: #RRGGBB" placeholder="#RRGGBB">
                     <div class="colorPresets" data-target="ledColor"></div>
+                </div>
+
+                <label for="ledColorError" title="Format: #RRGGBB">LED Color Error:</label>
+                <div class="hexField">
+                    <input type="text" id="ledColorError" name="ledColorError" value="#ff0000" maxlength="7" pattern="^#([0-9a-fA-F]{6})$" title="Format: #RRGGBB" placeholder="#RRGGBB">
+                    <div class="colorPresets" data-target="ledColorError"></div>
+                </div>
+
+                <label for="ledColorPulse" title="Format: #RRGGBB">LED Color Pulse:</label>
+                <div class="hexField">
+                    <input type="text" id="ledColorPulse" name="ledColorPulse" value="#ff0000" maxlength="7" pattern="^#([0-9a-fA-F]{6})$" title="Format: #RRGGBB" placeholder="#RRGGBB">
+                    <div class="colorPresets" data-target="ledColorPulse"></div>
                 </div>
 
                 <label for="ledTimeout">LED Timeout (ms):</label>

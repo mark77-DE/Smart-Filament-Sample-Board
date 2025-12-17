@@ -3,6 +3,8 @@ body {
     font-family: sans-serif;
     margin: 0;
     padding: 0;
+    background-color: #071325;
+    color: #7f8c8d;
 }
 
 
@@ -72,7 +74,15 @@ input:checked + .slider::after { left: 21px; }
 #tableHeader, .tableRow {
     display: grid; gap: 4px; align-items: center;
 }
-#tableHeader { grid-template-columns: 180px 180px 130px 130px 130px 100px; background-color: #f0f0f0; font-weight: bold; padding: 8px 4px; border-bottom: 1px solid #ccc; }
+#tableHeader { 
+    grid-template-columns: 180px 180px 130px 130px 130px 100px; 
+    background-color: #2F3546; 
+    font-weight: bold; 
+    padding: 8px 4px; 
+    border-bottom: 1px solid #ccc; 
+}
+
+
 .tableRow { grid-template-columns: 180px 180px 130px 130px 130px 80px; padding: 4px 4px; border-bottom: 1px solid #eee; }
 span[contenteditable="true"] { padding: 2px 4px; border: 1px solid transparent; border-radius: 4px; }
 span[contenteditable="true"]:focus { border-color: #007BFF; outline: none; background-color: #f9f9f9; }
@@ -102,7 +112,8 @@ input[type="color"] { padding: 0; height: 34px; }
     flex-direction: row; 
     gap: 20px; 
     padding: 10px; 
-    background: #f7f7f7; 
+    background-color: #071325;
+    color: #7f8c8d; 
     border: 1px solid #ccc; 
     border-radius: 6px; 
     
@@ -111,7 +122,19 @@ input[type="color"] { padding: 0; height: 34px; }
 .sysGroup { display: flex; align-items: center; gap: 10px; margin-left: 10px; }
 
 /* -------------------- Card Container -------------------- */
-.card { background: #fff; border: 1px solid #ccc; border-radius: 8px; padding: 16px 20px; margin: 20px auto; max-width: 420px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
+.card { 
+    background-color: #071325;
+    color: #7f8c8d;
+    border: 1px solid #ccc; 
+    border-radius: 8px; 
+    padding: 16px 20px; 
+    margin: 20px auto; 
+    max-width: 420px; 
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08); 
+}
+
+
+
 .cardHeader { font-size: 1.2em; font-weight: bold; margin-bottom: 14px; padding-bottom: 6px; border-bottom: 1px solid #ddd; }
 .formGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; align-items: start; }
 .formGrid label { font-weight: 500; }

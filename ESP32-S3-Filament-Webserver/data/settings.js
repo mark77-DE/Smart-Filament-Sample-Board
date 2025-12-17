@@ -15,6 +15,9 @@ const maxLEDInput = document.getElementById("maxLED");
 const nfcMaxLEDInput = document.getElementById("nfcMaxLED");
 
 const ledColorInput = document.getElementById("ledColor");
+const ledColorErrorInput = document.getElementById("ledColorError");
+const ledColorPulseInput = document.getElementById("ledColorPulse");
+
 const nfcLedColorSuccessInput = document.getElementById("nfcLedColorSuccess");
 const nfcLedColorErrorInput = document.getElementById("nfcLedColorError");
 const nfcLedColorPulseInput = document.getElementById("nfcLedColorPulse");
@@ -43,9 +46,9 @@ socket.onclose = () => {
     updateWSStatus(false);
     document.body.innerHTML = `
         <h2>ESP Verbindung verloren...</h2>
-        <p>Seite wird in 5 Sekunden neu laden.</p>
+        <p>Seite wird in 2 Sekunden neu laden.</p>
     `;
-    setTimeout(() => location.reload(), 5000);
+    setTimeout(() => location.reload(), 2000);
 };
 socket.onerror = () => updateWSStatus(false);
 socket.onmessage = handleWSMessage;
@@ -102,18 +105,20 @@ async function handleWSMessage(ev){
     try { 
         data = JSON.parse(ev.data); 
     } catch (err) { 
-        console.error("Fehler beim Parsen der WS-Daten:", ev.data, err);
+        if(CONFIG.debugMode) {
+            console.error("Fehler beim Parsen der WS-Daten:", ev.data, err);
+        }
         return; 
     }
 
     if(!data.uid) {
-        //console.log("Keine UID im empfangenen Datenobjekt:", data);
+        
         return;
     }
 
     // UID nur Hex-Ziffern, Großschreibung vereinheitlicht
     const scannedUID = data.uid.replace(/[^a-fA-F0-9]/g,'').toUpperCase();
-    //console.log("Scanned UID:", scannedUID);
+
 
     const rows = document.querySelectorAll("#db .tableRow");
     let highlighted = false;
@@ -121,19 +126,19 @@ async function handleWSMessage(ev){
     rows.forEach((row, idx) => {
         const uidCell = row.querySelector(".uid");
         if (!uidCell) {
-            //console.log("Keine UID-Zelle in Zeile", idx);
+
             return;
         }
 
         const rowUID = uidCell.textContent.replace(/[^a-fA-F0-9]/g,'').toUpperCase();
-        //console.log(`Zeile ${idx}: rowUID=${rowUID} | scannedUID=${scannedUID}`);
+
 
         if (rowUID === scannedUID) {
-            //console.log(`Zeile ${idx} match!`);
+
             highlighted = true;
 
             if (lastHighlightedRow && lastHighlightedRow !== row) {
-                //console.log("Entferne vorherige Highlight-Markierung von Zeile", lastHighlightedRow.dataset.idx);
+
                 lastHighlightedRow.classList.remove("highlight");
             }
 
@@ -145,7 +150,7 @@ async function handleWSMessage(ev){
     });
 
     if (!highlighted) {
-        //console.log("UID unbekannt, Add-Form vorbereiten:", scannedUID);
+
         document.querySelector('#addForm input[name="uid"]').value = data.uid;
         document.querySelector('#addForm input[name="vendor"]').focus();
 
@@ -205,7 +210,11 @@ document.getElementById("importFile").addEventListener("change", e=>{
 document.getElementById("rebootBtn").addEventListener("click", async ()=>{
     if(!confirm("ESP wirklich neustarten?")) return;
     try{ await fetch("/api/reboot",{method:"POST"});} catch {}
-    document.body.innerHTML="<h2>ESP wird neu gestartet...</h2><p>Bitte kurz warten.</p>";
+    document.body.innerHTML = `
+        <h2>ESP Verbindung verloren...</h2>
+        <p>Seite wird in 2 Sekunden neu laden.</p>
+    `;
+    setTimeout(() => location.reload(), 2000);
 });
 
 // -------------------- Add Form --------------------
@@ -251,7 +260,7 @@ async function loadTable() {
             </div>
     `;
 
-    //data.forEach((e, idx) => console.log(idx, e.uid));
+    
 
     data.forEach((e, idx) => {
         html += `
@@ -296,6 +305,9 @@ async function loadTable() {
     nfcLedTimeoutInput.value = CONFIG.options.nfcLedTimeout;
 
     ledColorInput.value = rgbToHex(CONFIG.options.ledColor);
+    ledColorErrorInput.value = rgbToHex(CONFIG.options.ledColorError);
+    ledColorPulseInput.value = rgbToHex(CONFIG.options.ledColorPulse);
+
     nfcLedColorSuccessInput.value = rgbToHex(CONFIG.options.nfcLedColorSuccess);
     nfcLedColorErrorInput.value = rgbToHex(CONFIG.options.nfcLedColorError);
     nfcLedColorPulseInput.value = rgbToHex(CONFIG.options.nfcLedColorPulse);
@@ -382,6 +394,8 @@ document.getElementById("saveConfig").addEventListener("click", async () => {
     const ledPin = Number(document.getElementById("ledPin").value);
     const ledBrightness = percentToLedValue(Number(document.getElementById("ledBrightness").value));
     const ledColor = hexToRgb(document.getElementById("ledColor").value);
+    const ledColorError = hexToRgb(document.getElementById("ledColorError").value);
+    const ledColorPulse = hexToRgb(document.getElementById("ledColorPulse").value);
     const ledTimeout = Number(document.getElementById("ledTimeout").value);
 
     const debugMode = debugToggle.checked;
@@ -400,9 +414,9 @@ document.getElementById("saveConfig").addEventListener("click", async () => {
     const nfcLedSuccessBlinkMs      = Number(document.getElementById("nfcLedSuccessBlinkMs").value);
 
 
-    if(debugMode) {
+    if(CONFIG.debugMode) {
         console.log("Neue LED Config:", {
-            ledCount, ledPin, ledBrightness, ledColor, ledTimeout,
+            ledCount, ledPin, ledBrightness, ledColor, ledTimeout, ledColorError, ledColorPulse,
             nfcLedCount, nfcLedPin, nfcLedBrightness, nfcLedColorSuccess, nfcLedColorError, nfcLedTimeout,
             debugMode
         });
@@ -412,32 +426,34 @@ document.getElementById("saveConfig").addEventListener("click", async () => {
        
     try {
         await fetch("/api/updateConfig", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-        options: {
-            ledCount,
-            ledPin,
-            ledBrightness,
-            ledColor,
-            ledTimeout,
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                options: {
+                    ledCount,
+                    ledPin,
+                    ledBrightness,
+                    ledColor,
+                    ledColorError,
+                    ledColorPulse,
+                    ledTimeout,
 
-            nfcLedCount,
-            nfcLedPin,
-            nfcLedBrightness,
-            nfcLedColorSuccess,
-            nfcLedColorError,
-            nfcLedColorPulse,
-            nfcLedTimeout,
+                    nfcLedCount,
+                    nfcLedPin,
+                    nfcLedBrightness,
+                    nfcLedColorSuccess,
+                    nfcLedColorError,
+                    nfcLedColorPulse,
+                    nfcLedTimeout,
 
-            nfcLedSuccessBlinkEnabled,
-            nfcLedSuccessBlinkCount,
-            nfcLedSuccessBlinkMs,
+                    nfcLedSuccessBlinkEnabled,
+                    nfcLedSuccessBlinkCount,
+                    nfcLedSuccessBlinkMs,
 
-            debugMode
-        }
-    })
-});
+                    debugMode
+                }
+            })
+        });
 
     } catch(e){
         // ESP schon offline – kein Problem

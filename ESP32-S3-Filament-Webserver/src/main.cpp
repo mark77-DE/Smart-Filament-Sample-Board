@@ -145,7 +145,8 @@ void setup(){
     Serial.printf("Firmware Version: %s\n", FIRMWARE_VERSION);
     Serial.printf("Git Hash: %s\n", GIT_HASH);
 
-    
+    loadConfig();
+
 
     Wire.begin(SDA_PIN,SCL_PIN);
 
@@ -157,12 +158,7 @@ void setup(){
     while (1);
     }
 
-    // 1. Config laden
-    loadConfig();
     
-
-
-    // 2. LED Strip initialisieren
     LEDCTRL_FILAMENT::init(LED_COUNT, LED_PIN, LED_TIMEOUT, LED_BRIGHTNESS, LED_COLOR, LED_COLOR_ERROR, LED_COLOR_PULSE);
     
     LEDCTRL_FILAMENT::allOff();
