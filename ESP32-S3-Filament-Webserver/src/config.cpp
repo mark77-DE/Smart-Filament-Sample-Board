@@ -4,6 +4,7 @@
 #include <Adafruit_NeoPixel.h>
 #include "ledctrl_filament.h"
 #include "ledctrl_nfc.h"
+#include "filament_db.h"
 
 AppConfig CONFIG;
 
@@ -92,7 +93,7 @@ bool loadConfig() {
     CONFIG.nfc.successBlinkMs      = opt["nfcLedSuccessBlinkMs"]      | 150;
 
    
-
+    loadFilaments();
     applyConfig();
     return true;
 }
@@ -243,28 +244,21 @@ bool saveConfig() {
     JsonObject opt = doc["options"].to<JsonObject>();
 
     // LED
-    opt["ledCount"]      = CONFIG.led.count;
-    opt["ledPin"]        = CONFIG.led.pin;
-    opt["ledBrightness"] = CONFIG.led.brightness;
-    opt["ledTimeout"]    = CONFIG.led.timeout;
-    char ledColorStr[10];
-    //sprintf(ledColorStr, "0x%06X", CONFIG.led.color);
-    opt["ledColor"]      = ledColorStr;
+    opt["ledCount"]         = CONFIG.led.count;
+    opt["ledPin"]           = CONFIG.led.pin;
+    opt["ledBrightness"]    = CONFIG.led.brightness;
+    opt["ledTimeout"]       = CONFIG.led.timeout;
+    opt["ledColor"]         = CONFIG.led.color;
+    opt["ledColorError"]    = CONFIG.led.colorError;
 
     // NFC
-    opt["nfcLedCount"]      = CONFIG.nfc.count;
-    opt["nfcLedPin"]        = CONFIG.nfc.pin;
-    opt["nfcLedBrightness"] = CONFIG.nfc.brightness;
-    opt["nfcLedTimeout"]    = CONFIG.nfc.timeout;
-    char nfcSuccessStr[10];
-    char nfcErrorStr[10];
-    char nfcPulseStr[10];
-    //sprintf(nfcSuccessStr, "0x%06X", CONFIG.nfc.colorSuccess);
-    //sprintf(nfcErrorStr,   "0x%06X", CONFIG.nfc.colorError);
-    //sprintf(nfcPulseStr,   "0x%06X", CONFIG.nfc.colorPulse);
-    opt["nfcLedColorSuccess"] = nfcSuccessStr;
-    opt["nfcLedColorError"]   = nfcErrorStr;
-    opt["nfcLedColorPulse"]   = nfcPulseStr;
+    opt["nfcLedCount"]          = CONFIG.nfc.count;
+    opt["nfcLedPin"]            = CONFIG.nfc.pin;
+    opt["nfcLedBrightness"]     = CONFIG.nfc.brightness;
+    opt["nfcLedTimeout"]        = CONFIG.nfc.timeout;
+    opt["nfcLedColorSuccess"]   = CONFIG.nfc.colorSuccess;
+    opt["nfcLedColorError"]     = CONFIG.nfc.colorError;
+    opt["nfcLedColorPulse"]     = CONFIG.nfc.colorPulse;
 
     // Sonstige Optionen
     opt["darkmode"]  = CONFIG.darkmode;
@@ -486,5 +480,31 @@ f.close();
 
 
     applyConfig();
+    return true;
+}
+
+
+bool loadFilaments() {
+    JsonDocument doc;
+    JsonArray arr = doc.to<JsonArray>();
+    if (!loadFilamentsAsJson(arr)) return false;
+    return FilamentDB::loadFromJsonArray(arr);
+}
+
+
+
+bool saveFilamentsToFile() {
+    StaticJsonDocument<32*1024> doc;
+    JsonArray arr = FilamentDB::toJsonArray(doc);  // direkt aus Namespace
+
+    File f = LittleFS.open("/filaments.json", "w");
+    if (!f) {
+        Serial.println("saveFilamentsToFile: Cannot open file for write!");
+        return false;
+    }
+
+    size_t written = serializeJson(doc, f);
+    f.close();
+    Serial.printf("DB saved. bytes=%u entries=%d\n", (unsigned)written, FilamentDB::getAllCount());
     return true;
 }

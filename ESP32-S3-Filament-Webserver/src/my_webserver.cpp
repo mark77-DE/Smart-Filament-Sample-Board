@@ -195,7 +195,7 @@ server.on("/api/update", HTTP_POST,
 
         // Update über Index
         if(FilamentDB::updateAtIndex(idx, entry)){
-            FilamentDB::saveToFile();
+            saveFilamentsToFile();
             Serial.println("DB updated and saved");
         } else {
             Serial.println("DB update failed: invalid index");
@@ -240,7 +240,7 @@ server.on("/api/update", HTTP_POST,
 
             if (FilamentDB::add(entry)) {
                 Serial.println("ADD: OK");
-                FilamentDB::saveToFile();
+                saveFilamentsToFile();
             } else {
                 Serial.println("ADD: FAILED");
             }
@@ -248,21 +248,23 @@ server.on("/api/update", HTTP_POST,
     );
 
     server.on("/api/delete", HTTP_POST, [](AsyncWebServerRequest *request) {
-    if (!request->hasParam("uid", true)) {
-        request->send(400, "application/json",
-            "{\"status\":\"error\",\"msg\":\"missing uid\"}");
-        return;
-    }
+        if (!request->hasParam("uid", true)) {
+            request->send(400, "application/json",
+                "{\"status\":\"error\",\"msg\":\"missing uid\"}");
+            return;
+        }
 
-    String uid = request->getParam("uid", true)->value();
+        String uid = request->getParam("uid", true)->value();
 
-    if (!FilamentDB::remove(uid)) {
-        request->send(404, "application/json",
-            "{\"status\":\"error\",\"msg\":\"uid not found\"}");
-        return;
-    }
+        if (!FilamentDB::remove(uid)) {
+            request->send(404, "application/json",
+                "{\"status\":\"error\",\"msg\":\"uid not found\"}");
+            return;
+        } else {
+            saveFilamentsToFile();
+        }
 
-    request->send(200, "application/json", "{\"status\":\"ok\"}");
+        request->send(200, "application/json", "{\"status\":\"ok\"}");
 });
 
 
@@ -285,61 +287,65 @@ server.on("/api/update", HTTP_POST,
 
 
     // Update LED Config (sicherer Upload-Handler)
-    server.on("/api/updateConfig", HTTP_POST,
-    [](AsyncWebServerRequest *req){},  // keine GET-Handler nötig
-    nullptr,                            // kein Body-Upload-Handler für Chunked POST
-    [](AsyncWebServerRequest *req, uint8_t *data, size_t len, size_t index, size_t total) {
-        static String body;
-        if (index == 0) {
-            body = "";
-            if (total > 0) body.reserve(total);
-        }
-        body.concat((const char*)data, len);
+    server.on("/api/updateConfig", HTTP_POST, 
+        [](AsyncWebServerRequest *req){},  // keine GET-Handler nötig
+        nullptr,                            // kein Body-Upload-Handler für Chunked POST
+        [](AsyncWebServerRequest *req, uint8_t *data, size_t len, size_t index, size_t total) {
+            static String body;
+            if (index == 0) {
+                body = "";
+                if (total > 0) body.reserve(total);
+                }
+                
+                body.concat((const char*)data, len);
 
-        if (index + len != total) return; // noch nicht alles empfangen
+                if (index + len != total) return; // noch nicht alles empfangen
 
-        // --- JSON parsen ---
-        StaticJsonDocument<2048> doc; // Größe anpassen
-        DeserializationError err = deserializeJson(doc, body);
-        if (err) {
-            req->send(400, "text/plain", "JSON Error");
-            Serial.print("updateConfig JSON error: ");
-            Serial.println(err.c_str());
-            return;
-        }
+                    // --- JSON parsen ---
+                    JsonDocument doc;
+                    DeserializationError err = deserializeJson(doc, body);
 
-        // --- Update CONFIG ---
-        if (!updateConfigFromJson(doc)) {
-            req->send(400, "text/plain", "Invalid JSON structure");
-            return;
-        }
+                    // --- Debug Ausgabe optional ---
+                    if (CONFIG.debugMode) {
+                        Serial.println("Updated CONFIG:");
+                        Serial.printf("LED: count=%d, pin=%d, brightness=%d, timeout=%d, color=0x%06X\n",
+                                    CONFIG.led.count, CONFIG.led.pin, CONFIG.led.brightness, CONFIG.led.timeout, CONFIG.led.color);
+                        Serial.printf("NFC: count=%d, pin=%d, brightness=%d, timeout=%d, success=0x%06X, error=0x%06X, pulse=0x%06X\n",
+                                    CONFIG.nfc.count, CONFIG.nfc.pin, CONFIG.nfc.brightness, CONFIG.nfc.timeout,
+                                    CONFIG.nfc.colorSuccess, CONFIG.nfc.colorError, CONFIG.nfc.colorPulse);
+                        Serial.printf("NFC Blink: enabled=%d, count=%d, ms=%d\n",
+                                    CONFIG.nfc.successBlinkEnabled, CONFIG.nfc.successBlinkCount, CONFIG.nfc.successBlinkMs);
+                        Serial.printf("Debug Mode: %s\n", CONFIG.debugMode ? "ON" : "OFF");
+                    }
+                    
+                    if (err) {
+                        req->send(400, "text/plain", "JSON Error");
+                        Serial.print("updateConfig JSON error: ");
+                        Serial.println(err.c_str());
+                        return;
+                    }
 
-        // --- Debug Ausgabe optional ---
-        if (CONFIG.debugMode) {
-            Serial.println("Updated CONFIG:");
-            Serial.printf("LED: count=%d, pin=%d, brightness=%d, timeout=%d, color=0x%06X\n",
-                          CONFIG.led.count, CONFIG.led.pin, CONFIG.led.brightness, CONFIG.led.timeout, CONFIG.led.color);
-            Serial.printf("NFC: count=%d, pin=%d, brightness=%d, timeout=%d, success=0x%06X, error=0x%06X, pulse=0x%06X\n",
-                          CONFIG.nfc.count, CONFIG.nfc.pin, CONFIG.nfc.brightness, CONFIG.nfc.timeout,
-                          CONFIG.nfc.colorSuccess, CONFIG.nfc.colorError, CONFIG.nfc.colorPulse);
-            Serial.printf("NFC Blink: enabled=%d, count=%d, ms=%d\n",
-                          CONFIG.nfc.successBlinkEnabled, CONFIG.nfc.successBlinkCount, CONFIG.nfc.successBlinkMs);
-            Serial.printf("Debug Mode: %s\n", CONFIG.debugMode ? "ON" : "OFF");
-        }
+                    // --- Update CONFIG ---
+                    if (!updateConfigFromJson(doc)) {
+                        req->send(400, "text/plain", "Invalid JSON structure");
+                        return;
+                    }
 
-        req->send(200, "application/json", "{\"status\":\"ok\"}");
-    }
-);
+                    
+
+                    req->send(200, "application/json", "{\"status\":\"ok\"}");
+                }
+    );
 
 
-      server.on("/api/reboot", HTTP_POST, [](AsyncWebServerRequest *request){
-        showRebootScreen();
-        rebootPending = true;
-        rebootAt = millis() + 1000;   // 1 Sekunde Zeit fürs Display
+            server.on("/api/reboot", HTTP_POST, [](AsyncWebServerRequest *request){
+                showRebootScreen();
+                rebootPending = true;
+                rebootAt = millis() + 1000;   // 1 Sekunde Zeit fürs Display
 
-        request->send(200, "text/plain", "Rebooting");
+                request->send(200, "text/plain", "Rebooting");
 
-    });
+            });
 
 
     

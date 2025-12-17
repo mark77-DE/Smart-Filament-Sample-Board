@@ -24,11 +24,6 @@ extern bool     NFC_LED_SUCCESS_BLINK_ENABLED; // true = Success blinkt zunächs
 extern uint8_t  NFC_LED_SUCCESS_BLINK_COUNT;   // Anzahl An/Aus-Wechsel (0 = kein Blink)
 extern uint16_t NFC_LED_SUCCESS_BLINK_MS;      // Blink-Intervall in ms (min. 25 ms)
 
-// ----------------------------------------------------------------------------
-// Lädt die Optionen aus /config.json und ruft danach LEDCTRL_NFC::init() auf.
-// ----------------------------------------------------------------------------
-//void loadNfcLedConfig();
-
 
 // ============================================================================
 // LEDCTRL_NFC – Controller für den NFC-LED-Streifen
