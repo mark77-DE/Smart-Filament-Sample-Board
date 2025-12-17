@@ -221,7 +221,7 @@ addForm.addEventListener("submit", async e=>{
     };
     const db = await (await fetch("/filaments.json")).json();
     const used = db.find(e=>Number(e.ledIndex)===entry.ledIndex);
-    if(used){ alert(`LED ${entry.ledIndex} bereits verwendet von UID ${used.uid}`); return; }
+    if(used){ alert(`LED ${entry.ledIndex + 1} bereits verwendet von UID ${used.uid}`); return; }
     const res = await fetch("/api/add",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(entry)});
     if(res.ok){ alert("Eintrag hinzugefügt!"); addForm.reset(); await loadTable(); await updateAddFormLEDs(); }
     else alert("Fehler beim Hinzufügen!");
@@ -318,7 +318,18 @@ async function loadTable() {
 
 
 function getTypeOptions(selected){ return ["PLA","PLA+","PLA-CF","PLA-Matte","PETG","PETG-CF","ABS","ASA","TPU","Nylon","Holz"].map(t=>`<option value="${t}" ${t===selected?"selected":""}>${t}</option>`).join(""); }
-function buildLedDropdown(currentLED, usedLEDs){ let html=`<select data-field="ledIndex">`; for(let i=0;i<CONFIG.options.ledCount;i++){ if(!usedLEDs.has(i)||i===currentLED) html+=`<option value="${i}" ${i===currentLED?"selected":""}>LED ${i}</option>`;} html+=`</select>`; return html; }
+
+function buildLedDropdown(currentLED, usedLEDs, disabled=false) {
+    let html = `<select data-field="ledIndex" ${disabled ? "disabled" : ""}>`;
+    for (let i = 0; i < CONFIG.options.ledCount; i++) {
+        if (!usedLEDs.has(i) || i === currentLED) {
+            html += `<option value="${i}" ${i === currentLED ? "selected" : ""}>LED ${i+1}</option>`;
+        }
+    }
+    html += `</select>`;
+    return html;
+}
+
 
 // -------------------- Buttons für Save/Delete --------------------
 function activateButtons(){
@@ -350,11 +361,19 @@ function activateButtons(){
 }
 
 
-
-
-
-
-async function updateAddFormLEDs(){ const data=await (await fetch("/filaments.json")).json(); const free=[]; for(let i=0;i<CONFIG.options.ledCount;i++){ if(!data.find(e=>Number(e.ledIndex)===i)) free.push(i); } const sel=document.getElementById("ledIndexSelect"); sel.innerHTML=""; free.forEach(v=>{ const opt=document.createElement("option"); opt.value=v; opt.textContent=`LED ${v}`; sel.appendChild(opt); }); }
+async function updateAddFormLEDs(){ 
+    const data=await (await fetch("/filaments.json")).json(); 
+    const free=[]; 
+        for(let i=0;i<CONFIG.options.ledCount;i++)
+            { if(!data.find(e=>Number(e.ledIndex)===i)) free.push(i); } 
+        const sel=document.getElementById("ledIndexSelect"); 
+        sel.innerHTML=""; 
+        free.forEach(v=>{ const opt=document.createElement("option"); 
+            opt.value = v; 
+            opt.textContent = `LED ${v+1}`; 
+            sel.appendChild(opt); }); 
+        
+}
 
 // -------------------- LED Config --------------------
 document.getElementById("saveConfig").addEventListener("click", async () => {
@@ -389,18 +408,37 @@ document.getElementById("saveConfig").addEventListener("click", async () => {
         });
     }
 
+
        
     try {
         await fetch("/api/updateConfig", {
-            method: "POST",
-            headers: {"Content-Type":"application/json"},
-            body: JSON.stringify({
-                ledCount, ledPin, ledBrightness, ledColor, ledTimeout,
-                nfcLedCount, nfcLedPin, nfcLedBrightness, nfcLedColorSuccess, nfcLedColorError, nfcLedTimeout, nfcLedColorPulse,
-                nfcLedSuccessBlinkEnabled, nfcLedSuccessBlinkCount, nfcLedSuccessBlinkMs,
-                debugMode
-            })
-        });
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+        options: {
+            ledCount,
+            ledPin,
+            ledBrightness,
+            ledColor,
+            ledTimeout,
+
+            nfcLedCount,
+            nfcLedPin,
+            nfcLedBrightness,
+            nfcLedColorSuccess,
+            nfcLedColorError,
+            nfcLedColorPulse,
+            nfcLedTimeout,
+
+            nfcLedSuccessBlinkEnabled,
+            nfcLedSuccessBlinkCount,
+            nfcLedSuccessBlinkMs,
+
+            debugMode
+        }
+    })
+});
+
     } catch(e){
         // ESP schon offline – kein Problem
     }

@@ -15,7 +15,7 @@
 #include "globals.h"
 #include "display_anim.h"
 #include "nfc.h"
-#include "config.h"
+#include "filehandling.h"
 
 
 
@@ -175,7 +175,7 @@ void setup(){
 
     // 3. Display & DB init
     MYDISPLAY::init(&display);
-    FilamentDB::load();
+    
     display.clearDisplay();
     MYDISPLAY::showCentered("WIFI CONNECTING...");
 
