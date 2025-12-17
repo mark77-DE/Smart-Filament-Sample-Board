@@ -7,7 +7,7 @@
 #include "display.h"
 #include "globals.h"
 #include "filament_db.h"
-#include "config.h"
+#include "filehandling.h"
 
 extern volatile bool rebootPending;
 extern unsigned long rebootAt;
