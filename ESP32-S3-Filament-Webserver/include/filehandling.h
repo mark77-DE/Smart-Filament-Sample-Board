@@ -150,3 +150,13 @@ bool loadFilamentDB(FilamentEntry *dst, size_t maxEntries, size_t &outCount);
  */
 // --------------------------------------------------------------------------
 bool saveFilamentsToFile();
+
+// --------------------------------------------------------------------------
+/**
+ * @brief Wandelt die farbwerte in einem JsonArray in einen 0xRRGGBB-Wert um und setzt die Referenz
+ * @param opt   JsonObject mit den Optionen
+ * @param key   Schlüssel des Farb-Arrays
+ * @param color Referenz auf den 0xRRGGBB-Farbwert
+ */
+// --------------------------------------------------------------------------
+void setColorArray(JsonObject &opt, const char* key, uint32_t color);

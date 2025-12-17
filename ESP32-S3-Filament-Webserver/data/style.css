@@ -1,6 +1,6 @@
 body {
-    background-color: lightgrey;
-    color: darkcyan;
+    background-color: #071325;
+    color: #7f8c8d;
 }
 
 #header {
@@ -39,7 +39,14 @@ body {
 
 
 button {
-    padding: 8px 10px; margin: 0; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9em;
+    padding: 8px 10px;
+    margin: 0;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
+    background-color: #2c3e50;
+    color: #7f8c8d;
 }
 
 #unknown { 
@@ -52,7 +59,7 @@ button {
     font-weight: bold; 
     padding: 10px 20px; 
     border-radius: 5px; 
-    display: none; 
+    display: inline; 
     z-index: 1000; 
 }
 
@@ -82,7 +89,7 @@ button {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    border: 2px solid goldenrod;
+    border: 2px solid #2980b9;
     border-radius: 10px;
 }
 
@@ -113,6 +120,7 @@ button {
 
 .vendor {
     font-weight: bold; 
+    font-size: 1.2em;
 }
 
 #style_head_uid, #style_uid, #style_head_led, #style_led {

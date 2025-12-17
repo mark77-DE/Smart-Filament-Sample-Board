@@ -12,7 +12,10 @@ AppConfig CONFIG;
 bool loadConfig() {
     
     if(!LittleFS.begin(true)){
-        Serial.println("LittleFS mount failed!");
+        if(CONFIG.debugMode) {
+            Serial.println("LittleFS mount failed!");
+        }
+        
         while(1);
     }
 
@@ -126,27 +129,27 @@ void applyConfig() {
         CONFIG.nfc.successBlinkMs
     );
 
+    if(CONFIG.debugMode) {
+        Serial.println("--------------------");
+        Serial.println("Config applied:");
+        Serial.print(" LED_COUNT = "); Serial.println(CONFIG.led.count);
+        Serial.print(" LED_PIN = "); Serial.println(CONFIG.led.pin);
+        Serial.print(" LED_TIMEOUT = "); Serial.println(CONFIG.led.timeout);
+        Serial.print(" LED_BRIGHTNESS = "); Serial.println(CONFIG.led.brightness);
+        Serial.print(" LED_COLOR = 0x"); Serial.println(CONFIG.led.color, HEX);
+        Serial.print(" LED_COLOR_ERROR = 0x"); Serial.println(CONFIG.led.colorError, HEX);
+        Serial.print(" LED_COLOR_PULSE = 0x"); Serial.println(CONFIG.led.colorPulse, HEX);
 
-    Serial.println("--------------------");
-    Serial.println("Config applied:");
-    Serial.print(" LED_COUNT = "); Serial.println(CONFIG.led.count);
-    Serial.print(" LED_PIN = "); Serial.println(CONFIG.led.pin);
-    Serial.print(" LED_TIMEOUT = "); Serial.println(CONFIG.led.timeout);
-    Serial.print(" LED_BRIGHTNESS = "); Serial.println(CONFIG.led.brightness);
-    Serial.print(" LED_COLOR = 0x"); Serial.println(CONFIG.led.color, HEX);
-    Serial.print(" LED_COLOR_ERROR = 0x"); Serial.println(CONFIG.led.colorError, HEX);
-    Serial.print(" LED_COLOR_PULSE = 0x"); Serial.println(CONFIG.led.colorPulse, HEX);
-
-    Serial.print(" NFC_LED_COUNT = "); Serial.println(CONFIG.nfc.count);    
-    Serial.print(" NFC_LED_PIN = "); Serial.println(CONFIG.nfc.pin);
-    Serial.print(" NFC_LED_TIMEOUT = "); Serial.println(CONFIG.nfc.timeout);
-    Serial.print(" NFC_LED_BRIGHTNESS = "); Serial.println(CONFIG.nfc.brightness);
-    Serial.print(" NFC_LED_COLOR_SUCCESS = 0x"); Serial.println(CONFIG.nfc.colorSuccess, HEX);
-    Serial.print(" NFC_LED_COLOR_ERROR = 0x"); Serial.println(CONFIG.nfc.colorError, HEX);
-    Serial.print(" NFC_LED_COLOR_PULSE = 0x"); Serial.println(CONFIG.nfc.colorPulse, HEX);  
-    Serial.print(" DEBUG_MODE = "); Serial.println(CONFIG.debugMode ? "true" : "false");
-    Serial.println("--------------------");
-
+        Serial.print(" NFC_LED_COUNT = "); Serial.println(CONFIG.nfc.count);    
+        Serial.print(" NFC_LED_PIN = "); Serial.println(CONFIG.nfc.pin);
+        Serial.print(" NFC_LED_TIMEOUT = "); Serial.println(CONFIG.nfc.timeout);
+        Serial.print(" NFC_LED_BRIGHTNESS = "); Serial.println(CONFIG.nfc.brightness);
+        Serial.print(" NFC_LED_COLOR_SUCCESS = 0x"); Serial.println(CONFIG.nfc.colorSuccess, HEX);
+        Serial.print(" NFC_LED_COLOR_ERROR = 0x"); Serial.println(CONFIG.nfc.colorError, HEX);
+        Serial.print(" NFC_LED_COLOR_PULSE = 0x"); Serial.println(CONFIG.nfc.colorPulse, HEX);  
+        Serial.print(" DEBUG_MODE = "); Serial.println(CONFIG.debugMode ? "true" : "false");
+        Serial.println("--------------------");
+    }
 }
 
 bool updateConfigFromJson(ArduinoJson::V742PB22::JsonDocument &doc) {
@@ -225,6 +228,8 @@ bool updateConfigFromJson(ArduinoJson::V742PB22::JsonDocument &doc) {
     CONFIG.nfc.successBlinkMs      = opt["nfcLedSuccessBlinkMs"]      | CONFIG.nfc.successBlinkMs;
 
     // --- Debug ---
+
+    Serial.println("Updating debug mode from JSON" + String(opt["debugMode"].is<bool>() ? " on" : " off"));
     CONFIG.debugMode = opt["debugMode"] | CONFIG.debugMode;
 
     // Speichern und anwenden
@@ -249,17 +254,20 @@ bool saveConfig() {
     opt["ledPin"]           = CONFIG.led.pin;
     opt["ledBrightness"]    = CONFIG.led.brightness;
     opt["ledTimeout"]       = CONFIG.led.timeout;
-    opt["ledColor"]         = CONFIG.led.color;
-    opt["ledColorError"]    = CONFIG.led.colorError;
+
+    setColorArray(opt, "ledColor", CONFIG.led.color);
+    setColorArray(opt, "ledColorError", CONFIG.led.colorError);
+    setColorArray(opt, "ledColorPulse", CONFIG.led.colorPulse);
 
     // NFC
     opt["nfcLedCount"]          = CONFIG.nfc.count;
     opt["nfcLedPin"]            = CONFIG.nfc.pin;
     opt["nfcLedBrightness"]     = CONFIG.nfc.brightness;
     opt["nfcLedTimeout"]        = CONFIG.nfc.timeout;
-    opt["nfcLedColorSuccess"]   = CONFIG.nfc.colorSuccess;
-    opt["nfcLedColorError"]     = CONFIG.nfc.colorError;
-    opt["nfcLedColorPulse"]     = CONFIG.nfc.colorPulse;
+
+    setColorArray(opt, "nfcLedColorSuccess", CONFIG.nfc.colorSuccess);
+    setColorArray(opt, "nfcLedColorError", CONFIG.nfc.colorError);
+    setColorArray(opt, "nfcLedColorPulse", CONFIG.nfc.colorPulse);
 
     // Sonstige Optionen
     opt["darkmode"]  = CONFIG.darkmode;
@@ -504,13 +512,17 @@ bool saveFilamentsToFile() {
 
     File f = LittleFS.open("/filaments.json", "w");
     if (!f) {
-        Serial.println("saveFilamentsToFile: Cannot open file for write!");
+        if(CONFIG.debugMode) {
+            Serial.println("saveFilamentsToFile: Cannot open file for write!");
+    }
         return false;
     }
 
     size_t written = serializeJson(doc, f);
     f.close();
-    Serial.printf("DB saved. bytes=%u entries=%d\n", (unsigned)written, FilamentDB::getAllCount());
+    if(CONFIG.debugMode) {
+        Serial.printf("DB saved. bytes=%u entries=%d\n", (unsigned)written, FilamentDB::getAllCount());
+    }
     return true;
 }
 
@@ -541,13 +553,18 @@ bool importFilamentsJson(JsonArray src) {
     // 1. In DB laden (überschreibt intern die bestehende DB)
     bool ok = FilamentDB::loadFromJsonArray(src);
     if (!ok) {
-        Serial.println("importFilamentsJson: FilamentDB load failed");
+        if (CONFIG.debugMode) {
+            Serial.println("importFilamentsJson: FilamentDB loadFromJsonArray failed");
+        }
+
         return false;
     }
 
     // 2. Persistieren
     if (!saveFilamentsToFile()) {
-        Serial.println("importFilamentsJson: saving filaments failed");
+        if (CONFIG.debugMode) {
+            Serial.println("importFilamentsJson: saving filaments failed");
+        }
         return false;
     }
 
@@ -559,4 +576,13 @@ bool importFilamentsJson(JsonArray src) {
     }
 
     return true;
+}
+
+
+
+void setColorArray(JsonObject &opt, const char* key, uint32_t color) {
+    JsonArray arr = opt[key].to<JsonArray>();
+    arr.add((color >> 16) & 0xFF);
+    arr.add((color >> 8) & 0xFF);
+    arr.add(color & 0xFF);
 }

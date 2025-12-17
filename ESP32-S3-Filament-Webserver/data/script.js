@@ -23,7 +23,8 @@ function connectWS() {
     socket = new WebSocket(`ws://${location.host}/ws`);
 
     socket.onopen = () => {
-        console.log("WS verbunden!");
+
+        //console.log("WS verbunden!");
         if (reconnectTimer) {
             clearTimeout(reconnectTimer);
             reconnectTimer = null;
@@ -32,13 +33,13 @@ function connectWS() {
     };
 
     socket.onclose = () => {
-        console.log("WS getrennt, versuche erneut in 2s...");
+        //console.log("WS getrennt, versuche erneut in 2s...");
         updateWSStatus(false);
         reconnectTimer = setTimeout(connectWS, RECONNECT_DELAY);
     };
 
     socket.onerror = (err) => {
-        console.error("WebSocket-Fehler", err);
+        //console.error("WebSocket-Fehler", err);
         socket.close(); // löst onclose aus
     };
 

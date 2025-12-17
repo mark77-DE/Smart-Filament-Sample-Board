@@ -138,7 +138,10 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
         DeserializationError err = deserializeJson(doc, body);
         if (err) {
             req->send(400, "text/plain", "JSON parse failed");
-            Serial.println("importAll JSON parse failed");
+            
+            if(CONFIG.debugMode) {
+                Serial.println("importAll JSON parse failed");
+            }
             return;
         }
 
@@ -169,20 +172,29 @@ server.on("/api/update", HTTP_POST,
         body.concat((const char*)data, len);
         if(index + len != total) return;
 
-        Serial.println("Received body: " + body);
+        if(CONFIG.debugMode) {
+            Serial.println("Update received: " + body);
+        }
+
+       
 
         JsonDocument doc;
         DeserializationError err = deserializeJson(doc, body);
         if(err){
-            Serial.print("update JSON parse failed: ");
-            Serial.println(err.c_str());
+            if(CONFIG.debugMode) {
+                Serial.print("update JSON parse failed: ");
+                Serial.println(err.c_str());
+            }
             return;
         }
 
         // Index aus JSON auslesen
         int idx = doc["idx"] | -1;
         if(idx < 0){
-            Serial.println("Update failed: missing index");
+            if(CONFIG.debugMode) {
+                Serial.println("Update failed: missing index");
+            }
+            
             return;
         }
 
@@ -196,9 +208,15 @@ server.on("/api/update", HTTP_POST,
         // Update über Index
         if(FilamentDB::updateAtIndex(idx, entry)){
             saveFilamentsToFile();
-            Serial.println("DB updated and saved");
+            if(CONFIG.debugMode) {
+                Serial.println("DB updated and saved");
+            }
+            
         } else {
-            Serial.println("DB update failed: invalid index");
+            if(CONFIG.debugMode) {
+                Serial.println("DB update failed");
+            }
+            
         }
 
         
@@ -226,8 +244,11 @@ server.on("/api/update", HTTP_POST,
 
             DeserializationError err = deserializeJson(doc, body);
             if (err) {
-                Serial.print("ADD: JSON parse failed: ");
-                Serial.println(err.c_str());
+                if(CONFIG.debugMode) {
+                    Serial.print("ADD: JSON parse failed: ");
+                    Serial.println(err.c_str());
+                }
+                
                 return;
             }
 
@@ -239,10 +260,16 @@ server.on("/api/update", HTTP_POST,
             entry.ledIndex = doc["ledIndex"].as<int>();
 
             if (FilamentDB::add(entry)) {
-                Serial.println("ADD: OK");
+                if(CONFIG.debugMode) {
+                    Serial.println("ADD: OK");
+                }
+                
                 saveFilamentsToFile();
             } else {
-                Serial.println("ADD: FAILED");
+                if(CONFIG.debugMode) {
+                    Serial.println("ADD: FAILED");
+                }
+                
             }
         }
     );
@@ -308,8 +335,8 @@ server.on("/api/update", HTTP_POST,
                     // --- Debug Ausgabe optional ---
                     if (CONFIG.debugMode) {
                         Serial.println("Updated CONFIG:");
-                        Serial.printf("LED: count=%d, pin=%d, brightness=%d, timeout=%d, color=0x%06X\n",
-                                    CONFIG.led.count, CONFIG.led.pin, CONFIG.led.brightness, CONFIG.led.timeout, CONFIG.led.color);
+                        Serial.printf("LED: count=%d, pin=%d, brightness=%d, timeout=%d, color=0x%06X, colorError=0x%06X, colorPulse=0x%06X\n", 
+                                    CONFIG.led.count, CONFIG.led.pin, CONFIG.led.brightness, CONFIG.led.timeout, CONFIG.led.color, CONFIG.led.colorError, CONFIG.led.colorPulse);
                         Serial.printf("NFC: count=%d, pin=%d, brightness=%d, timeout=%d, success=0x%06X, error=0x%06X, pulse=0x%06X\n",
                                     CONFIG.nfc.count, CONFIG.nfc.pin, CONFIG.nfc.brightness, CONFIG.nfc.timeout,
                                     CONFIG.nfc.colorSuccess, CONFIG.nfc.colorError, CONFIG.nfc.colorPulse);
@@ -320,8 +347,10 @@ server.on("/api/update", HTTP_POST,
                     
                     if (err) {
                         req->send(400, "text/plain", "JSON Error");
-                        Serial.print("updateConfig JSON error: ");
-                        Serial.println(err.c_str());
+                        if(CONFIG.debugMode) {
+                            Serial.print("updateConfig JSON error: ");
+                            Serial.println(err.c_str());
+                        }
                         return;
                     }
 
