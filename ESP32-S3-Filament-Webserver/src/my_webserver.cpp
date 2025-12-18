@@ -91,13 +91,16 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
         JsonDocument doc;
         JsonArray arr = doc.to<JsonArray>();
 
+        
         for (auto &e : list) {
             JsonObject o = arr.add<JsonObject>();
+            
             o["uid"] = e.uid;
             o["vendor"] = e.vendor;
             o["type"] = e.type;
             o["color"] = e.color;
             o["ledIndex"] = e.ledIndex;
+            
         }
 
         String json;
@@ -106,7 +109,7 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
     });
 
 
-    // --- Export ALL (filaments + config) ---
+    // --- api to export ALL (filaments + config) ---
     server.on("/api/exportAll", HTTP_GET, [](AsyncWebServerRequest *req) {
 
         JsonDocument outDoc;
@@ -124,7 +127,7 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
         req->send(200, "application/json", out);
     });
 
-    // --- Import ALL ---
+    // --- api to import ALL ---
     server.on("/api/importAll", HTTP_POST,
     [](AsyncWebServerRequest *req){ req->send(200, "text/plain", "Upload started"); },
     nullptr,
@@ -157,71 +160,71 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
 
 
     
-    // Update eines Filament Eintrags
-server.on("/api/update", HTTP_POST,
-    [](AsyncWebServerRequest *req){ 
-        req->send(200, "text/plain", "Processing"); 
-    },
-    nullptr,
-    [](AsyncWebServerRequest *req, uint8_t *data, size_t len, size_t index, size_t total){
-        static String body;
-        if(index == 0){
-            body = "";
-            if(total > 0) body.reserve(total);
-        }
-        body.concat((const char*)data, len);
-        if(index + len != total) return;
+    // Update single filament
+    server.on("/api/update", HTTP_POST,
+        [](AsyncWebServerRequest *req){ 
+            req->send(200, "text/plain", "Processing"); 
+        },
+        nullptr,
+        [](AsyncWebServerRequest *req, uint8_t *data, size_t len, size_t index, size_t total){
+            static String body;
+            if(index == 0){
+                body = "";
+                if(total > 0) body.reserve(total);
+            }
+            body.concat((const char*)data, len);
+            if(index + len != total) return;
 
-        if(CONFIG.debugMode) {
-            Serial.println("Update received: " + body);
-        }
+            if(CONFIG.debugMode) {
+                Serial.println("Update received: " + body);
+            }
 
        
 
-        JsonDocument doc;
-        DeserializationError err = deserializeJson(doc, body);
-        if(err){
-            if(CONFIG.debugMode) {
-                Serial.print("update JSON parse failed: ");
-                Serial.println(err.c_str());
+            JsonDocument doc;
+            DeserializationError err = deserializeJson(doc, body);
+            if(err){
+                if(CONFIG.debugMode) {
+                    Serial.print("update JSON parse failed: ");
+                    Serial.println(err.c_str());
+                }
+                return;
             }
-            return;
-        }
 
-        // Index aus JSON auslesen
-        int idx = doc["idx"] | -1;
-        if(idx < 0){
-            if(CONFIG.debugMode) {
-                Serial.println("Update failed: missing index");
+            // Index aus JSON auslesen
+            int idx = doc["idx"] | -1;
+            if(idx < 0){
+                if(CONFIG.debugMode) {
+                    Serial.println("Update failed: missing index");
+                }
+                
+                return;
             }
-            
-            return;
-        }
 
-        FilamentEntry entry;
-        entry.uid      = doc["uid"].as<String>();
-        entry.vendor   = doc["vendor"].as<String>();
-        entry.type     = doc["type"].as<String>();
-        entry.color    = doc["color"].as<String>();
-        entry.ledIndex = doc["ledIndex"].as<int>();
+            FilamentEntry entry;
+            entry.uid      = doc["uid"].as<String>();
+            entry.vendor   = doc["vendor"].as<String>();
+            entry.type     = doc["type"].as<String>();
+            entry.color    = doc["color"].as<String>();
+            entry.ledIndex = doc["ledIndex"].as<int>();
 
-        // Update über Index
-        if(FilamentDB::updateAtIndex(idx, entry)){
-            saveFilamentsToFile();
-            if(CONFIG.debugMode) {
-                Serial.println("DB updated and saved");
+            // Update über Index
+            if(FilamentDB::updateAtIndex(idx, entry)){
+                saveFilamentsToFile();
+                if(CONFIG.debugMode) {
+                    Serial.println("DB updated and saved");
+                }
+                
+            } else {
+                if(CONFIG.debugMode) {
+                    Serial.println("DB update failed");
+                }
+                
             }
-            
-        } else {
-            if(CONFIG.debugMode) {
-                Serial.println("DB update failed");
-            }
-            
-        }
 
         
-    }
-);
+        }
+    );
 
 
 
