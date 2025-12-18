@@ -32,6 +32,9 @@ const nfcLedSuccessBlinkMsInput      = document.getElementById("nfcLedSuccessBli
 const importFileInput = document.getElementById("importFile");
 const importBtn = document.getElementById("importBtn");
 
+const toggleBtn = document.getElementById("toggleSettings");
+const section = document.getElementById("sectionSettings");
+
 let EDIT_MODE = false;
 let CONFIG = null;
 let lastHighlightedRow = null;
@@ -88,6 +91,7 @@ editToggle.addEventListener("change", () => {
     EDIT_MODE = editToggle.checked;
     applyEditMode();
 });
+
 function applyEditMode(){
     const table = document.querySelector("#table");
     if(!table) return;
@@ -250,6 +254,7 @@ async function loadTable() {
 
     let html = `
         <div id="table">
+            
             <div id="tableHeader">
                 <span id="uidHeader">Tag UID</span>
                 <span id="vendorHeader">Name</span>
@@ -604,6 +609,12 @@ function ledValueToPercent(value) {
     value = Math.max(0, Math.min(255, value));
     return Math.round((value / 255) * 100);
 }
+
+openSettings.onclick = () =>
+    settingsOverlay.classList.add("active");
+
+closeSettings.onclick = () =>
+    settingsOverlay.classList.remove("active");
 
 
 

@@ -137,3 +137,22 @@ button {
     color: red;
     font-weight: bold;
 }
+
+/* Mittelgroße Geräte / Tablets */
+@media screen and (min-width: 480px) {
+    #filamentGrid {
+        grid-template-columns: repeat(1, 1fr); /* 3 Spalten */
+    }
+}
+
+@media screen and (min-width: 768px) {
+    #filamentGrid {
+        grid-template-columns: repeat(2, 1fr); /* 5 Spalten */
+    }
+}
+
+@media screen and (min-width: 1024px) {
+    #filamentGrid {
+        grid-template-columns: repeat(10, 1fr); /* Desktop */
+    }
+}
