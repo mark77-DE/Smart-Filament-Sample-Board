@@ -389,3 +389,35 @@ input[type="color"] { padding: 0; height: 34px; }
 .card .formGrid select option:disabled {
     color: #9aa0a6;
 }
+
+.card input[type="checkbox"] {
+    height: 20px;
+    margin: 4px;
+    cursor: pointer;
+}
+
+
+#buttonEnabled, #buzzerEnabled {
+    transition: opacity 0.2s ease;
+}
+
+#buttonEnabled.disabled, #buzzerEnabled.disabled {
+    display: none;
+}
+
+#buttonEnabled, #buzzerEnabled {
+    grid-column: 1 / -1;  /* volle Breite im äußeren Grid */
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* zwei Spalten für Label + Input */
+    gap: 10px 14px;               /* Abstand wie im Haupt-FormGrid */
+}
+
+input.invalid {
+    border-color: red;
+    background-color: #fee;
+}
+
+span.uid.invalid {
+    background-color: #fee;       /* Optional leicht rot hinterlegt */
+    color: #900;                  /* Textfarbe rot */
+}
