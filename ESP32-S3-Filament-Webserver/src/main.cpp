@@ -16,12 +16,14 @@
 #include "display_anim.h"
 #include "nfc.h"
 #include "filehandling.h"
+#include "gpio_hardware.h"
 
 
 
 // Reboot-Steuerung
 volatile bool rebootPending = false;
 unsigned long rebootAt = 0;
+static const uint16_t REBOOT_DELAY_MS = 1000; // zusätzliche Verzögerung
 
 bool DEBUG_MODE = false;
 
@@ -97,6 +99,11 @@ void handleUID(const String &uid, UidSource source) {
             LEDCTRL_NFC::showSuccess();
         }
 
+        // nur piepen, wenn von NFC und (optional) kein laufender Beep
+        if (isNfc && !buzzer_busy()) {
+            buzzer_single_beep();
+        }
+
         // Event fürs Websocket
         doc["action"]   = "knownUID";
         doc["ledIndex"] = entry.ledIndex;
@@ -158,7 +165,7 @@ void setup(){
     while (1);
     }
 
-    
+    //Test: Wird bereits in loadConfig() aufgerufen ?! -> Prüfen !
     LEDCTRL_FILAMENT::init(LED_COUNT, LED_PIN, LED_TIMEOUT, LED_BRIGHTNESS, LED_COLOR, LED_COLOR_ERROR, LED_COLOR_PULSE);
     
     LEDCTRL_FILAMENT::allOff();
@@ -222,6 +229,21 @@ void loop() {
   // 0) Zeitbasis
   // ---------------------------------------------------------------------------
   now = millis();
+
+
+  // 0a) Button/Buzzer tick (Entprellung, Sequencer, Events)
+  gpiohw_tick(now);
+
+  // 0b) Long-Press → Reboot einleiten (mit optionalem Doppel-Pieps)
+  // Optional: akustische Bestätigung (funktioniert nur, wenn Buzzer konfiguriert ist)
+  // Sanft verzögerten Reboot anfordern (siehe Schritt 2 in der loop)
+  if (button_long_press()) {
+  
+        buzzer_double_beep(); 
+        rebootPending = true;
+        rebootAt      = now + REBOOT_DELAY_MS;
+
+        }
 
   // ---------------------------------------------------------------------------
   // 1) NFC-Polling + Guards + LED-Trigger

@@ -21,6 +21,23 @@
     "nfcLedColorPulse": [0, 51, 170],
     "nfcLedSuccessBlinkEnabled": true,
     "nfcLedSuccessBlinkCount": 3,
-    "nfcLedSuccessBlinkMs": 150
+    "nfcLedSuccessBlinkMs": 150,
+
+    "buttonPin": 32,
+    "buttonPullup": true,
+    "buttonDebounceMs": 30,
+    "buttonLongMs": 800,
+    "buttonDoubleMs": 400,
+    "buttonHoldMs": 250,
+
+    "buzzerPin": 33,
+    "buzzerActiveHigh": true,
+    "buzzerFreq": 4000,
+    "buzzerSingleMs": 80,
+    "buzzerDoubleOnMs": 60,
+    "buzzerDoubleGapMs": 80,
+    "buzzerErrorOnMs": 50,
+    "buzzerErrorGapMs": 60,
+    "buzzerErrorCount": 3
   }
 }

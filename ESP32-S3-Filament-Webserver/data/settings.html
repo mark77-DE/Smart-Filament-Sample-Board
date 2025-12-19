@@ -52,9 +52,6 @@
             </div>
         </div>
 
-        
-
-
         <!-- System Control -->
         <div class="sysGroup">
             <button id="rebootBtn">Reboot</button>
@@ -62,27 +59,20 @@
 
         <!-- Export / Import -->
         <div class="sysGroup">
-
             <!-- Export -->
             <button id="exportAllBtn">Export</button>
-
         </div>
 
         <!-- Export / Import -->
         <div class="sysGroup">
-
             <!-- Import -->
             <form id="importAllForm" method="POST" enctype="multipart/form-data">
-
                 <!-- Stylbarer Upload-Button -->
                 <label for="importFile" id="uploadLabel" class="upload-btn">Choose file</label>
                 <input type="file" id="importFile" name="file" accept=".json" required hidden>
-
                 <!-- Import starten -->
                 <button id="importBtn" type="submit" hidden>Import</button>
-
             </form>
-
         </div>
     
         <div class="sysGroup">
@@ -101,11 +91,7 @@
     <!--  Settings -->
     <div id="sectionSettings">
 
-        
-
-
         <!-- LED Settings -->
-
         <div id="ledSettings" class="card">
             <div class="cardHeader">LED Settings</div>
 
@@ -127,6 +113,8 @@
                     <option value="15">15</option>
                     <option value="16">16</option>
                     <option value="17">17</option>
+                    <option value="32">32</option>
+                    <option value="33">33</option>
                 </select>
 
                 <label for="ledColor" title="Format: #RRGGBB">LED Color:</label>
@@ -150,17 +138,13 @@
                 <label for="ledTimeout">LED Timeout (ms):</label>
                 <input type="number" id="ledTimeout" name="ledTimeout" min="500" max="30000" value="500">
 
-
             </div>
-
         </div>
 
         <!-- NFC LED Settings -->
-
         <div id="nfcLedSettings" class="card">
             <div class="cardHeader">NFC LED Settings</div>
             <div class="formGrid">
-
 
                 <label for="nfcMaxLED">Number of LEDs (1–100):</label>
                 <input type="number" id="nfcMaxLED" name="nfcMaxLED" min="1" max="16" value="8">
@@ -178,9 +162,9 @@
                     <option value="15">15</option>
                     <option value="16">16</option>
                     <option value="17">17</option>
+                    <option value="32">32</option>
+                    <option value="33">33</option>
                 </select>
-
-
 
                 <label for="nfcLedColorSuccess" title="Format: #RRGGBB">LED Color (NFC-Erkannt):</label>
                 <div class="hexField">
@@ -212,18 +196,98 @@
                 <label for="nfcLedSuccessBlinkMs">Blinken Intervall (ms):</label>
                 <input type="number" id="nfcLedSuccessBlinkMs" name="nfcLedSuccessBlinkMs" min="20" max="2000" step="10" value="150">
 
+            </div>
+        </div>
+
+        <!-- Pushbutton Settings (NEU) -->
+        <div id="buttonSettings" class="card">
+            <div class="cardHeader">Pushbutton Settings</div>
+            <div class="formGrid">
+
+                <label for="buttonPin">Button Pin:</label>
+                <select id="buttonPin" name="buttonPin">
+                    <option value="-1">disabled</option>
+                    <option value="2">2</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                    <option value="12">12</option>
+                    <option value="14">14</option>
+                    <option value="15">15</option>
+                    <option value="16">16</option>
+                    <option value="17">17</option>
+                    <option value="32">32</option>
+                    <option value="33">33</option>
+                </select>
+
+                <label for="buttonPullup">Use internal Pull-Up (active-low):</label>
+                <input type="checkbox" id="buttonPullup" name="buttonPullup" checked>
+
+                <label for="buttonDebounceMs">Debounce (ms):</label>
+                <input type="number" id="buttonDebounceMs" name="buttonDebounceMs" min="1" max="200" value="30">
+
+                <label for="buttonLongMs">Long-Press (ms):</label>
+                <input type="number" id="buttonLongMs" name="buttonLongMs" min="100" max="5000" value="800">
+
+                <label for="buttonDoubleMs">Double-Press Gap (ms):</label>
+                <input type="number" id="buttonDoubleMs" name="buttonDoubleMs" min="50" max="2000" value="400">
+
+                <label for="buttonHoldMs">Hold Repeat (ms):</label>
+                <input type="number" id="buttonHoldMs" name="buttonHoldMs" min="50" max="2000" value="250">
 
             </div>
+        </div>
 
+        <!-- Buzzer Settings (NEU) -->
+        <div id="buzzerSettings" class="card">
+            <div class="cardHeader">Buzzer Settings</div>
+            <div class="formGrid">
 
+                <label for="buzzerPin">Buzzer Pin:</label>
+                <select id="buzzerPin" name="buzzerPin">
+                    <option value="-1">disabled</option>
+                    <option value="2">2</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                    <option value="12">12</option>
+                    <option value="14">14</option>
+                    <option value="15">15</option>
+                    <option value="16">16</option>
+                    <option value="17">17</option>
+                    <option value="32">32</option>
+                    <option value="33">33</option>
+                </select>
+
+                <label for="buzzerActiveHigh">Active-High Output:</label>
+                <input type="checkbox" id="buzzerActiveHigh" name="buzzerActiveHigh" checked>
+
+                <label for="buzzerFreq">Frequency (Hz):</label>
+                <input type="number" id="buzzerFreq" name="buzzerFreq" min="50" max="10000" value="4000">
+
+                <label for="buzzerSingleMs">Single Beep On (ms):</label>
+                <input type="number" id="buzzerSingleMs" name="buzzerSingleMs" min="10" max="2000" value="80">
+
+                <label for="buzzerDoubleOnMs">Double Beep On (ms):</label>
+                <input type="number" id="buzzerDoubleOnMs" name="buzzerDoubleOnMs" min="10" max="2000" value="60">
+
+                <label for="buzzerDoubleGapMs">Double Beep Gap (ms):</label>
+                <input type="number" id="buzzerDoubleGapMs" name="buzzerDoubleGapMs" min="10" max="2000" value="80">
+
+                <label for="buzzerErrorOnMs">Error Beep On (ms):</label>
+                <input type="number" id="buzzerErrorOnMs" name="buzzerErrorOnMs" min="10" max="2000" value="50">
+
+                <label for="buzzerErrorGapMs">Error Beep Gap (ms):</label>
+                <input type="number" id="buzzerErrorGapMs" name="buzzerErrorGapMs" min="10" max="2000" value="60">
+
+                <label for="buzzerErrorCount">Error Beep Count:</label>
+                <input type="number" id="buzzerErrorCount" name="buzzerErrorCount" min="1" max="10" value="3">
+
+            </div>
         </div>
 
     </div>
 
-
     </div>
     </div>
-
 
     <div id="tableAdd">
         <div id="tableHeaderAdd">
