@@ -31,114 +31,82 @@ This is an ESP32-S3 embedded system project called "Spot My Filament" - a smart 
 
 ### Critical Data Flow
 ```
-NFC Tag Scan → handleUID() → FilamentDB::findByUID() 
-  → activateLed(ledIndex) + MYDISPLAY::show() 
-  → WebSocket broadcast to UI
-  → LED timeout resets after 3s inactivity
-```
+# Copilot Instructions for ESP32-S3 Filament Webserver
 
-## Build & Development Setup
+Purpose: help an AI coding agent become productive quickly in this repo.
 
-### Build System
-- **PlatformIO** with ESP32 dev board configuration
-- Key dependencies:
-  - `ESPAsyncWebServer` + `AsyncTCP` (web service)
-  - `Adafruit_PN532`, `Adafruit_SSD1306`, `Adafruit_GFX` (hardware)
-  - `ArduinoJson 7.4.2+` (JSON parsing - see version pin)
-  - `WiFiManager 2.0.5` (AP setup)
-  - LittleFS filesystem in SPIFFS
+Quick Start (common tasks)
+- Build firmware: `pio run`
+- Upload LittleFS `/data` contents: `pio run --target uploadfs` (used frequently)
+- Flash firmware: `pio run --target upload` (or configured environment)
 
-- Build flags embed firmware version and git hash at compile time
+Key entrypoints & architecture (read these files first)
+- `src/main.cpp` — main loop, NFC polling, `handleUID()` (core runtime flow)
+- `src/my_webserver.cpp` — AsyncWebServer, REST endpoints and WebSocket `/ws`
+- `src/filament_db.cpp` & `include/filament_db.h` — in-memory DB, load/save logic (static 100-entry array)
+- `src/ledctrl_filament.cpp` & `include/ledctrl_filament.h` — NeoPixel control APIs
+- `src/nfc.cpp` & `include/nfc.h` — PN532 init and UID handling
 
-### Configuration Loading
-- `loadConfig()` reads `/config.json` from LittleFS
-- Sets globals: `LED_COUNT`, `LED_PIN`, `LED_BRIGHTNESS`, `LED_COLOR`
-- Called in setup before hardware init
+Critical runtime flow (simplified)
+1. NFC scan → `handleUID()` in `main.cpp`
+2. `FilamentDB::findByUID()` locates entry (returns ledIndex + meta)
+3. `LEDCTRL_FILAMENT::activateLed(ledIndex)` + `MYDISPLAY::show()`
+# Copilot Instructions for ESP32-S3 Filament Webserver
 
-## Project-Specific Patterns
+Purpose: help an AI coding agent become productive quickly in this repo.
 
-### Namespace vs Class Conventions
-- **Drivers use static class methods**: `LEDCTRL_FILAMENT::init()`, `MYDISPLAY::show()` 
-- **Database is namespace**: `FilamentDB::loadFromFile()`, `FilamentDB::findByUID()`
-- Exception: `NFC` is namespace with pointer injection pattern
+Quick Start (common tasks)
+- Build firmware: `pio run`
+- Upload LittleFS `/data` contents: `pio run --target uploadfs` (used frequently)
+- Flash firmware: `pio run --target upload` (or configured environment)
 
-### Hardware Initialization Order (Critical)
+Key entrypoints & architecture (read these files first)
+- `src/main.cpp` — main loop, NFC polling, `handleUID()` (core runtime flow)
+- `src/my_webserver.cpp` — AsyncWebServer, REST endpoints and WebSocket `/ws`
+- `src/filament_db.cpp` & `include/filament_db.h` — in-memory DB, load/save logic (static 100-entry array)
+- `src/ledctrl_filament.cpp` & `include/ledctrl_filament.h` — NeoPixel control APIs
+- `src/nfc.cpp` & `include/nfc.h` — PN532 init and UID handling
+
+Critical runtime flow (simplified)
+1. NFC scan → `handleUID()` in `main.cpp`
+2. `FilamentDB::findByUID()` locates entry (returns ledIndex + meta)
+3. `LEDCTRL_FILAMENT::activateLed(ledIndex)` + `MYDISPLAY::show()`
+4. WebSocket broadcast from `my_webserver.cpp` to clients
+
+Project-specific patterns & constraints
+- Drivers use static classes / static methods (e.g., `LEDCTRL_FILAMENT::init(...)`).
+- Database is a simple static array (see `filament_db.cpp` — 100 max entries). Expand struct and array there if needed.
+- JSON uses `ArduinoJson` with dynamic allocation; allocate document sizes per endpoint (UID events ~256B, list exports several KB).
+- LittleFS data files live in `data/` and are uploaded via `pio run --target uploadfs`.
+
+Initialization order (must be preserved)
 1. Serial + Wire (I2C)
 2. LittleFS mount
 3. OLED init
-4. `loadConfig()` - sets LED globals
-5. `LEDCTRL_FILAMENT::init(LED_COUNT, LED_PIN)` - must have counts before init
-6. `FilamentDB::load()` 
-7. NFC SAM config + firmware check
-8. WiFiManager AP connection
-9. WebSocket + web server start
+4. `loadConfig()` (reads `data/config.json`) — sets `LED_COUNT`, `LED_PIN`, etc.
+5. `LEDCTRL_FILAMENT::init(LED_COUNT, LED_PIN)`
+6. `FilamentDB::load()`
+7. NFC SAM config & firmware check (`nfc.cpp`)
+8. WiFiManager & AP fallback
+9. Start WebSocket & web server
 
-Breaking this order causes "not initialized" crashes.
+Web API & WebSocket notes
+- REST: `GET /filaments.json`, `GET /api/exportAll`, `POST /api/importAll` — implemented in `my_webserver.cpp`.
+- WebSocket path: `/ws`. Incoming format `{action:"highlightLED",uid:"..."}`; outgoing includes `{action:"knownUID"|"unknownUID", ledIndex, vendor, type, color}`.
 
-### Global State Management
-- `targetLed` (int) - currently active LED index (-1 = none)
-- `lastTagTime` (millis) - tracks inactivity for timeout logic
-- `activeUID` (String) - last scanned tag
-- LED_COUNT, LED_PIN, LED_BRIGHTNESS shared as extern globals
+Common edits the agent may perform
+- Add a filament field: update `FilamentEntry` struct in `include/filament_db.h`, update parsing in `src/filament_db.cpp`, and update UI (`data/script.js`).
+- Change LED count/pin: update `data/config.json` and ensure `loadConfig()` is invoked before `LEDCTRL_FILAMENT::init`.
+- Increase DB size: edit the static array max in `src/filament_db.cpp`.
 
-### JSON Handling
-- Uses `ArduinoJson` with dynamic sizing
-- Document size must accommodate payload + overhead (~256 for UID events, ~4096 for filament lists, ~128KB for exports)
-- Serialization: `serializeJson(doc, string)` for compact; `serializeJsonPretty()` for debug
+Debugging tips
+- Serial logs are primary debug output for firmware behavior.
+- To test WebSocket messages from a dev machine: `ws.send(JSON.stringify({action:"highlightLED",uid:"04:..."}))` in browser console.
 
-## Web Service Patterns
+Files to inspect for policy or dependency constraints
+- `platformio.ini` — board, filesystem (`littlefs`), build flags and lib deps
+- `data/filaments.json` and `data/config.json` — runtime data uploaded to LittleFS
 
-### REST Endpoints
-- `GET /filaments.json` - Returns all filaments as JSON array
-- `GET /api/exportAll` - Exports combined config + filaments
-- `POST /api/importAll` - Bulk import with validation
-- Static files served from LittleFS (`/style.css`, `/script.js`, `/admin.html`)
+Do not change: the hardware init order and `LEDCTRL_FILAMENT::init` timing; breaking them causes crashes.
 
-### WebSocket Protocol
-- Path: `/ws` with AsyncWebSocket
-- **Incoming Message Format**: `{action: string, uid?: string, ...}`
-  - `action: "highlightLED"` triggers LED + display
-- **Outgoing**: `{action: "knownUID"|"unknownUID", ledIndex, vendor, type, color}`
-- Broadcast to all clients with `ws.textAll(msg)`
-
-### Error Handling Pattern
-- File operations check `.exists()` before open
-- JSON parse errors logged to Serial with `deserializeJson()` error code
-- Hardware not found → display error message + halt
-
-## Common Development Tasks
-
-### Adding a New Filament Entry
-1. Edit `/filaments.json` manually or use admin UI
-2. Call `FilamentDB::loadFromFile()` to reload
-3. UI polls `/filaments.json` to refresh grid
-
-### Extending Hardware Configuration
-1. Add field to `FilamentEntry` struct
-2. Update JSON parsing in `filament_db.cpp` 
-3. Update WebSocket message schema
-4. Sync UI in `script.js`
-
-### WebSocket Debugging
-- All inbound messages deserialized with error handling
-- Enable Serial debug: messages logged before processing
-- Test with browser console: `ws.send(JSON.stringify({action: "highlightLED", uid: "04:D3:..."}))` 
-
-### File Management
-- Configuration & data live in LittleFS (8MB typical)
-- Device uses `littlefs` not SPIFFS (see platformio.ini: `board_build.filesystem = littlefs`)
-- Data files in source at `/data/`, copied to LittleFS via PlatformIO upload_fs
-
-## Known Constraints & Gotchas
-
-1. **LED Array Size**: Static 100-entry limit in `filament_db.cpp` - expand if needed
-2. **JSON Buffer Sizes**: Auto-sized dynamically but monitor for stack overflow in low-memory scenarios
-3. **PN532 Firmware Check**: Crashes if NFC module not detected - always check `getFirmwareVersion()`
-4. **WiFi Connection**: Uses AP fallback ("NFC-Setup-AP") if SSID not in memory
-5. **OLED Font**: Only FreeMono7pt7b included - add more fonts to `/Fonts/` if needed
-
-## References
-- [PlatformIO Docs](https://docs.platformio.org/en/latest/)
-- [AsyncWebServer](https://github.com/me-no-dev/ESPAsyncWebServer)
-- [ArduinoJson](https://arduinojson.org/) - version 7.4.2 for this project
-- [Adafruit PN532](https://github.com/adafruit/Adafruit-PN532)
+If unclear sections remain, ask which subsystem (NFC, LED, display, web) you want more examples for.

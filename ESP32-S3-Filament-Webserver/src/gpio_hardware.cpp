@@ -164,19 +164,15 @@ void gpiohw_init() {
   s_buzEnabled = (CFG_BUZ_PIN >= 0);
   if (s_buzEnabled) {
   #ifdef ARDUINO_ARCH_ESP32
-    // Für passiven Buzzer LEDC vorbereiten (auch wenn später aktiv genutzt)
-    ledcSetup(LEDC_CH, (double)CFG_BUZ_FREQ_HZ, LEDC_BITS);
-    ledcAttachPin(CFG_BUZ_PIN, LEDC_CH);
-    ledcWriteTone(LEDC_CH, 0); // sicher aus
+  #if ESP_ARDUINO_VERSION_MAJOR >= 3
+    ledcAttach(CFG_BUZ_PIN, CFG_BUZ_FREQ_HZ, LEDC_BITS);
   #else
-    pinMode(CFG_BUZ_PIN, OUTPUT);
-    // aktiv -> Pegel „aus“, passiv -> noTone
-    if (CFG_BUZ_PASSIVE) {
-      noTone((uint8_t)CFG_BUZ_PIN);
-    } else {
-      digitalWrite(CFG_BUZ_PIN, CFG_BUZ_ACTIVE_HIGH ? LOW : HIGH);
-    }
+    ledcSetup(LEDC_CH, CFG_BUZ_FREQ_HZ, LEDC_BITS);
+    ledcAttachPin(CFG_BUZ_PIN, LEDC_CH);
   #endif
+  ledcWriteTone(LEDC_CH, 0);
+#endif
+
   }
 
   GDBG("init: btnPin=%d pullup=%d buzPin=%d passive=%d freq=%dHz\n",

@@ -219,21 +219,24 @@
                     <option value="33">33</option>
                 </select>
 
-                <label for="buttonPullup">Use internal Pull-Up (active-low):</label>
-                <input type="checkbox" id="buttonPullup" name="buttonPullup" checked>
+                <div id="buttonEnabled">
 
-                <label for="buttonDebounceMs">Debounce (ms):</label>
-                <input type="number" id="buttonDebounceMs" name="buttonDebounceMs" min="1" max="200" value="30">
+                    <label for="buttonPullup">Use internal Pull-Up (active-low):</label>
+                    <input type="checkbox" id="buttonPullup" name="buttonPullup" checked>
 
-                <label for="buttonLongMs">Long-Press (ms):</label>
-                <input type="number" id="buttonLongMs" name="buttonLongMs" min="100" max="5000" value="800">
+                    <label for="buttonDebounceMs">Debounce (ms):</label>
+                    <input type="number" id="buttonDebounceMs" name="buttonDebounceMs" min="1" max="200" value="30">
 
-                <label for="buttonDoubleMs">Double-Press Gap (ms):</label>
-                <input type="number" id="buttonDoubleMs" name="buttonDoubleMs" min="50" max="2000" value="400">
+                    <label for="buttonLongMs">Long-Press (ms):</label>
+                    <input type="number" id="buttonLongMs" name="buttonLongMs" min="100" max="5000" value="800">
 
-                <label for="buttonHoldMs">Hold Repeat (ms):</label>
-                <input type="number" id="buttonHoldMs" name="buttonHoldMs" min="50" max="2000" value="250">
+                    <label for="buttonDoubleMs">Double-Press Gap (ms):</label>
+                    <input type="number" id="buttonDoubleMs" name="buttonDoubleMs" min="50" max="2000" value="400">
 
+                    <label for="buttonHoldMs">Hold Repeat (ms):</label>
+                    <input type="number" id="buttonHoldMs" name="buttonHoldMs" min="50" max="2000" value="250">
+
+                </div>
             </div>
         </div>
 
@@ -257,30 +260,32 @@
                     <option value="33">33</option>
                 </select>
 
-                <label for="buzzerActiveHigh">Active-High Output:</label>
-                <input type="checkbox" id="buzzerActiveHigh" name="buzzerActiveHigh" checked>
+                <div id="buzzerEnabled">
 
-                <label for="buzzerFreq">Frequency (Hz):</label>
-                <input type="number" id="buzzerFreq" name="buzzerFreq" min="50" max="10000" value="4000">
+                    <label for="buzzerActiveHigh">Active-High Output:</label>
+                    <input type="checkbox" id="buzzerActiveHigh" name="buzzerActiveHigh" checked>
 
-                <label for="buzzerSingleMs">Single Beep On (ms):</label>
-                <input type="number" id="buzzerSingleMs" name="buzzerSingleMs" min="10" max="2000" value="80">
+                    <label for="buzzerFreq">Frequency (Hz):</label>
+                    <input type="number" id="buzzerFreq" name="buzzerFreq" min="50" max="10000" value="4000">
 
-                <label for="buzzerDoubleOnMs">Double Beep On (ms):</label>
-                <input type="number" id="buzzerDoubleOnMs" name="buzzerDoubleOnMs" min="10" max="2000" value="60">
+                    <label for="buzzerSingleMs">Single Beep On (ms):</label>
+                    <input type="number" id="buzzerSingleMs" name="buzzerSingleMs" min="10" max="2000" value="80">
 
-                <label for="buzzerDoubleGapMs">Double Beep Gap (ms):</label>
-                <input type="number" id="buzzerDoubleGapMs" name="buzzerDoubleGapMs" min="10" max="2000" value="80">
+                    <label for="buzzerDoubleOnMs">Double Beep On (ms):</label>
+                    <input type="number" id="buzzerDoubleOnMs" name="buzzerDoubleOnMs" min="10" max="2000" value="60">
 
-                <label for="buzzerErrorOnMs">Error Beep On (ms):</label>
-                <input type="number" id="buzzerErrorOnMs" name="buzzerErrorOnMs" min="10" max="2000" value="50">
+                    <label for="buzzerDoubleGapMs">Double Beep Gap (ms):</label>
+                    <input type="number" id="buzzerDoubleGapMs" name="buzzerDoubleGapMs" min="10" max="2000" value="80">
 
-                <label for="buzzerErrorGapMs">Error Beep Gap (ms):</label>
-                <input type="number" id="buzzerErrorGapMs" name="buzzerErrorGapMs" min="10" max="2000" value="60">
+                    <label for="buzzerErrorOnMs">Error Beep On (ms):</label>
+                    <input type="number" id="buzzerErrorOnMs" name="buzzerErrorOnMs" min="10" max="2000" value="50">
 
-                <label for="buzzerErrorCount">Error Beep Count:</label>
-                <input type="number" id="buzzerErrorCount" name="buzzerErrorCount" min="1" max="10" value="3">
+                    <label for="buzzerErrorGapMs">Error Beep Gap (ms):</label>
+                    <input type="number" id="buzzerErrorGapMs" name="buzzerErrorGapMs" min="10" max="2000" value="60">
 
+                    <label for="buzzerErrorCount">Error Beep Count:</label>
+                    <input type="number" id="buzzerErrorCount" name="buzzerErrorCount" min="1" max="10" value="3">
+                </div>
             </div>
         </div>
 

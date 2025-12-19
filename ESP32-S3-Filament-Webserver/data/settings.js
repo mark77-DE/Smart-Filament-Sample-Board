@@ -9,12 +9,17 @@ const ledPinSelect = document.getElementById("ledPin");
 const nfcLedPinSelect = document.getElementById("nfcLedPin");
 
 // Button & Buzzer (neu)
+
+const buttonEnabledDiv      = document.getElementById("buttonEnabled");
+
 const buttonPinSelect       = document.getElementById("buttonPin");
 const buttonPullupInput     = document.getElementById("buttonPullup");
 const buttonDebounceInput   = document.getElementById("buttonDebounce");
 const buttonLongInput       = document.getElementById("buttonLong");
 const buttonDoubleInput     = document.getElementById("buttonDouble");
 const buttonHoldInput       = document.getElementById("buttonHold");
+
+const buzzerEnabledDiv      = document.getElementById("buzzerEnabled");
 
 const buzzerPinSelect       = document.getElementById("buzzerPin");
 const buzzerPassiveInput    = document.getElementById("buzzerPassive");
@@ -53,6 +58,9 @@ const importBtn = document.getElementById("importBtn");
 
 const toggleBtn = document.getElementById("toggleSettings");
 const section = document.getElementById("sectionSettings");
+
+const uidInput = document.querySelector('input[name="uid"]');
+
 
 let EDIT_MODE = false;
 let CONFIG = null;
@@ -684,7 +692,128 @@ function initColorPresets() {
 }
 
 
+
+
+function disableButton() {
+    const pin = parseInt(buttonPinSelect.value, 10);
+
+    console.log("Pin: " + pin);
+
+    if (pin === -1) {
+        buttonEnabledDiv.classList.add("disabled");
+    } else {
+        buttonEnabledDiv.classList.remove("disabled");
+    }
+}
+
+function disableBuzzer() {
+    const pin = parseInt(buzzerPinSelect.value, 10);
+
+    console.log("Pin: " + pin);
+
+    if (pin === -1) {
+        buzzerEnabledDiv.classList.add("disabled");
+    } else {
+        buzzerEnabledDiv.classList.remove("disabled");
+    }
+}
+
+function isValidNFCUID(uid) {
+    // Großschreiben & Trim
+    uid = String(uid).trim().toUpperCase();
+
+    // Format: 7 Gruppen Hex (2 Zeichen) getrennt durch ":"
+    const regex = /^([0-9A-F]{2}:){6}[0-9A-F]{2}$/;
+    return regex.test(uid);
+}
+
+
+uidInput.addEventListener('input', () => {
+    if (!isValidNFCUID(uidInput.value)) {
+        uidInput.classList.add('invalid');
+    } else {
+        uidInput.classList.remove('invalid');
+    }
+});
+
+
+dbDiv.addEventListener('input', e => {
+    if (e.target.matches('span.uid')) {
+        if (!isValidNFCUID(e.target.textContent)) {
+            e.target.classList.add('invalid');
+        } else {
+            e.target.classList.remove('invalid');
+        }
+    }
+});
+
+
+// Live-Validierung ohne Cursorverlust
+dbDiv.addEventListener('input', e => {
+    if (e.target.matches('span.uid')) validateUIDSpan(e.target);
+});
+
+// Blur: optional abschließende Validierung + Großschreibung
+dbDiv.addEventListener('blur', e => {
+    if (e.target.matches('span.uid')) {
+        e.target.textContent = e.target.textContent.trim().toUpperCase();
+        validateUIDSpan(e.target);
+    }
+}, true);
+
+// Paste: nach Einfügen prüfen
+dbDiv.addEventListener('paste', e => {
+    if (e.target.matches('span.uid')) {
+        setTimeout(() => validateUIDSpan(e.target), 0);
+    }
+});
+
+// Optional: nur erlaubte Zeichen
+dbDiv.addEventListener('keydown', e => {
+    if (e.target.matches('span.uid') && e.key.length === 1) {
+        if (!/[0-9a-fA-F:]/.test(e.key)) e.preventDefault();
+    }
+});
+
+
+// Nur Klassenzuweisung, Text bleibt unverändert
+function validateUIDSpan(span) {
+  
+    const uid = span.textContent.trim().toUpperCase();
+
+    if (!isValidNFCUID(uid)) {
+        span.classList.add('invalid');
+    } else {
+        span.classList.remove('invalid');
+    }
+}
+
+
+
+//----------------- Event Listeners ---------------------
+
+
+
+buttonPinSelect.addEventListener("change", disableButton);
+buzzerPinSelect.addEventListener("change", disableBuzzer);
+
+
+
+
+
+
+
+
+
+
+
 // -------------------- Helpers --------------------
+
+
+
+
+
+
 function percentToLedValue(percent) {
     percent = Math.max(0, Math.min(100, percent));
     return Math.round((percent / 100) * 255);
@@ -710,6 +839,8 @@ async function init() {
     updatePinOptions();
     updateImportBtnVisibility();
     initColorPresets();
+    disableButton();
+    disableBuzzer();
 }
 
 init();
