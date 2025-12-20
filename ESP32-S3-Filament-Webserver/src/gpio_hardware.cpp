@@ -57,8 +57,10 @@ static bool s_evHold   = false;
 // Interner Buzzer-State (Sequencer)
 // ============================================================================
 #ifdef ARDUINO_ARCH_ESP32
-  static const int LEDC_CH   = 6;  // fixer Kanal
-  static const int LEDC_BITS = 10; // 10-bit duty
+  #include <esp_arduino_version.h>
+  static const int LEDC_CH   = 6;   // fixer Fallback-Kanal für alte Cores
+  static const int LEDC_BITS = 10;  // 10-bit duty
+  static int s_ledcChannel   = -1;  // tatsächlich verwendeter Kanal (v3 liefert ihn)
 #endif
 
 struct Step { bool on; uint16_t ms; };
@@ -78,10 +80,11 @@ static inline void buzzer_output(bool on) {
   if (CFG_BUZ_PASSIVE) {
     // PASSIVER BUZZER -> Ton erzeugen (PWM)
   #ifdef ARDUINO_ARCH_ESP32
+    if (s_ledcChannel < 0) return; // sollte nicht passieren, Sicherheitsnetz
     if (on) {
-      ledcWriteTone(LEDC_CH, (double)CFG_BUZ_FREQ_HZ);
+      ledcWriteTone((uint8_t)s_ledcChannel, (uint32_t)CFG_BUZ_FREQ_HZ);
     } else {
-      ledcWriteTone(LEDC_CH, 0);
+      ledcWriteTone((uint8_t)s_ledcChannel, 0);
     }
   #else
     if (CFG_BUZ_PIN < 0) return;
@@ -93,7 +96,7 @@ static inline void buzzer_output(bool on) {
 
   // AKTIVER BUZZER -> Pegel schalten
   if (CFG_BUZ_PIN < 0) return;
-  pinMode(CFG_BUZ_PIN, OUTPUT);
+  // (pinMode wurde in init gesetzt; ein erneutes Setzen wäre unnötig)
   if (on) {
     digitalWrite(CFG_BUZ_PIN, CFG_BUZ_ACTIVE_HIGH ? HIGH : LOW);
   } else {
@@ -164,19 +167,47 @@ void gpiohw_init() {
   s_buzEnabled = (CFG_BUZ_PIN >= 0);
   if (s_buzEnabled) {
   #ifdef ARDUINO_ARCH_ESP32
-  #if ESP_ARDUINO_VERSION_MAJOR >= 3
-    ledcAttach(CFG_BUZ_PIN, CFG_BUZ_FREQ_HZ, LEDC_BITS);
+    if (CFG_BUZ_PASSIVE) {
+      // PASSIVER BUZZER -> LEDC initialisieren
+    #if defined(ESP_ARDUINO_VERSION_MAJOR) && (ESP_ARDUINO_VERSION_MAJOR >= 3)
+      // Core v3: Kanal wird von ledcAttach bestimmt und zurückgegeben
+      s_ledcChannel = ledcAttach((uint8_t)CFG_BUZ_PIN,
+                                 (uint32_t)CFG_BUZ_FREQ_HZ,
+                                 (uint8_t)LEDC_BITS);
+    #else
+      // Alte Cores: fixer Kanal + AttachPin
+      s_ledcChannel = LEDC_CH;
+      ledcSetup(s_ledcChannel, (double)CFG_BUZ_FREQ_HZ, LEDC_BITS);
+      ledcAttachPin((uint8_t)CFG_BUZ_PIN, s_ledcChannel);
+    #endif
+      // sicher aus
+      if (s_ledcChannel >= 0) {
+        ledcWriteTone((uint8_t)s_ledcChannel, 0);
+      }
+    } else {
+      // AKTIVER BUZZER -> Pegelmodus
+      pinMode(CFG_BUZ_PIN, OUTPUT);
+      digitalWrite(CFG_BUZ_PIN, CFG_BUZ_ACTIVE_HIGH ? LOW : HIGH); // AUS
+    }
   #else
-    ledcSetup(LEDC_CH, CFG_BUZ_FREQ_HZ, LEDC_BITS);
-    ledcAttachPin(CFG_BUZ_PIN, LEDC_CH);
+    // Nicht-ESP32 (z. B. AVR)
+    pinMode(CFG_BUZ_PIN, OUTPUT);
+    if (CFG_BUZ_PASSIVE) {
+      noTone((uint8_t)CFG_BUZ_PIN);   // AUS
+    } else {
+      digitalWrite(CFG_BUZ_PIN, CFG_BUZ_ACTIVE_HIGH ? LOW : HIGH); // AUS
+    }
   #endif
-  ledcWriteTone(LEDC_CH, 0);
-#endif
-
   }
 
-  GDBG("init: btnPin=%d pullup=%d buzPin=%d passive=%d freq=%dHz\n",
-       CFG_BTN_PIN, (int)CFG_BTN_PULLUP, CFG_BUZ_PIN, (int)CFG_BUZ_PASSIVE, CFG_BUZ_FREQ_HZ);
+  GDBG("init: btnPin=%d pullup=%d buzPin=%d passive=%d freq=%dHz ch=%d\n",
+       CFG_BTN_PIN, (int)CFG_BTN_PULLUP, CFG_BUZ_PIN, (int)CFG_BUZ_PASSIVE, CFG_BUZ_FREQ_HZ,
+  #ifdef ARDUINO_ARCH_ESP32
+       s_ledcChannel
+  #else
+       -1
+  #endif
+  );
 }
 
 // ============================================================================
@@ -204,7 +235,7 @@ void gpiohw_tick(unsigned long now) {
 
       if (s_btnStable) {
         // Rising (gedrückt)
-        s_pressStartTs  = now;         // <<< FIX: Start-Zeitpunkt nur hier setzen
+        s_pressStartTs  = now;         // <<< Start-Zeitpunkt nur hier setzen
         s_longFired     = false;
         s_lastHoldTick  = now;
         // Short-Event wird erst beim Release/Timeout finalisiert
@@ -224,13 +255,12 @@ void gpiohw_tick(unsigned long now) {
             s_doubleUntilTs  = now + CFG_BTN_DOUBLE_MS;
           }
         }
-        s_pressStartTs = 0;            // <<< FIX: Baseline löschen, damit kein Phantom-Long
+        s_pressStartTs = 0;            // Baseline löschen, damit kein Phantom-Long
       }
     }
 
     // Long / Hold während gedrückt
     if (s_btnStable) {
-      // <<< FIX: beide Events nur nach echter Rising-Edge (s_pressStartTs != 0)
       if (s_pressStartTs != 0 &&
           !s_longFired &&
           (now - s_pressStartTs) >= (unsigned long)CFG_BTN_LONG_MS) {
