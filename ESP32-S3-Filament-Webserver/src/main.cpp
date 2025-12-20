@@ -17,14 +17,11 @@
 #include "nfc.h"
 #include "filehandling.h"
 #include "gpio_hardware.h"
+#include "version_info.h"
 
 
 
-// Reboot-Steuerung
-volatile bool rebootPending = false;
-unsigned long rebootAt = 0;
-static const uint16_t REBOOT_DELAY_MS = 1000; // zusätzliche Verzögerung
-
+//Debug
 bool DEBUG_MODE = false;
 
 // ----------------- Server & WS -----------------
@@ -57,6 +54,27 @@ bool isActive = false;
 String activeUID = "";       // aktuell aktive UID
 
 // ----------------- Hilfsfunktionen -----------------
+// Helfer: Render Countdown only if second changed
+static void renderRebootCountdown(unsigned long nowMs) {
+  if (!rebootPending) return;
+
+  static uint32_t lastSec = 0xFFFFFFFF;
+  const uint32_t remainingMs = (nowMs < rebootAt) ? (rebootAt - nowMs) : 0;
+  const uint32_t sec = (remainingMs + 999U) / 1000U;
+
+  if (sec != lastSec) {
+    lastSec = sec;
+    char line2[24];
+    snprintf(line2, sizeof(line2), "%lu s", (unsigned long)sec);
+    MYDISPLAY::showThreeCentered(
+      F("Reboot in :"),
+      String(line2),
+      F("Press to Cancel")
+    );
+  }
+}
+
+
 void activateLed(int index) {
     if(targetLed != -1 && targetLed != index){
         LEDCTRL_FILAMENT::setPixel(targetLed, 0); // alte LED aus
@@ -73,7 +91,7 @@ void activateLed(int index) {
 }
 
 void handleUID(const String &uid, UidSource source) {
-    lastTagTime = now;
+    lastTagTime = millis();
     isActive = true;
 
     // Idle-Animation stoppen
@@ -178,6 +196,10 @@ void setup(){
 
     // 3. Display & DB init
     MYDISPLAY::init(&display);
+
+    display.clearDisplay();
+    MYDISPLAY::showBootVersion(FIRMWARE_VERSION, GIT_HASH);
+    delay(10000); // 10s Bootscreen
     
     display.clearDisplay();
     MYDISPLAY::showCentered("WIFI CONNECTING...");
@@ -228,50 +250,54 @@ void loop() {
   // ---------------------------------------------------------------------------
   // 0) Zeitbasis
   // ---------------------------------------------------------------------------
-  now = millis();
-
+  const unsigned long now = millis();
 
   // 0a) Button/Buzzer tick (Entprellung, Sequencer, Events)
   gpiohw_tick(now);
 
-  // 0b) Long-Press → Reboot einleiten (mit optionalem Doppel-Pieps)
-  // Optional: akustische Bestätigung (funktioniert nur, wenn Buzzer konfiguriert ist)
-  // Sanft verzögerten Reboot anfordern (siehe Schritt 2 in der loop)
-  if (button_long_press()) {
-  
-        buzzer_double_beep(); 
-        rebootPending = true;
-        rebootAt      = now + REBOOT_DELAY_MS;
+  // 0b) Double-Press → Reboot starten (nur, wenn keiner läuft)
+  if (!rebootPending && button_long_press()) {
+    buzzer_double_beep();
+    rebootPending = true;
+    rebootAt      = now + REBOOT_DELAY_MS;
+    renderRebootCountdown(now);
+  }
 
-        }
+  // 0c) Cancel per Single-Press während Countdown
+  if (rebootPending && (button_tap_release() || button_short_press())) {
+    rebootPending = false;
+    buzzer_stop();
+    gpiohw_reset_click_state();
+    DisplayAnim::startIdleTextFirst(now);
+  }
 
   // ---------------------------------------------------------------------------
   // 1) NFC-Polling + Guards + LED-Trigger
-  //    -> NFC::tick() erkennt Tags, triggert handleUID() beim Auflegen (Rising),
-  //       setzt isActive/lastTagTime und versorgt LEDCTRL_NFC intern mit Präsenz.
   // ---------------------------------------------------------------------------
   bool tagPresent = false;
   NFC::tick(now, isActive, lastTagTime, tagPresent);
 
   // ---------------------------------------------------------------------------
   // 1b) Präsenz auch an den FILAMENT-Controller geben
-  //     -> dessen Timeout startet erst, wenn der Tag entfernt wurde.
   // ---------------------------------------------------------------------------
   LEDCTRL_FILAMENT::tagPresenceTick(tagPresent);
 
   // ---------------------------------------------------------------------------
-  // 2) Reboot (falls angefordert)
+  // 2) Reboot (falls angefordert) + Countdown-UI
   // ---------------------------------------------------------------------------
+  // 
   if (rebootPending && now > rebootAt) {
     ESP.restart();
   }
 
   // ---------------------------------------------------------------------------
-  // 3) Display-Idle-Animation nur wenn nicht aktiv
+  // 3) Display: wenn kein Countdown → Idle-Animation
   // ---------------------------------------------------------------------------
-  if (!isActive) {
-    DisplayAnim::tickIdle(display, now);
-  }
+  if (rebootPending) {
+        renderRebootCountdown(now);
+    } else if (!isActive) {
+        DisplayAnim::tickIdle(display, now);
+    }
 
   // ---------------------------------------------------------------------------
   // 4) LED-Controller: Filament (Auto-Off erst nach Tag-Entfernung)
@@ -288,8 +314,7 @@ void loop() {
   // ---------------------------------------------------------------------------
   static bool prevIdle = false;
   const bool idleNow = LEDCTRL_NFC::isIdle();
-  if (idleNow && !prevIdle) {
-    // LEDs sind in Idle übergegangen -> Display mitnehmen
+  if (!rebootPending && idleNow && !prevIdle) {
     DisplayAnim::startIdleTextFirst(now);
     isActive = false;
   }
@@ -300,7 +325,3 @@ void loop() {
   // ---------------------------------------------------------------------------
   yield();
 }
-
-
-
-

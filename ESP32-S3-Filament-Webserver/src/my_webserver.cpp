@@ -8,16 +8,9 @@
 #include "globals.h"
 #include "filament_db.h"
 #include "filehandling.h"
-
-extern volatile bool rebootPending;
-extern unsigned long rebootAt;
+#include "gpio_hardware.h"
 
 
-
-void showRebootScreen(){
-        // Zeige Reboot-Nachricht an
-        Serial.println("Rebooting...");
-    }
 
 // ----------------- WebSocket Event -----------------
 void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
@@ -370,14 +363,36 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
     );
 
 
-            server.on("/api/reboot", HTTP_POST, [](AsyncWebServerRequest *request){
-                showRebootScreen();
+        server.on("/api/reboot", HTTP_POST, [](AsyncWebServerRequest *request){
+            // Falls schon ein Countdown läuft: nicht erneut piepen, nur Status zurückgeben
+            const unsigned long nowMs = millis();
+            if (!rebootPending) {
+                // Anzeige & Akustik
+                buzzer_double_beep();
                 rebootPending = true;
-                rebootAt = millis() + 1000;   // 1 Sekunde Zeit fürs Display
+                rebootAt      = nowMs + REBOOT_DELAY_WEBIF_MS;
 
-                request->send(200, "text/plain", "Rebooting");
+                // Wichtig: Button-Click-/Double-States flushen, sonst kann ein noch
+                // gesetztes Tap/Short direkt wieder canceln oder den nächsten Long blockieren.
+                gpiohw_reset_click_state();
 
-            });
+                // Countdown sofort einmal rendern (Loop übernimmt das weitere Ticken)
+                const uint32_t sec = (REBOOT_DELAY_WEBIF_MS + 999U) / 1000U;
+                char line2[24];
+                snprintf(line2, sizeof(line2), "in %lu Sekunden", (unsigned long)sec);
+                MYDISPLAY::showThreeCentered(
+                    F("Reboot..."),
+                    String(line2),
+                    F("Press to Cancel")
+                );
+            } else {
+                // schon aktiv: optional die Anzeige auffrischen (nicht nötig – die loop rendert)
+                // (keine Aktion)
+            }
+
+            request->send(200, "text/plain", "Rebooting");
+        });
+
 
 
     

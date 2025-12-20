@@ -54,3 +54,8 @@ bool button_long_press();
 bool button_double_press();
 /** @brief true bei jedem Hold-Intervall nach Long-Press. */
 bool button_hold();
+
+// Feuert SOFORT beim Loslassen (wenn kein Long erkannt wurde).
+// Unabhängig vom Double-Fenster. Einmalig true (auto-reset).
+bool button_tap_release();
+void gpiohw_reset_click_state(); // Click/Double/Long-Logik komplett flushen

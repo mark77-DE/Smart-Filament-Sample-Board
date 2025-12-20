@@ -1,0 +1,49 @@
+name: Build & Release (PlatformIO)
+
+on:
+  push:
+    tags:
+      - 'v*'       # erlaubt v0.1a, v1.0.0, ...
+      - '[0-9]*'   # erlaubt 0.1a, 1.0.0, ...
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (mit Tags!)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # wichtig -> Tags sind verfügbar
+
+      - name: Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install PlatformIO
+        run: pip install platformio
+
+      - name: Build firmware
+        run: pio run -e esp32
+
+      - name: Build LittleFS (optional)
+        run: pio run -e esp32 -t buildfs
+
+      - name: Sammeln
+        run: |
+          mkdir -p out
+          cp .pio/build/esp32/firmware.bin out/firmware_${GITHUB_REF_NAME}.bin
+          cp .pio/build/esp32/partitions.bin out/partitions_${GITHUB_REF_NAME}.bin || true
+          cp .pio/build/esp32/bootloader.bin out/bootloader_${GITHUB_REF_NAME}.bin || true
+          if [ -f .pio/build/esp32/littlefs.bin ]; then cp .pio/build/esp32/littlefs.bin out/littlefs_${GITHUB_REF_NAME}.bin; fi
+
+      - name: Release upload
+        uses: softprops/action-gh-release@v2
+        with:
+          files: out/*
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          # Markiere vorab-Versionen automatisch als Pre-Release (a/b/rc im Tag)
+          prerelease: ${{ contains(github.ref_name, 'a') || contains(github.ref_name, 'b') || contains(github.ref_name, 'rc') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
