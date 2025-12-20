@@ -1,17 +1,5 @@
-// include/version_info.h
 #pragma once
-
-// Wenn der Auto-Header existiert, nutze ihn zuerst
-#if defined(__has_include)
-  #if __has_include("version_auto.h")
-    #include "version_auto.h"
-  #endif
-#endif
-
-// Fallbacks: greifen nur, wenn der Auto-Header nicht (oder fehlerhaft) gesetzt hat
-#ifndef FIRMWARE_VERSION
-  #define FIRMWARE_VERSION "0.0.0"
-#endif
-#ifndef GIT_HASH
-  #define GIT_HASH "nogit"
-#endif
+#define FIRMWARE_VERSION "v0.2.0-dev+e8f0171"
+#define GIT_HASH "e8f0171"
+#define BUILD_DATE "2025-12-21 00:55:14"
+#define BUILD_DATE_SHORT "21.12.25"

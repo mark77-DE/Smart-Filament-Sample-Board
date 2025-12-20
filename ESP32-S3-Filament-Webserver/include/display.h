@@ -49,7 +49,7 @@ public:
   static void showThreeCentered(const String& line1, const String& line2, const String& line3);
 
   // --- Neu: Bootscreen mit Firmware-Version/Hash ---
-  static void showBootVersion(const char* fw, const char* hash);
+  static void showBootVersion(const char* version, const char* dateShort);
 
 private:
   static DisplayType* _display;

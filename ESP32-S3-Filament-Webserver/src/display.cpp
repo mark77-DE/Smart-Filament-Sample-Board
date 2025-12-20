@@ -335,10 +335,19 @@ void MYDISPLAY::showThreeCentered(const String& line1, const String& line2, cons
 
 
 
-// --- Neu: Bootscreen mit FW-Version & Git-Hash ---
-void MYDISPLAY::showBootVersion(const char* fw, const char* hash) {
-    String l1 = F("Spot My Filament");
-    String l2 = String(F("FW ")) + (fw ? fw : "unknown");
-    String l3 = String(F("Git ")) + (hash ? String(hash).substring(0, 7) : "nogit");
-    showThreeCentered(l1, l2, l3);
+// --- Neu: Bootscreen 
+void MYDISPLAY::showBootVersion(const char* version, const char* dateShort) {
+    if (!_display) return;
+
+    String l1 = F("Firmware");
+    String l2 = String(version);   // z.B. "FW v0.1.0"
+    String l3 = String(dateShort);            // z.B. "21.12:25"
+
+    showThreeCentered(l1, l2, l3);            
 }
+
+
+
+
+//String l2 = String(F("FW ")) + (fw ? fw : "unknown");
+//String l3 = String(F("Git ")) + (hash ? String(hash).substring(0, 7) : "nogit");

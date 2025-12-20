@@ -198,7 +198,7 @@ void setup(){
     MYDISPLAY::init(&display);
 
     display.clearDisplay();
-    MYDISPLAY::showBootVersion(FIRMWARE_VERSION, GIT_HASH);
+    MYDISPLAY::showBootVersion(FIRMWARE_VERSION, BUILD_DATE_SHORT);
     delay(10000); // 10s Bootscreen
     
     display.clearDisplay();
