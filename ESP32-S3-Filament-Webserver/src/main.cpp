@@ -19,6 +19,11 @@
 #include "gpio_hardware.h"
 #include "version_info.h"
 
+constexpr uint32_t SPLASH_CHAR_MS = 35;
+constexpr uint32_t SPLASH_LINE_MS = 200;
+constexpr uint32_t SPLASH_HOLD_MS = 2000;
+
+constexpr uint32_t FIRMWARE_HOLD_MS = 5000;
 
 
 //Debug
@@ -216,10 +221,10 @@ void setup() {
                     NFC_LED_SUCCESS_BLINK_MS);
   LEDCTRL_NFC::allOff();
 
-  // 7) FIRMWARE-BOOTSCREEN 10 s ANZEIGEN (WebIF ist bereits online)
+  // 7) FIRMWARE-BOOTSCREEN x s ANZEIGEN (WebIF ist bereits online)
   {
     MYDISPLAY::showBootVersion(FIRMWARE_VERSION, BUILD_DATE_SHORT);
-    const uint32_t until = millis() + 10000UL; // exakt 10 s
+    const uint32_t until = millis() + FIRMWARE_HOLD_MS; 
     while ((int32_t)(until - millis()) > 0) {
       // Währenddessen nichts blockieren:
       gpiohw_tick(millis());
@@ -227,6 +232,11 @@ void setup() {
       yield();
     }
   }
+
+  // Nach dem Firmware-Bootscreen (10 s), WLAN+Webserver sind schon da
+  DisplayAnim::playThreeLineTypewriter(display, F("Spot my"), F("Filament by"), F("Mark & Kolja"),
+                                      SPLASH_CHAR_MS, SPLASH_LINE_MS, SPLASH_HOLD_MS);
+
 
   // 8) PN532 JETZT initialisieren (kann im Fehlerfall aufs Display schreiben)
   NFC::init(&nfc);  // begin() + SAMConfig()

@@ -1,6 +1,7 @@
 #include "display_anim.h"
 #include "display_config.h"
 #include "display.h"
+#include "gpio_hardware.h"
 
 
 // Diese Werte stammen aus dem Animator-Export:
@@ -107,8 +108,8 @@ static void drawFrameCropped(DisplayType &display, uint16_t frameIdx) {
 }
 
 
-    const uint8_t *bmp = (const uint8_t*)frames[frameIdx];
-    bmp += srcYOffset * bytesPerRow;
+    const uint8_t* bmp = &frames[frameIdx][0];
+    bmp += srcYOffset * bytesPerRow; // vertikal „croppen“
 
     int16_t x = (SCREEN_WIDTH  - FRAME_WIDTH) / 2;
     int16_t y = (SCREEN_HEIGHT - drawH)      / 2;
@@ -390,4 +391,178 @@ void tickIdle(DisplayType &display, unsigned long now) {
     }
 }
 
+
+// ----------------------------------------------
+// 3-Zeilen-Typewriter inkl. rückwärts Löschen
+// ----------------------------------------------
+namespace {
+
+// kleine Hilfsfunktion wie in display.cpp
+static String fixUmlauts_local(String s) {
+    s.replace("ä","ae"); s.replace("ö","oe"); s.replace("ü","ue");
+    s.replace("Ä","Ae"); s.replace("Ö","Oe"); s.replace("Ü","Ue");
+    s.replace("ß","ss");
+    return s;
+}
+
+// Textausschnitt zentriert an vorgegebenem Zeilen-Top zeichnen
+static void drawCenteredSubstringAtTop(
+    DisplayType& display,
+    const String& full,
+    size_t count,
+    int16_t yTop
+) {
+    String s = fixUmlauts_local(full.substring(0, count));
+    int16_t x1, y1; uint16_t w, h;
+    display.getTextBounds(s, 0, 0, &x1, &y1, &w, &h);
+    int16_t x = (int16_t)((SCREEN_WIDTH - (int16_t)w) / 2) - x1;
+    int16_t y = (int16_t)(yTop - y1); // yTop ist die "Top"-Kante der Zeile
+    display.setCursor(x, y);
+    display.print(s);
+}
+
+// Layout: ermittelt konstante Y-Top-Positionen der 3 Zeilen,
+// damit während des Tippens/Löschens nix vertikal „zittert“.
+static void computeThreeLineLayout(
+    DisplayType& display,
+    int16_t& yTop1,
+    int16_t& yTop2,
+    int16_t& yTop3
+) {
+    // Font setzen wie im restlichen UI
+    display.setTextWrap(false);
+    display.setTextColor(DISPLAY_COLOR);
+    display.setTextSize(1);
+    display.setFont(DISPLAY_FONT); // darf nullptr sein -> Standardfont
+
+    // Referenzhöhe messen (stabil)
+    int16_t rx1, ry1; uint16_t rw, rh;
+    display.getTextBounds("Hg", 0, 0, &rx1, &ry1, &rw, &rh);
+    int16_t lineHeight = (int16_t)rh + 2;
+
+    // Gesamt-Blockhöhe (3 Zeilen)
+    int16_t totalH = (int16_t)(3 * lineHeight);
+
+    // Oberen Start so wählen, dass der Block vertikal zentriert ist
+    int16_t blockTop = (int16_t)((SCREEN_HEIGHT - totalH) / 2);
+
+    yTop1 = blockTop;
+    yTop2 = (int16_t)(blockTop + lineHeight);
+    yTop3 = (int16_t)(blockTop + 2 * lineHeight);
+}
+
+static inline void delay_with_yield(uint32_t ms) {
+    uint32_t until = millis() + ms;
+    while ((int32_t)(millis() - until) < 0) { yield(); }
+}
+
+} // anonymous namespace
+
+
+// String-Overload: eigentliche Logik
+void playThreeLineTypewriter(
+    DisplayType& display,
+    const String& line1,
+    const String& line2,
+    const String& line3,
+    uint32_t charDelayMs,
+    uint32_t linePauseMs,
+    uint32_t endHoldMs,
+    bool     eraseBackwards,
+    uint32_t eraseCharDelayMs,
+    uint32_t eraseLinePauseMs
+) {
+    // Fix für Umlaute (wie in deinem UI)
+    String L1 = fixUmlauts_local(line1);
+    String L2 = fixUmlauts_local(line2);
+    String L3 = fixUmlauts_local(line3);
+
+    // Stabiles Layout (Y-Positionen)
+    int16_t yTop1, yTop2, yTop3;
+    computeThreeLineLayout(display, yTop1, yTop2, yTop3);
+
+    auto drawAll = [&](size_t c1, size_t c2, size_t c3) {
+        display.clearDisplay();
+        if (c1) drawCenteredSubstringAtTop(display, L1, c1, yTop1);
+        if (c2) drawCenteredSubstringAtTop(display, L2, c2, yTop2);
+        if (c3) drawCenteredSubstringAtTop(display, L3, c3, yTop3);
+        display.display();
+    };
+
+    // 1) Tippen Zeile 1
+    for (size_t i = 1; i <= L1.length(); ++i) {
+        drawAll(i, 0, 0);
+        delay_with_yield(charDelayMs);
+    }
+    delay_with_yield(linePauseMs);
+
+    // 2) Tippen Zeile 2
+    for (size_t i = 1; i <= L2.length(); ++i) {
+        drawAll(L1.length(), i, 0);
+        delay_with_yield(charDelayMs);
+    }
+    delay_with_yield(linePauseMs);
+
+    // 3) Tippen Zeile 3
+    for (size_t i = 1; i <= L3.length(); ++i) {
+        drawAll(L1.length(), L2.length(), i);
+        delay_with_yield(charDelayMs);
+    }
+
+    // 4) Vollbild kurz halten
+    delay_with_yield(endHoldMs);
+
+    if (!eraseBackwards) {
+        return; // ohne Rückwärts-Animation beenden
+    }
+
+    // 5) Rückwärts löschen: Zeile 3 → 2 → 1
+    delay_with_yield(eraseLinePauseMs);
+    for (int i = (int)L3.length() - 1; i >= 0; --i) {
+        drawAll(L1.length(), L2.length(), (size_t)i);
+        delay_with_yield(eraseCharDelayMs);
+    }
+
+    delay_with_yield(eraseLinePauseMs);
+    for (int i = (int)L2.length() - 1; i >= 0; --i) {
+        drawAll(L1.length(), (size_t)i, 0);
+        delay_with_yield(eraseCharDelayMs);
+    }
+
+    delay_with_yield(eraseLinePauseMs);
+    for (int i = (int)L1.length() - 1; i >= 0; --i) {
+        drawAll((size_t)i, 0, 0);
+        delay_with_yield(eraseCharDelayMs);
+    }
+
+    // Ende: Display bleibt leer (oder du lässt hier bewusst das letzte Bild stehen)
+    display.clearDisplay();
+    display.display();
+}
+
+
+// PROGMEM-Overload: wandelt um und delegiert
+void playThreeLineTypewriter(
+    DisplayType& display,
+    const __FlashStringHelper* line1,
+    const __FlashStringHelper* line2,
+    const __FlashStringHelper* line3,
+    uint32_t charDelayMs,
+    uint32_t linePauseMs,
+    uint32_t endHoldMs,
+    bool     eraseBackwards,
+    uint32_t eraseCharDelayMs,
+    uint32_t eraseLinePauseMs
+) {
+    String s1(line1), s2(line2), s3(line3);
+    DisplayAnim::playThreeLineTypewriter(
+        display, s1, s2, s3,
+        charDelayMs, linePauseMs, endHoldMs,
+        eraseBackwards, eraseCharDelayMs, eraseLinePauseMs
+    );
+}
+
+
 } // namespace DisplayAnim
+
+
