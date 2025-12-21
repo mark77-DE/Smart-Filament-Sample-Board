@@ -18,6 +18,7 @@
 #include "filehandling.h"
 #include "gpio_hardware.h"
 #include "version_info.h"
+#include "reboot_handler.h"
 
 constexpr uint32_t SPLASH_CHAR_MS = 35;
 constexpr uint32_t SPLASH_LINE_MS = 200;
@@ -61,7 +62,7 @@ String activeUID = "";       // aktuell aktive UID
 // ----------------- Hilfsfunktionen -----------------
 
 // Reboot
-static void renderRebootCountdown(unsigned long nowMs) {
+void renderRebootCountdown(unsigned long nowMs) {
   static bool     inReboot = false;
   static uint32_t lastSec  = 0xFFFFFFFF;
 

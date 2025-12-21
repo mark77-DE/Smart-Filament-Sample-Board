@@ -10,6 +10,7 @@
 #include "filehandling.h"
 #include "gpio_hardware.h"
 #include "version_info.h"
+#include "reboot_handler.h"
 
 
 
@@ -377,42 +378,25 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
     );
 
 
-        server.on("/api/reboot", HTTP_POST, [](AsyncWebServerRequest *request){
-            // Falls schon ein Countdown läuft: nicht erneut piepen, nur Status zurückgeben
+    server.on("/api/reboot", HTTP_POST, [](AsyncWebServerRequest *request){
             const unsigned long nowMs = millis();
+
             if (!rebootPending) {
-                // Anzeige & Akustik
+                // Akustik + Countdown starten
                 buzzer_double_beep();
                 rebootPending = true;
                 rebootAt      = nowMs + REBOOT_DELAY_WEBIF_MS;
 
-                // Wichtig: Button-Click-/Double-States flushen, sonst kann ein noch
-                // gesetztes Tap/Short direkt wieder canceln oder den nächsten Long blockieren.
+                // Button-States flushen, damit kein sofortiges Cancel aus altem Zustand kommt
                 gpiohw_reset_click_state();
 
-                // Countdown sofort einmal rendern (Loop übernimmt das weitere Ticken)
-                const uint32_t sec = (REBOOT_DELAY_WEBIF_MS + 999U) / 1000U;
-                char line2[24];
-                snprintf(line2, sizeof(line2), "in %lu Sekunden", (unsigned long)sec);
-                MYDISPLAY::showThreeCentered(
-                    F("Reboot..."),
-                    String(line2),
-                    F("Press to Cancel")
-                );
-            } else {
-                // schon aktiv: optional die Anzeige auffrischen (nicht nötig – die loop rendert)
-                // (keine Aktion)
+                // WICHTIG: sofort LEDs + UI „armen“ (idempotent)
+                renderRebootCountdown(nowMs);
             }
+            // optional: Status-JSON zurückgeben
+            request->send(200, "application/json", "{\"status\":\"ok\",\"pending\":true}");
+    });
 
-            request->send(200, "text/plain", "Rebooting");
-        });
-
-
-
-    
-
-
-  
 
 
 
