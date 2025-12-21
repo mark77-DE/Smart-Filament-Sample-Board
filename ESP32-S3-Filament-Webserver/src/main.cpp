@@ -59,14 +59,48 @@ bool isActive = false;
 String activeUID = "";       // aktuell aktive UID
 
 // ----------------- Hilfsfunktionen -----------------
-// Helfer: Render Countdown only if second changed
-static void renderRebootCountdown(unsigned long nowMs) {
-  if (!rebootPending) return;
 
-  static uint32_t lastSec = 0xFFFFFFFF;
+// Reboot
+static void renderRebootCountdown(unsigned long nowMs) {
+  static bool     inReboot = false;
+  static uint32_t lastSec  = 0xFFFFFFFF;
+
+  if (!rebootPending) {
+    if (inReboot) {
+      inReboot = false;
+
+      // Präsenz freigeben + sauber resetten, damit nächster Start bei Null beginnt
+      LEDCTRL_NFC::tagPresenceTick(false);
+      LEDCTRL_FILAMENT::tagPresenceTick(false);
+      LEDCTRL_NFC::allOff();
+      LEDCTRL_FILAMENT::allOff();
+
+      lastSec = 0xFFFFFFFF;
+    }
+    return;
+  }
+
+  // --- Reboot aktiv ---
+  if (!inReboot) {
+    inReboot = true;
+    lastSec  = 0xFFFFFFFF;
+  }
+
+  // Präsenz „halten“, damit Solid/Error nicht aus-Timeouten
+  LEDCTRL_NFC::tagPresenceTick(true);
+  LEDCTRL_FILAMENT::tagPresenceTick(true);
+
+  // WICHTIG: idempotent „armen“, falls der Controller gerade im Idle ist
+  if (LEDCTRL_NFC::isIdle()) {
+    LEDCTRL_NFC::showError();       // sofort stabil rot
+  }
+  if (LEDCTRL_FILAMENT::isIdle()) {
+    LEDCTRL_FILAMENT::errorBlink(); // blinkt, dann rot
+  }
+
+  // Countdown-Text nur bei Sekundenwechsel neu zeichnen
   const uint32_t remainingMs = (nowMs < rebootAt) ? (rebootAt - nowMs) : 0;
   const uint32_t sec = (remainingMs + 999U) / 1000U;
-
   if (sec != lastSec) {
     lastSec = sec;
     char line2[24];
@@ -78,6 +112,10 @@ static void renderRebootCountdown(unsigned long nowMs) {
     );
   }
 }
+
+
+
+
 
 
 void activateLed(int index) {
@@ -280,6 +318,7 @@ void loop() {
     buzzer_stop();
     gpiohw_reset_click_state();
     DisplayAnim::startIdleTextFirst(now);
+    renderRebootCountdown(now);
   }
 
   // ---------------------------------------------------------------------------
@@ -304,11 +343,12 @@ void loop() {
   // ---------------------------------------------------------------------------
   // 3) Display: wenn kein Countdown → Idle-Animation
   // ---------------------------------------------------------------------------
-  if (rebootPending) {
-        renderRebootCountdown(now);
-    } else if (!isActive) {
-        DisplayAnim::tickIdle(display, now);
+  renderRebootCountdown(now);
+  if (!rebootPending){
+    if(!isActive){
+      DisplayAnim::tickIdle(display, now);
     }
+  }
 
   // ---------------------------------------------------------------------------
   // 4) LED-Controller: Filament (Auto-Off erst nach Tag-Entfernung)
