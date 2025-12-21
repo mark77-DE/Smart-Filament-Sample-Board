@@ -163,87 +163,88 @@ void handleUID(const String &uid, UidSource source) {
 
 // ----------------------------- Setup -----------------------------
 // -----------------------------------------------------------------
-void setup(){
-    Serial.begin(115200);
-    while(!Serial);
+void setup() {
+  Serial.begin(115200);
+  while (!Serial);
 
-    Serial.printf("Firmware Version: %s\n", FIRMWARE_VERSION);
-    Serial.printf("Git Hash: %s\n", GIT_HASH);
+  Serial.printf("Firmware Version: %s\n", FIRMWARE_VERSION);
+  Serial.printf("Build Date: %s\n", BUILD_DATE_SHORT);
 
-    loadConfig();
+  // 1) Konfiguration laden
+  loadConfig();
 
+  // 2) I2C + DISPLAY FRÜH initialisieren (alles, was malen will, braucht das)
+  Wire.begin(SDA_PIN, SCL_PIN);
+  if (!initDisplay(display)) {
+    Serial.println("OLED init failed!");
+    while (1) { delay(100); }
+  }
+  MYDISPLAY::init(&display);
 
-    Wire.begin(SDA_PIN,SCL_PIN);
+  // 3) WLAN verbinden (Anzeige davor setzen)
+  MYDISPLAY::showCentered("VERBINDUNG...");
+  WiFiManager wifiManager;
+  if (!wifiManager.autoConnect("NFC-Setup-AP")) {
+    ESP.restart();
+  }
+  Serial.print("IP: "); Serial.println(WiFi.localIP());
 
-    
-
-    // OLED init
-    if (!initDisplay(display)) {
-        Serial.println("OLED init failed!");
-    while (1);
-    }
-
-    //Test: Wird bereits in loadConfig() aufgerufen ?! -> Prüfen !
-    LEDCTRL_FILAMENT::init(LED_COUNT, LED_PIN, LED_TIMEOUT, LED_BRIGHTNESS, LED_COLOR, LED_COLOR_ERROR, LED_COLOR_PULSE);
-    
-    LEDCTRL_FILAMENT::allOff();
-
-    LEDCTRL_NFC::init(NFC_LED_COUNT, NFC_LED_PIN, NFC_LED_TIMEOUT, NFC_LED_BRIGHTNESS,
-                      NFC_LED_COLOR_SUCCESS, NFC_LED_COLOR_ERROR, NFC_LED_COLOR_PULSE,
-                      NFC_LED_SUCCESS_BLINK_ENABLED, NFC_LED_SUCCESS_BLINK_COUNT, NFC_LED_SUCCESS_BLINK_MS);
-
-    LEDCTRL_NFC::allOff();
-
-    // 3. Display & DB init
-    MYDISPLAY::init(&display);
-
-    display.clearDisplay();
-    MYDISPLAY::showBootVersion(FIRMWARE_VERSION, BUILD_DATE_SHORT);
-    delay(10000); // 10s Bootscreen
-    
-    display.clearDisplay();
-    MYDISPLAY::showCentered("WIFI CONNECTING...");
-
-    // PN532 init
-    NFC::init(&nfc);  // macht begin() + SAMConfig()
-
-    // Optional: Firmware anzeigen (Diagnose)
-    uint32_t version = nfc.getFirmwareVersion();
-    if (!version) {
-        Serial.println("PN532 not found!");
-        MYDISPLAY::showCentered("PN532 FEHLT!");
-        while (1) { delay(100); }
-    } else {
-        Serial.print("PN532 FW "); Serial.print((version>>24)&0xFF);
-        Serial.print('.');        Serial.print((version>>16)&0xFF);
-        Serial.print(" chip=0x"); Serial.println(version & 0xFFFF, HEX);
-    }
-
-    // IRQ-Pin bei I2C: INPUT (schadet nicht), bei SPI meist egal
-    pinMode(PN532_IRQ, INPUT);
-
-    // WLAN
-    WiFiManager wifiManager;
-    MYDISPLAY::showCentered("VERBINDUNG...");
-    if(!wifiManager.autoConnect("NFC-Setup-AP")){
-        ESP.restart();
-    }
-    Serial.print("IP: "); Serial.println(WiFi.localIP());
+  // 4) IP kurz zeigen (nicht hart blockieren)
+  {
     MYDISPLAY::showCentered(WiFi.localIP().toString());
-    delay(5000);
+    const uint32_t until = millis() + 1200UL;
+    while ((int32_t)(until - millis()) > 0) {
+      gpiohw_tick(millis());  // Button/Buzzer am Leben halten
+      yield();
+    }
+  }
 
-    // Erst "SCAN TAG" anzeigen, dann später in die Animation wechseln
-    DisplayAnim::startIdleTextFirst(millis());
+  // 5) WebSocket + Webserver starten (WebIF nun sofort erreichbar)
+  server.addHandler(&ws);
+  initWebServer(server, ws);
+  WiFi.setSleep(false);
 
-    // WebSocket starten
-    
-    server.addHandler(&ws);
+  // 6) LED/NFC Controller initialisieren (schreibt NICHT aufs Display)
+  LEDCTRL_FILAMENT::init(LED_COUNT, LED_PIN, LED_TIMEOUT, LED_BRIGHTNESS,
+                         LED_COLOR, LED_COLOR_ERROR, LED_COLOR_PULSE);
+  LEDCTRL_FILAMENT::allOff();
 
-    // Webserver starten
-    initWebServer(server, ws);
+  LEDCTRL_NFC::init(NFC_LED_COUNT, NFC_LED_PIN, NFC_LED_TIMEOUT,
+                    NFC_LED_BRIGHTNESS, NFC_LED_COLOR_SUCCESS,
+                    NFC_LED_COLOR_ERROR, NFC_LED_COLOR_PULSE,
+                    NFC_LED_SUCCESS_BLINK_ENABLED, NFC_LED_SUCCESS_BLINK_COUNT,
+                    NFC_LED_SUCCESS_BLINK_MS);
+  LEDCTRL_NFC::allOff();
 
-    WiFi.setSleep(false);
+  // 7) FIRMWARE-BOOTSCREEN 10 s ANZEIGEN (WebIF ist bereits online)
+  {
+    MYDISPLAY::showBootVersion(FIRMWARE_VERSION, BUILD_DATE_SHORT);
+    const uint32_t until = millis() + 10000UL; // exakt 10 s
+    while ((int32_t)(until - millis()) > 0) {
+      // Währenddessen nichts blockieren:
+      gpiohw_tick(millis());
+      ws.cleanupClients();   // optional; AsyncWebServer schafft das auch alleine
+      yield();
+    }
+  }
+
+  // 8) PN532 JETZT initialisieren (kann im Fehlerfall aufs Display schreiben)
+  NFC::init(&nfc);  // begin() + SAMConfig()
+  uint32_t version = nfc.getFirmwareVersion();
+  if (!version) {
+    Serial.println("PN532 not found!");
+    MYDISPLAY::showCentered("PN532 FEHLT!");
+    while (1) { delay(100); }
+  } else {
+    Serial.print("PN532 FW "); Serial.print((version>>24)&0xFF);
+    Serial.print('.');        Serial.print((version>>16)&0xFF);
+    Serial.print(" chip=0x"); Serial.println(version & 0xFFFF, HEX);
+  }
+
+  // 9) Idle-Animation vorbereiten
+  DisplayAnim::startIdleTextFirst(millis());
 }
+
 
 
 void loop() {
