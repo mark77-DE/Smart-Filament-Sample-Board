@@ -421,3 +421,16 @@ span.uid.invalid {
     background-color: #fee;       /* Optional leicht rot hinterlegt */
     color: #900;                  /* Textfarbe rot */
 }
+
+#about {
+    margin-top: 20px;
+    text-align: center;
+}
+
+.version {
+    font-size: 0.8em;
+    color: #7f8c8d;
+    text-align: center;
+    padding-left: 5px;
+    padding-right: 5px;
+}
