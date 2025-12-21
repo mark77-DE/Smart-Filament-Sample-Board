@@ -830,6 +830,17 @@ openSettings.onclick = () =>
 closeSettings.onclick = () =>
     settingsOverlay.classList.remove("active");
 
+function getVersion() {
+    fetch("/api/version")
+    .then(r => r.json())
+    .then(data => {
+        document.getElementById("fwVersion").textContent = "FW-Version: " + data.firmware;
+        document.getElementById("gitHash").textContent = "Git hash: " + data.git_hash;
+        document.getElementById("build_date").textContent = "Build date: " + data.build_date;
+    })
+    .catch(err => console.error("Version fetch failed:", err));
+}
+
 
 // -------------------- Init --------------------
 async function init() {
@@ -841,6 +852,7 @@ async function init() {
     initColorPresets();
     disableButton();
     disableBuzzer();
+    getVersion();
 }
 
 init();

@@ -9,6 +9,7 @@
 #include "filament_db.h"
 #include "filehandling.h"
 #include "gpio_hardware.h"
+#include "version_info.h"
 
 
 
@@ -73,6 +74,19 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
     // Admin page
     server.on("/settings", HTTP_GET, [](AsyncWebServerRequest *request){
         request->send(LittleFS, "/settings.html", "text/html");
+    });
+
+    server.on("/api/version", HTTP_GET, [](AsyncWebServerRequest *request) {
+        StaticJsonDocument<256> doc;
+        doc["firmware"] = FIRMWARE_VERSION;
+        doc["git_hash"] = GIT_HASH;
+        doc["build_date"] = BUILD_DATE;
+        doc["build_date_short"] = BUILD_DATE_SHORT;
+
+
+        String response;
+        serializeJson(doc, response);
+        request->send(200, "application/json", response);
     });
 
     // Filament-Liste als JSON
