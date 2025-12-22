@@ -73,12 +73,13 @@ static unsigned long s_releaseTs        = 0;     // 0 = kein Timeout aktiv
 static bool          idlePulseEnabled   = true;
 static float         minBrightness      = 0.30f; // minimaler Helligkeitsfaktor [0..1]
 static unsigned long s_lastPulseUpdate  = 0;
-static const uint16_t PULSE_INTERVAL_MS = 16;    // ~60 FPS
+// FIX: Idle-FPS entschärfen (ca. 40 FPS)
+static const uint16_t PULSE_INTERVAL_MS = 25;
 static const uint16_t BREATHS_PER_MIN   = 15;
-static const uint8_t  BAYER4[16]        = {      // 4x4 Ordered Dithering Matrix
+static const uint8_t  BAYER4[16]        = {
   0,8,2,10, 12,4,14,6, 3,11,1,9, 15,7,13,5
 };
-static uint8_t s_ditherPhase = 0;
+static uint8_t ditherPhase = 0;
 
 // --- Idle-Blocker (wirkt NUR im Idle) ---
 static unsigned long s_idleBlockUntil   = 0;
@@ -86,6 +87,9 @@ static unsigned long s_idleBlockUntil   = 0;
 // --- Debounce für Success-Trigger (gegen Doppeltrigger) ---
 static unsigned long s_lastSuccessCmdTs = 0;
 static const uint16_t SUCCESS_DEBOUNCE_MS = 200;
+
+// FIX: Netzlast-Pause (Idle-Frames aussetzen)
+unsigned long LEDCTRL_NFC::s_netPauseUntil = 0;
 
 // ============================================================================
 // Strip-Instanz (intern) – implementiert in ledctrl_nfc.h
@@ -98,7 +102,6 @@ Adafruit_NeoPixel* LEDCTRL_NFC::rawStrip() { return _leds; }
 // ============================================================================
 // Helpers (file-scope)
 // ============================================================================
-
 static inline int pixCount() {
   return LEDCTRL_NFC::rawStrip() ? (int)LEDCTRL_NFC::rawStrip()->numPixels() : 0;
 }
@@ -123,6 +126,14 @@ static inline void forceFill(uint32_t neo) {
   neopixelShowSafe(LEDCTRL_NFC::rawStrip());
 }
 
+// FIX: generisches Doppel-show wenn kein Voll-Fill (Blink/Idle/Einzelpixel)
+static inline void forceShowNfc() {
+  if (!LEDCTRL_NFC::rawStrip()) return;
+  neopixelShowSafe(LEDCTRL_NFC::rawStrip());
+  delayMicroseconds(300);
+  neopixelShowSafe(LEDCTRL_NFC::rawStrip());
+}
+
 static uint8_t breath8(uint16_t bpm, uint32_t nowMs, uint8_t low, uint8_t high) {
   const float periodMs = 60000.0f / (float)bpm;
   float phase01 = fmodf((float)nowMs, periodMs) / periodMs;
@@ -134,17 +145,22 @@ static uint8_t breath8(uint16_t bpm, uint32_t nowMs, uint8_t low, uint8_t high) 
 static void renderIdlePulseFrame(unsigned long now) {
   if (!idlePulseEnabled || !LEDCTRL_NFC::rawStrip()) return;
 
-  LEDCTRL_NFC::rawStrip()->setBrightness(constrain(NFC_LED_BRIGHTNESS, 0, 255));
 
-  const uint8_t low8  = (uint8_t)constrain((int)lroundf(minBrightness * 255.0f), 0, 255);
-  const uint8_t lvl   = breath8(BREATHS_PER_MIN, now, low8, 255);
-  const uint8_t glvl  = Adafruit_NeoPixel::gamma8(lvl);
+  const uint8_t low8 = (uint8_t)constrain(
+      (int)lroundf(minBrightness * 255.0f), 0, 255);
+
+  const uint8_t lvl  = breath8(BREATHS_PER_MIN, now, low8, 255);
+  const uint8_t glvl = Adafruit_NeoPixel::gamma8(lvl);
 
   const uint8_t r0 = (NFC_LED_COLOR_PULSE >> 16) & 0xFF;
   const uint8_t g0 = (NFC_LED_COLOR_PULSE >>  8) & 0xFF;
   const uint8_t b0 = (NFC_LED_COLOR_PULSE      ) & 0xFF;
 
-  auto dimDither8 = [](uint8_t base, uint8_t dim, uint8_t thr)->uint8_t {
+  // 🔧 Dither-Phase ZEITBASIERT (kein Frame-Jitter mehr)
+  const uint8_t ditherPhase =
+      (uint8_t)((now / PULSE_INTERVAL_MS) & 0x0F);
+
+  auto dimDither8 = [](uint8_t base, uint8_t dim, uint8_t thr) -> uint8_t {
     const uint32_t v12 = ((uint32_t)base * (uint32_t)dim * 16U + 127U) / 255U;
     uint8_t out = (uint8_t)(v12 >> 4);
     if ((v12 & 0x0F) > thr && out < 255) out++;
@@ -153,14 +169,18 @@ static void renderIdlePulseFrame(unsigned long now) {
 
   const int n = pixCount();
   for (int i = 0; i < n; ++i) {
-    const uint8_t thr = BAYER4[(s_ditherPhase + (i & 0x0F)) & 0x0F];
+    const uint8_t thr =
+        BAYER4[(ditherPhase + (i & 0x0F)) & 0x0F];
+
     const uint8_t r = dimDither8(r0, glvl, thr);
     const uint8_t g = dimDither8(g0, glvl, thr);
     const uint8_t b = dimDither8(b0, glvl, thr);
-    LEDCTRL_NFC::rawStrip()->setPixelColor(i, LEDCTRL_NFC::rawStrip()->Color(r, g, b));
+
+    LEDCTRL_NFC::rawStrip()->setPixelColor(
+        i, LEDCTRL_NFC::rawStrip()->Color(r, g, b));
   }
-  s_ditherPhase = (s_ditherPhase + 1) & 0x0F;
 }
+
 
 static inline void dbgState(const char* where, LedState s) {
   (void)where; (void)s;
@@ -173,7 +193,6 @@ static inline void dbgState(const char* where, LedState s) {
 // ============================================================================
 // Public API
 // ============================================================================
-
 void LEDCTRL_NFC::init(int count, int pin, int timeout_ms, int brightness,
                        uint32_t colorSuccess, uint32_t colorError, uint32_t colorPulse,
                        bool successBlinkEnabled, int successBlinkCount, int successBlinkMs) {
@@ -221,6 +240,7 @@ void LEDCTRL_NFC::init(int count, int pin, int timeout_ms, int brightness,
   s_tagHeld          = false;
   s_releaseTs        = 0;
   currentState       = LED_OFF;
+  s_netPauseUntil    = 0; // FIX
 
   dbgState("init()", currentState);
 }
@@ -230,7 +250,8 @@ void LEDCTRL_NFC::setPixel(int index, uint32_t color) {
   const int n = pixCount();
   if (index < 0 || index >= n) return;
   _leds->setPixelColor(index, color);
-  neopixelShowSafe(_leds);
+  // FIX: Doppel-show bei Einzelpixel
+  forceShowNfc();
 }
 
 void LEDCTRL_NFC::allOff() {
@@ -294,18 +315,18 @@ void LEDCTRL_NFC::confirmSuccess() {
       NFC_LED_SUCCESS_BLINK_COUNT > 0 &&
       currentState != LED_SUCCESS_BLINK)
   {
-    // 0/zu klein → clamp auf Minimum
     s_blinkMs = (uint16_t)max<int>(NFC_LED_SUCCESS_BLINK_MS, MIN_BLINK_MS);
 
     currentState        = LED_SUCCESS_BLINK;
     s_successBlinkStep  = 0;
-    s_blinkStartTs      = now;   // feste Phase
-    s_successBlinkOn    = true;  // Start immer AN
+    s_blinkStartTs      = now;
+    s_successBlinkOn    = true;
     s_holdActive        = false;
     s_releaseTs         = 0;
 
     renderAll(rgbHexToNeo(NFC_LED_COLOR_SUCCESS));
-    neopixelShowSafe(_leds);
+    // FIX: Blink-Start doppelt
+    forceShowNfc();
 
     DBG("confirmSuccess(BLINK) state=%s held=%u relTs=%lu blinkMs=%u count=%u\n",
         stName((uint8_t)currentState), (unsigned)s_tagHeld, s_releaseTs, s_blinkMs, NFC_LED_SUCCESS_BLINK_COUNT);
@@ -333,7 +354,7 @@ void LEDCTRL_NFC::confirmError() {
   s_holdActive       = true;
   s_holdColorNeo     = rgbHexToNeo(NFC_LED_COLOR_ERROR);
   s_lastHoldRefresh  = 0;
-  s_idleBlockUntil   = now + 2;          // nur Idle kurz blocken
+  s_idleBlockUntil   = now + 2;
   s_releaseTs        = s_tagHeld ? 0 : now;
 
   forceFill(s_holdColorNeo);
@@ -351,10 +372,9 @@ void LEDCTRL_NFC::update() {
   if (!_leds) return;
   const unsigned long now = millis();
 
-  // === SUCCESS (Solid) ======================================================
+  // === SUCCESS (Solid)
   if (currentState == LED_SUCCESS) {
     if (s_tagHeld) {
-      // Solange das Tag da ist, kein Timeout und regelmäßiges Reassert
       s_releaseTs = 0;
       if (s_holdActive && now - s_lastHoldRefresh >= HOLD_REFRESH_MS) {
         s_lastHoldRefresh = now;
@@ -363,7 +383,6 @@ void LEDCTRL_NFC::update() {
       return;
     }
 
-    // Tag ist entfernt → ggf. Timeout
     if (s_releaseTs != 0 && (now - s_releaseTs) >= NFC_LED_TIMEOUT) {
       currentState      = LED_OFF;
       s_holdActive      = false;
@@ -379,10 +398,9 @@ void LEDCTRL_NFC::update() {
     }
   }
 
-  // === ERROR (Solid) ========================================================
+  // === ERROR (Solid)
   if (currentState == LED_ERROR) {
     if (s_tagHeld) {
-      // Solange Tag da: halten & reasserten
       s_releaseTs = 0;
       if (s_holdActive && now - s_lastHoldRefresh >= HOLD_REFRESH_MS) {
         s_lastHoldRefresh = now;
@@ -391,7 +409,6 @@ void LEDCTRL_NFC::update() {
       return;
     }
 
-    // Tag entfernt → ggf. Timeout
     if (s_releaseTs != 0 && (now - s_releaseTs) >= NFC_LED_TIMEOUT) {
       currentState      = LED_OFF;
       s_holdActive      = false;
@@ -407,21 +424,21 @@ void LEDCTRL_NFC::update() {
     }
   }
 
-  // === SUCCESS BLINK (phasenbasiert; genau 1 show pro Änderungs-Tick) ======
+  // === SUCCESS BLINK
   if (currentState == LED_SUCCESS_BLINK) {
-    const uint32_t intervals = (uint32_t)((now - s_blinkStartTs) / s_blinkMs); // Half-steps seit Start
+    const uint32_t intervals = (uint32_t)((now - s_blinkStartTs) / s_blinkMs);
 
     if (intervals != s_successBlinkStep) {
       s_successBlinkStep = (uint8_t)min<uint32_t>(255U, intervals);
-      s_successBlinkOn   = ((intervals & 1U) == 0U);   // gerade = AN, ungerade = AUS
+      s_successBlinkOn   = ((intervals & 1U) == 0U);
 
       const uint32_t cOn  = rgbHexToNeo(NFC_LED_COLOR_SUCCESS);
       const uint32_t cOff = 0;
       renderAll(s_successBlinkOn ? cOn : cOff);
-      neopixelShowSafe(_leds);
+      // FIX: Blink-Kante doppelt
+      forceShowNfc();
     }
 
-    // Nach N Blinks in stabilen SUCCESS wechseln
     if (intervals >= (uint32_t)NFC_LED_SUCCESS_BLINK_COUNT * 2U) {
       const uint32_t cOn = rgbHexToNeo(NFC_LED_COLOR_SUCCESS);
 
@@ -438,20 +455,29 @@ void LEDCTRL_NFC::update() {
     return;
   }
 
-  // === IDLE (Breathing Pulse) ==============================================
+  // === IDLE (Breathing Pulse)
   if (currentState == LED_OFF) {
-    if (now < s_idleBlockUntil) return;
+    if (now < s_idleBlockUntil || now < s_netPauseUntil) return;
 
-    if (now - s_lastPulseUpdate >= PULSE_INTERVAL_MS) {
-      s_lastPulseUpdate = now;
-      renderIdlePulseFrame(now);
-      neopixelShowSafe(_leds);
+    // Stabiler Takt: nicht auf "now" snappen, sondern Intervalle nachholen
+    while ((uint32_t)(now - s_lastPulseUpdate) >= PULSE_INTERVAL_MS) {
+      s_lastPulseUpdate += PULSE_INTERVAL_MS;
+
+      renderIdlePulseFrame(s_lastPulseUpdate);
+      neopixelShowSafe(_leds);  // im Idle weiterhin nur 1x show
     }
   }
+
+  
 }
 
 bool LEDCTRL_NFC::isIdle() {
   return currentState == LED_OFF;
 }
 
-
+// FIX: Netz busy → Idle kurz pausieren
+void LEDCTRL_NFC::netBusyHint(uint16_t ms) {
+  const unsigned long now = millis();
+  const unsigned long until = now + (unsigned long)ms;
+  if (until > s_netPauseUntil) s_netPauseUntil = until;
+}

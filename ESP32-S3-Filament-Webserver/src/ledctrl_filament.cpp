@@ -64,16 +64,28 @@ const uint16_t     LEDCTRL_FILAMENT::HOLD_REFRESH_MS  = 25;
 bool               LEDCTRL_FILAMENT::_idlePulseEnabled = true;
 float              LEDCTRL_FILAMENT::_minBrightness    = 0.30f;
 unsigned long      LEDCTRL_FILAMENT::_lastPulseUpdate  = 0;
-const uint16_t     LEDCTRL_FILAMENT::PULSE_INTERVAL_MS = 16;
+// FIX: Idle-FPS entschärfen (ca. 30 FPS)
+const uint16_t     LEDCTRL_FILAMENT::PULSE_INTERVAL_MS = 33;
 const uint16_t     LEDCTRL_FILAMENT::BREATHS_PER_MIN   = 15;
 uint8_t            LEDCTRL_FILAMENT::_ditherPhase      = 0;
 
 // Idle-Blocker (wirkt nur im Idle)
 unsigned long      LEDCTRL_FILAMENT::_idleBlockUntil   = 0;
 
+// FIX: Netzlast-Pause (Idle-Frames aussetzen)
+unsigned long      LEDCTRL_FILAMENT::_netPauseUntil    = 0;
+
 // ============================================================================
 // Kleine Helper
 // ============================================================================
+// FIX: robustes Doppelt-Senden für kritische Frames (Transitions/Reassert)
+static inline void forceShow(Adafruit_NeoPixel* s) {
+  if (!s) return;
+  neopixelShowSafe(s);
+  delayMicroseconds(300);
+  neopixelShowSafe(s);
+}
+
 static inline uint32_t rgbHexToNeo(Adafruit_NeoPixel* s, uint32_t rgb) {
   const uint8_t r = (rgb >> 16) & 0xFF;
   const uint8_t g = (rgb >>  8) & 0xFF;
@@ -107,7 +119,8 @@ void LEDCTRL_FILAMENT::ensureBuf(int n) {
 void LEDCTRL_FILAMENT::renderAllFromBuf(Adafruit_NeoPixel* s) {
   if (!s || !_buf) return;
   for (int i = 0; i < _bufCount; ++i) s->setPixelColor(i, _buf[i]);
-  neopixelShowSafe(s);
+  // FIX: kritische Frames doppelt
+  forceShow(s);
 }
 
 bool LEDCTRL_FILAMENT::bufAnyLit() {
@@ -119,16 +132,27 @@ bool LEDCTRL_FILAMENT::bufAnyLit() {
 }
 
 // ============================================================================
-// Idle-Pulse Frame
+// Idle-Pulse Frame (smooth + jitter-robust)
 // ============================================================================
+// Änderungen:
+//  - Dither-Phase ist ZEITBASIERT (now / pulseIntervalMs), nicht framebasiert
+//  - Kein ditherPhase++ mehr am Ende (verhindert "shimmer" bei Loop-Jitter)
+//  - setBrightness() NICHT jedes Frame (weniger Overhead / weniger Jitter)
+//
+// Hinweis: ditherPhase bleibt als Referenz-Parameter drin (API-kompatibel),
+// wird aber nur noch als "Output" für Kompatibilität/Debug gesetzt.
 static void renderIdlePulseFrame(Adafruit_NeoPixel* s,
                                  unsigned long now,
                                  uint32_t pulseRgbHex,
                                  float minBrightness,
                                  uint8_t& ditherPhase,
-                                 uint16_t breathsPerMin) {
+                                 uint16_t breathsPerMin,
+                                 uint16_t pulseIntervalMs)
+{
   if (!s) return;
-  s->setBrightness(constrain(LED_BRIGHTNESS, 0, 255));
+
+  // NICHT pro Frame: s->setBrightness(...)
+  // (Brightness wird in init() / bei Änderungen gesetzt)
 
   const uint8_t low8 = (uint8_t)constrain((int)lroundf(minBrightness * 255.0f), 0, 255);
   const uint8_t lvl  = breath8(breathsPerMin, now, low8, 255);
@@ -138,23 +162,32 @@ static void renderIdlePulseFrame(Adafruit_NeoPixel* s,
   const uint8_t g0 = (pulseRgbHex >>  8) & 0xFF;
   const uint8_t b0 =  pulseRgbHex        & 0xFF;
 
-  auto dimDither8 = [](uint8_t base, uint8_t dim, uint8_t thr)->uint8_t {
+  // ✅ Dither-Phase ZEITBASIERT (stabil bei Loop-/Netz-Jitter)
+  if (pulseIntervalMs == 0) pulseIntervalMs = 1;
+  ditherPhase = (uint8_t)((now / pulseIntervalMs) & 0x0F);
+
+  auto dimDither8 = [](uint8_t base, uint8_t dim, uint8_t thr) -> uint8_t {
     const uint32_t v12 = ((uint32_t)base * (uint32_t)dim * 16U + 127U) / 255U;
     uint8_t out = (uint8_t)(v12 >> 4);
     if ((v12 & 0x0F) > thr && out < 255) out++;
     return out;
   };
 
-  const int n = s->numPixels();
+  const int n = (int)s->numPixels();
   for (int i = 0; i < n; ++i) {
     const uint8_t thr = BAYER4[(ditherPhase + (i & 0x0F)) & 0x0F];
+
     const uint8_t r = dimDither8(r0, glvl, thr);
     const uint8_t g = dimDither8(g0, glvl, thr);
     const uint8_t b = dimDither8(b0, glvl, thr);
+
     s->setPixelColor(i, s->Color(r, g, b));
   }
-  ditherPhase = (uint8_t)((ditherPhase + 1) & 0x0F);
+
+  // ❌ KEIN ditherPhase++ mehr!
 }
+
+
 
 // ============================================================================
 // Public API
@@ -201,6 +234,7 @@ void LEDCTRL_FILAMENT::init(int count, int pin, int timeout_ms, int brightness, 
   _lastPulseUpdate = millis();
   _ditherPhase     = 0;
   _idleBlockUntil  = 0;
+  _netPauseUntil   = 0; // FIX
 
   FILDBG("init: count=%d pin=%d bright=%d timeout=%d color=%d error=%d pulse=%d\n", LED_COUNT, LED_PIN, LED_BRIGHTNESS, LED_TIMEOUT, LED_COLOR, LED_COLOR_ERROR, LED_COLOR_PULSE);
 }
@@ -225,7 +259,8 @@ void LEDCTRL_FILAMENT::setPixel(int index, uint32_t color) {
   // Gewünschten Pixel setzen
   _buf[index] = color;
   _leds->setPixelColor(index, color);
-  neopixelShowSafe(_leds);
+  // FIX: Transitions doppelt
+  forceShow(_leds);
 
   // Idle kurz blocken (Pulse nicht in Übergangsframe mischen)
   _idleBlockUntil = millis() + 2;
@@ -236,7 +271,8 @@ void LEDCTRL_FILAMENT::allOff() {
 
   for (int i = 0; i < _bufCount; ++i) _buf[i] = 0;
   _leds->clear();
-  neopixelShowSafe(_leds);
+  // FIX: Transitions doppelt
+  forceShow(_leds);
 
   _errBlinkActive = false;
   _errSolidActive = false;
@@ -286,7 +322,7 @@ void LEDCTRL_FILAMENT::errorAll() {
   // Alle rot/err füllen (Buffer + Ausgabe)
   const uint32_t neoErr = rgbHexToNeo(_leds, LED_COLOR_ERROR);
   for (int i = 0; i < _bufCount; ++i) _buf[i] = neoErr;
-  renderAllFromBuf(_leds);
+  renderAllFromBuf(_leds); // (doppelt)
 
   // Timeout ab Tag-Entfernung
   _releaseTs = _tagHeld ? 0UL : millis();
@@ -317,7 +353,8 @@ void LEDCTRL_FILAMENT::errorBlink() {
 
   // Startframe = AN (direkt rendern, ohne Buffer)
   for (int i = 0; i < _leds->numPixels(); ++i) _leds->setPixelColor(i, s_errBlinkColorNeo);
-  neopixelShowSafe(_leds);
+  // FIX: Blink-Kante doppelt
+  forceShow(_leds);
 
   // Timeout erst ab Entfernung
   _releaseTs = _tagHeld ? 0UL : millis();
@@ -331,7 +368,7 @@ void LEDCTRL_FILAMENT::update() {
   if (!_leds) return;
   const unsigned long now = millis();
 
-  // 1) ERROR-BLINK: phasenbasiert; Frames DIREKT rendern (kein Buffer!)
+  // 1) ERROR-BLINK
   if (_errBlinkActive) {
     const uint32_t intervals = (uint32_t)((now - _errBlinkStart) / _errBlinkMs); // Halbphasen
     if (intervals != _errBlinkStep) {
@@ -343,72 +380,69 @@ void LEDCTRL_FILAMENT::update() {
       } else {
         for (int i = 0; i < _leds->numPixels(); ++i) _leds->setPixelColor(i, 0);
       }
-      neopixelShowSafe(_leds);
+      // FIX: Blink-Kante doppelt
+      forceShow(_leds);
     }
 
-    // Ende der Blink-Sequenz?
     if (intervals >= (uint32_t)_errBlinkCount * 2U) {
       _errBlinkActive = false;
 
-      // Wenn Timeout noch nicht durch → in ERR-SOLID wechseln und Buffer füllen
       if (_releaseTs == 0 || (now - _releaseTs) < (unsigned long)LED_TIMEOUT) {
         _errSolidActive   = true;
         _lastHoldRefresh  = 0;
 
         const uint32_t neoErr = rgbHexToNeo(_leds, LED_COLOR_ERROR);
         for (int i = 0; i < _bufCount; ++i) _buf[i] = neoErr;
-        renderAllFromBuf(_leds);
+        renderAllFromBuf(_leds); // (doppelt)
 
         _idleBlockUntil = now + 2;
         FILDBG("errBlink -> errSolid\n");
       } else {
-        // Timeout bereits durch → Idle
         allOff();
       }
     }
-    // Solange Blinken aktiv ist, kein Idle-Pulse
     return;
   }
 
-  // 2) ERROR-SOLID: halten solange Tag da; sonst nach Timeout aus
+  // 2) ERROR-SOLID
   if (_errSolidActive) {
     if (_tagHeld) {
       _releaseTs = 0;
       if (now - _lastHoldRefresh >= HOLD_REFRESH_MS) {
         _lastHoldRefresh = now;
-        renderAllFromBuf(_leds);
+        renderAllFromBuf(_leds); // (doppelt)
       }
       return;
     }
     if (_releaseTs != 0 && (now - _releaseTs) >= (unsigned long)LED_TIMEOUT) {
       _errSolidActive = false;
       _releaseTs      = 0;
-      allOff(); // schaltet auch Idle wieder ein
+      allOff();
     } else {
       if (now - _lastHoldRefresh >= HOLD_REFRESH_MS) {
         _lastHoldRefresh = now;
-        renderAllFromBuf(_leds);
+        renderAllFromBuf(_leds); // (doppelt)
       }
     }
     return;
   }
 
-  // 3) Normale Pixel-Anzeige (einzelne LEDs gesetzt) mit Timeout-Gating
+  // 3) Normale Pixel-Anzeige
   if (bufAnyLit()) {
     if (_tagHeld) {
       _releaseTs = 0;
       if (now - _lastHoldRefresh >= HOLD_REFRESH_MS) {
         _lastHoldRefresh = now;
-        renderAllFromBuf(_leds);
+        renderAllFromBuf(_leds); // (doppelt)
       }
       return;
     }
     if (_releaseTs != 0 && (now - _releaseTs) >= (unsigned long)LED_TIMEOUT) {
-      allOff(); // löscht Buffer + geht in Idle
+      allOff();
     } else {
       if (now - _lastHoldRefresh >= HOLD_REFRESH_MS) {
         _lastHoldRefresh = now;
-        renderAllFromBuf(_leds);
+        renderAllFromBuf(_leds); // (doppelt)
       }
     }
     return;
@@ -416,13 +450,19 @@ void LEDCTRL_FILAMENT::update() {
 
   // 4) IDLE-PULSE (nur wenn nix aktiv + nix leuchtet)
   if (_idlePulseEnabled) {
-    if (now < _idleBlockUntil) return;
-    if (now - _lastPulseUpdate >= PULSE_INTERVAL_MS) {
-      _lastPulseUpdate = now;
-      renderIdlePulseFrame(_leds, now, LED_COLOR_PULSE, _minBrightness, _ditherPhase, BREATHS_PER_MIN);
-      neopixelShowSafe(_leds);
+    if (now < _idleBlockUntil || now < _netPauseUntil) return;
+
+    // Stabiler Takt: nicht auf "now" snappen
+    while ((uint32_t)(now - _lastPulseUpdate) >= PULSE_INTERVAL_MS) {
+      _lastPulseUpdate += PULSE_INTERVAL_MS;
+
+      renderIdlePulseFrame(_leds, _lastPulseUpdate, LED_COLOR_PULSE, _minBrightness, _ditherPhase,
+                     BREATHS_PER_MIN, PULSE_INTERVAL_MS);
+
+      neopixelShowSafe(_leds); // im Idle bewusst nur 1x
     }
   }
+
 }
 
 bool LEDCTRL_FILAMENT::isIdle() {
@@ -433,3 +473,9 @@ Adafruit_NeoPixel* LEDCTRL_FILAMENT::rawStrip() {
   return _leds;
 }
 
+// FIX: Netz busy → Idle kurz pausieren
+void LEDCTRL_FILAMENT::netBusyHint(uint16_t ms) {
+  const unsigned long now = millis();
+  const unsigned long until = now + (unsigned long)ms;
+  if (until > _netPauseUntil) _netPauseUntil = until;
+}

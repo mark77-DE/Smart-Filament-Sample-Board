@@ -19,6 +19,10 @@ extern void renderRebootCountdown(unsigned long nowMs);
 void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
                AwsEventType type, void *arg, uint8_t *data, size_t len)
 {
+    // FIX: Während WS-Traffic Idle-Pulse kurz pausieren (beide Strips)
+    LEDCTRL_FILAMENT::netBusyHint(350);
+    LEDCTRL_NFC::netBusyHint(350);
+
     if (type != WS_EVT_DATA) return;
 
     AwsFrameInfo *info = (AwsFrameInfo*)arg;
@@ -55,6 +59,7 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
     ws.onEvent(onWsEvent);
     server.addHandler(&ws);
 
+
     // FIX: Statische Dateien per serveStatic + Cache-Header ausliefern
     //      (schneller, weniger LittleFS-Lesezugriffe, Browser-Caching)
     // Spezifische Routen zuerst:
@@ -90,6 +95,10 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
     // server.on("/favicon.ico", HTTP_GET, ...);
 
     server.on("/api/version", HTTP_GET, [](AsyncWebServerRequest *request) {
+        // FIX: Netzlast-Hinweis – JSON bauen/senden
+        LEDCTRL_FILAMENT::netBusyHint(250);
+        LEDCTRL_NFC::netBusyHint(250);
+
         StaticJsonDocument<256> doc;
         doc["firmware"] = FIRMWARE_VERSION;
         doc["git_hash"] = GIT_HASH;
@@ -103,6 +112,10 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
 
     // Filament-Liste als JSON
     server.on("/filaments.json", HTTP_GET, [](AsyncWebServerRequest *request){
+        // FIX: Netzlast-Hinweis – Dateizugriff + JSON
+        LEDCTRL_FILAMENT::netBusyHint(350);
+        LEDCTRL_NFC::netBusyHint(350);
+
         std::vector<FilamentEntry> list;
         FilamentDB::getAll(list);
 
@@ -126,6 +139,10 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
 
     // --- api to export ALL (filaments + config) ---
     server.on("/api/exportAll", HTTP_GET, [](AsyncWebServerRequest *req) {
+        // FIX: Netzlast-Hinweis – relativ große JSON-Antwort
+        LEDCTRL_FILAMENT::netBusyHint(500);
+        LEDCTRL_NFC::netBusyHint(500);
+
         JsonDocument outDoc;
 
         // config
@@ -143,9 +160,18 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
 
     // --- api to import ALL ---
     server.on("/api/importAll", HTTP_POST,
-        [](AsyncWebServerRequest *req){ req->send(200, "text/plain", "Upload started"); },
+        [](AsyncWebServerRequest *req){ 
+            // FIX: Netzlast-Hinweis – Upload startet
+            LEDCTRL_FILAMENT::netBusyHint(500);
+            LEDCTRL_NFC::netBusyHint(500);
+            req->send(200, "text/plain", "Upload started"); 
+        },
         nullptr,
         [](AsyncWebServerRequest *req, uint8_t *data, size_t len, size_t index, size_t total){
+            // FIX: Netzlast-Hinweis – bei jedem Chunk
+            LEDCTRL_FILAMENT::netBusyHint(500);
+            LEDCTRL_NFC::netBusyHint(500);
+
             static String body;
             if (index == 0) { body = ""; if (total > 0) body.reserve(total); }
             body.concat((const char*)data, len);
@@ -174,10 +200,17 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
     // Update single filament
     server.on("/api/update", HTTP_POST,
         [](AsyncWebServerRequest *req){
+            // FIX: Netzlast-Hinweis – kurzer Upload/JSON
+            LEDCTRL_FILAMENT::netBusyHint(350);
+            LEDCTRL_NFC::netBusyHint(350);
             req->send(200, "text/plain", "Processing");
         },
         nullptr,
         [](AsyncWebServerRequest *req, uint8_t *data, size_t len, size_t index, size_t total){
+            // FIX: Netzlast-Hinweis – pro Chunk
+            LEDCTRL_FILAMENT::netBusyHint(350);
+            LEDCTRL_NFC::netBusyHint(350);
+
             static String body;
             if(index == 0){
                 body = "";
@@ -233,10 +266,17 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
     // Neuen Eintrag anlegen
     server.on("/api/add", HTTP_POST,
         [](AsyncWebServerRequest *req){
+            // FIX: Netzlast-Hinweis – kurzer Upload/JSON
+            LEDCTRL_FILAMENT::netBusyHint(350);
+            LEDCTRL_NFC::netBusyHint(350);
             req->send(200, "text/plain", "Processing");
         },
         nullptr,
         [](AsyncWebServerRequest *req, uint8_t *data, size_t len, size_t index, size_t total){
+            // FIX: Netzlast-Hinweis – pro Chunk
+            LEDCTRL_FILAMENT::netBusyHint(350);
+            LEDCTRL_NFC::netBusyHint(350);
+
             static String body;
             if (index == 0) {
                 body = "";
@@ -277,6 +317,10 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
     );
 
     server.on("/api/delete", HTTP_POST, [](AsyncWebServerRequest *request) {
+        // FIX: Netzlast-Hinweis – kleiner JSON-Response + DB-Zugriff
+        LEDCTRL_FILAMENT::netBusyHint(250);
+        LEDCTRL_NFC::netBusyHint(250);
+
         if (!request->hasParam("uid", true)) {
             request->send(400, "application/json",
                 "{\"status\":\"error\",\"msg\":\"missing uid\"}");
@@ -298,6 +342,10 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
 
     // Config als JSON ausliefern
     server.on("/config.json", HTTP_GET, [](AsyncWebServerRequest *request){
+        // FIX: Netzlast-Hinweis – FS-Read + JSON
+        LEDCTRL_FILAMENT::netBusyHint(250);
+        LEDCTRL_NFC::netBusyHint(250);
+
         if (!LittleFS.exists("/config.json")) {
             request->send(404, "application/json", "{\"error\":\"config.json missing\"}");
             return;
@@ -311,9 +359,17 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
 
     // Update LED Config (sicherer Upload-Handler)
     server.on("/api/updateConfig", HTTP_POST, 
-        [](AsyncWebServerRequest *req){},  // keine GET-Handler nötig
+        [](AsyncWebServerRequest *req){ 
+            // FIX: Netzlast-Hinweis – Start der Config-Übertragung
+            LEDCTRL_FILAMENT::netBusyHint(400);
+            LEDCTRL_NFC::netBusyHint(400);
+        },  // keine GET-Handler nötig
         nullptr,                            // kein Body-Upload-Handler für Chunked POST
         [](AsyncWebServerRequest *req, uint8_t *data, size_t len, size_t index, size_t total) {
+            // FIX: Netzlast-Hinweis – pro Chunk
+            LEDCTRL_FILAMENT::netBusyHint(400);
+            LEDCTRL_NFC::netBusyHint(400);
+
             static String body;
             if (index == 0) {
                 body = "";
@@ -360,6 +416,10 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
     );
 
     server.on("/api/reboot", HTTP_POST, [](AsyncWebServerRequest *request){
+        // FIX: Netzlast-Hinweis – Request bearbeiten
+        LEDCTRL_FILAMENT::netBusyHint(250);
+        LEDCTRL_NFC::netBusyHint(250);
+
         const unsigned long nowMs = millis();
 
         if (!rebootPending) {

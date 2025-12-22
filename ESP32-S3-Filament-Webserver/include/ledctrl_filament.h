@@ -111,6 +111,16 @@ public:
    */
   static Adafruit_NeoPixel* rawStrip();
 
+  // --------------------------------------------------------------------------
+  // Netzlast-Hinweis (Idle kurz pausieren)
+  // --------------------------------------------------------------------------
+  /**
+   * @brief Hinweis vom Webserver/WS: Netzwerk ist gerade beschäftigt.
+   *        Pausiert IDLE-Frames für die nächsten @p ms Millisekunden.
+   *        Transitions (Blink/Solid/Reassert) bleiben unbeeinflusst.
+   */
+  static void netBusyHint(uint16_t ms); // FIX: hinzugefügt
+
 private:
   // --------------------------------------------------------------------------
   // Hardware / Buffer
@@ -157,6 +167,9 @@ private:
 
   // Blockt den Idle-Pulse ganz kurz nach Umschaltungen (Frame-Trennung)
   static unsigned long      _idleBlockUntil;
+
+  // FIX: Während Netzlast (HTTP/WS) zusätzlich Idle-Frames pausieren
+  static unsigned long      _netPauseUntil;      // bis wann Idle unterdrücken
 
   // --------------------------------------------------------------------------
   // Buffer-Helfer

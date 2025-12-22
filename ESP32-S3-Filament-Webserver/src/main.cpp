@@ -81,23 +81,20 @@ void renderRebootCountdown(unsigned long nowMs) {
     return;
   }
 
-  // --- Reboot aktiv ---
-  if (!inReboot) {
-    inReboot = true;
-    lastSec  = 0xFFFFFFFF;
-  }
+// --- Reboot aktiv ---
+if (!inReboot) {
+  inReboot = true;
+  lastSec  = 0xFFFFFFFF;
 
-  // Präsenz „halten“, damit Solid/Error nicht aus-Timeouten
-  LEDCTRL_NFC::tagPresenceTick(true);
-  LEDCTRL_FILAMENT::tagPresenceTick(true);
+  // Beim Start des Countdowns IMMER auf Error umschalten (einmalig)
+  LEDCTRL_NFC::showError();        // NFC-Ring sofort rot (solid)
+  LEDCTRL_FILAMENT::errorBlink();  // Filament: blinkt -> rot (wie gewünscht)
+}
 
-  // WICHTIG: idempotent „armen“, falls der Controller gerade im Idle ist
-  if (LEDCTRL_NFC::isIdle()) {
-    LEDCTRL_NFC::showError();       // sofort stabil rot
-  }
-  if (LEDCTRL_FILAMENT::isIdle()) {
-    LEDCTRL_FILAMENT::errorBlink(); // blinkt, dann rot
-  }
+// Präsenz „halten“, damit Solid/Error nicht aus-Timeouten
+LEDCTRL_NFC::tagPresenceTick(true);
+LEDCTRL_FILAMENT::tagPresenceTick(true);
+
 
   // Countdown-Text nur bei Sekundenwechsel neu zeichnen
   const uint32_t remainingMs = (nowMs < rebootAt) ? (rebootAt - nowMs) : 0;
