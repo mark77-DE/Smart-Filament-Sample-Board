@@ -244,7 +244,8 @@ void setup() {
   }
 
   // 5) WebSocket + Webserver starten (WebIF nun sofort erreichbar)
-  server.addHandler(&ws);
+  // FIX: doppelte WS-Registrierung vermeiden – nur im Webserver-Modul hinzufügen
+  // server.addHandler(&ws); // <-- ENTFERNT, Registrierung erfolgt in initWebServer()
   initWebServer(server, ws);
   WiFi.setSleep(false);
 

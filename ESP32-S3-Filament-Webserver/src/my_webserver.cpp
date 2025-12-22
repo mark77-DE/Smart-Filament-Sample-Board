@@ -12,7 +12,8 @@
 #include "version_info.h"
 #include "reboot_handler.h"
 
-
+// FIX: Vorwärtsdeklaration, damit /api/reboot sofort rendern kann (Definition in main.cpp)
+extern void renderRebootCountdown(unsigned long nowMs);
 
 // ----------------- WebSocket Event -----------------
 void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
@@ -50,32 +51,43 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
 // ------------------ Webserver Init -------------------
 void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
 {
-    // ROOT
-    server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
-        request->send(LittleFS, "/index.html", "text/html");
-    });
+    // [ORDER-FIX]: WebSocket zuerst registrieren, damit /ws nicht vom Catch-all "/" abgefangen wird
+    ws.onEvent(onWsEvent);
+    server.addHandler(&ws);
 
-    // STATIC FILES
-    server.on("/style.css", HTTP_GET, [](AsyncWebServerRequest *request){
-        request->send(LittleFS, "/style.css", "text/css");
-    });
+    // FIX: Statische Dateien per serveStatic + Cache-Header ausliefern
+    //      (schneller, weniger LittleFS-Lesezugriffe, Browser-Caching)
+    // Spezifische Routen zuerst:
+    server.serveStatic("/settings", LittleFS, "/settings.html")
+        .setCacheControl("no-cache"); // HTML bewusst kurz cachen/prüfen
 
-    server.on("/script.js", HTTP_GET, [](AsyncWebServerRequest *request){
-        request->send(LittleFS, "/script.js", "application/javascript");
-    });
+    server.serveStatic("/script.js", LittleFS, "/script.js")
+        .setCacheControl("public, max-age=604800"); // 7 Tage
 
-    server.on("/settings.css", HTTP_GET, [](AsyncWebServerRequest *request){
-        request->send(LittleFS, "/settings.css", "text/css");
-    });
+    server.serveStatic("/style.css", LittleFS, "/style.css")
+        .setCacheControl("public, max-age=604800");
 
-    server.on("/settings.js", HTTP_GET, [](AsyncWebServerRequest *request){
-        request->send(LittleFS, "/settings.js", "application/javascript");
-    });
+    server.serveStatic("/settings.js", LittleFS, "/settings.js")
+        .setCacheControl("public, max-age=604800");
 
-    // Admin page
-    server.on("/settings", HTTP_GET, [](AsyncWebServerRequest *request){
-        request->send(LittleFS, "/settings.html", "text/html");
-    });
+    server.serveStatic("/settings.css", LittleFS, "/settings.css")
+        .setCacheControl("public, max-age=604800");
+
+    server.serveStatic("/logo.png", LittleFS, "/logo.png")
+        .setCacheControl("public, max-age=2592000"); // 30 Tage
+
+    server.serveStatic("/favicon.ico", LittleFS, "/favicon.ico")
+        .setCacheControl("public, max-age=2592000");
+
+    // ALT: Direkte Handler für statische Files entfernt (durch serveStatic ersetzt)
+    // server.on("/", HTTP_GET, ...);
+    // server.on("/style.css", HTTP_GET, ...);
+    // server.on("/script.js", HTTP_GET, ...);
+    // server.on("/settings.css", HTTP_GET, ...);
+    // server.on("/settings.js", HTTP_GET, ...);
+    // server.on("/settings", HTTP_GET, ...);
+    // server.on("/logo.png", HTTP_GET, ...);
+    // server.on("/favicon.ico", HTTP_GET, ...);
 
     server.on("/api/version", HTTP_GET, [](AsyncWebServerRequest *request) {
         StaticJsonDocument<256> doc;
@@ -83,7 +95,6 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
         doc["git_hash"] = GIT_HASH;
         doc["build_date"] = BUILD_DATE;
         doc["build_date_short"] = BUILD_DATE_SHORT;
-
 
         String response;
         serializeJson(doc, response);
@@ -99,16 +110,13 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
         JsonDocument doc;
         JsonArray arr = doc.to<JsonArray>();
 
-        
         for (auto &e : list) {
             JsonObject o = arr.add<JsonObject>();
-            
             o["uid"] = e.uid;
             o["vendor"] = e.vendor;
             o["type"] = e.type;
             o["color"] = e.color;
             o["ledIndex"] = e.ledIndex;
-            
         }
 
         String json;
@@ -116,10 +124,8 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
         request->send(200, "application/json", json);
     });
 
-
     // --- api to export ALL (filaments + config) ---
     server.on("/api/exportAll", HTTP_GET, [](AsyncWebServerRequest *req) {
-
         JsonDocument outDoc;
 
         // config
@@ -137,41 +143,38 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
 
     // --- api to import ALL ---
     server.on("/api/importAll", HTTP_POST,
-    [](AsyncWebServerRequest *req){ req->send(200, "text/plain", "Upload started"); },
-    nullptr,
-    [](AsyncWebServerRequest *req, uint8_t *data, size_t len, size_t index, size_t total){
-        static String body;
-        if (index == 0) { body = ""; if (total > 0) body.reserve(total); }
-        body.concat((const char*)data, len);
-        if (index + len != total) return;
+        [](AsyncWebServerRequest *req){ req->send(200, "text/plain", "Upload started"); },
+        nullptr,
+        [](AsyncWebServerRequest *req, uint8_t *data, size_t len, size_t index, size_t total){
+            static String body;
+            if (index == 0) { body = ""; if (total > 0) body.reserve(total); }
+            body.concat((const char*)data, len);
+            if (index + len != total) return;
 
-        DynamicJsonDocument doc(8192);
-        DeserializationError err = deserializeJson(doc, body);
-        if (err) {
-            req->send(400, "text/plain", "JSON parse failed");
-            
-            if(CONFIG.debugMode) {
-                Serial.println("importAll JSON parse failed");
+            DynamicJsonDocument doc(8192);
+            DeserializationError err = deserializeJson(doc, body);
+            if (err) {
+                req->send(400, "text/plain", "JSON parse failed");
+                if(CONFIG.debugMode) {
+                    Serial.println("importAll JSON parse failed");
+                }
+                return;
             }
-            return;
+
+            if (doc.containsKey("config") && doc["config"].is<JsonObject>())
+                importConfigJson(doc["config"].as<JsonObject>());
+
+            if (doc.containsKey("filaments") && doc["filaments"].is<JsonArray>())
+                importFilamentsJson(doc["filaments"].as<JsonArray>());
+
+            req->send(200, "text/plain", "Import OK");
         }
+    );
 
-        if (doc.containsKey("config") && doc["config"].is<JsonObject>())
-            importConfigJson(doc["config"].as<JsonObject>());
-
-        if (doc.containsKey("filaments") && doc["filaments"].is<JsonArray>())
-            importFilamentsJson(doc["filaments"].as<JsonArray>());
-
-        req->send(200, "text/plain", "Import OK");
-    }
-);
-
-
-    
     // Update single filament
     server.on("/api/update", HTTP_POST,
-        [](AsyncWebServerRequest *req){ 
-            req->send(200, "text/plain", "Processing"); 
+        [](AsyncWebServerRequest *req){
+            req->send(200, "text/plain", "Processing");
         },
         nullptr,
         [](AsyncWebServerRequest *req, uint8_t *data, size_t len, size_t index, size_t total){
@@ -186,8 +189,6 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
             if(CONFIG.debugMode) {
                 Serial.println("Update received: " + body);
             }
-
-       
 
             JsonDocument doc;
             DeserializationError err = deserializeJson(doc, body);
@@ -205,7 +206,6 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
                 if(CONFIG.debugMode) {
                     Serial.println("Update failed: missing index");
                 }
-                
                 return;
             }
 
@@ -222,19 +222,13 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
                 if(CONFIG.debugMode) {
                     Serial.println("DB updated and saved");
                 }
-                
             } else {
                 if(CONFIG.debugMode) {
                     Serial.println("DB update failed");
                 }
-                
             }
-
-        
         }
     );
-
-
 
     // Neuen Eintrag anlegen
     server.on("/api/add", HTTP_POST,
@@ -259,7 +253,6 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
                     Serial.print("ADD: JSON parse failed: ");
                     Serial.println(err.c_str());
                 }
-                
                 return;
             }
 
@@ -274,13 +267,11 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
                 if(CONFIG.debugMode) {
                     Serial.println("ADD: OK");
                 }
-                
                 saveFilamentsToFile();
             } else {
                 if(CONFIG.debugMode) {
                     Serial.println("ADD: FAILED");
                 }
-                
             }
         }
     );
@@ -303,8 +294,7 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
         }
 
         request->send(200, "application/json", "{\"status\":\"ok\"}");
-});
-
+    });
 
     // Config als JSON ausliefern
     server.on("/config.json", HTTP_GET, [](AsyncWebServerRequest *request){
@@ -315,14 +305,9 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
         request->send(LittleFS, "/config.json", "application/json");
     });
 
-    server.on("/logo.png", HTTP_GET, [](AsyncWebServerRequest *request){
-        request->send(LittleFS, "/logo.png", "image/png");
-    });
-
-    server.on("/favicon.ico", HTTP_GET, [](AsyncWebServerRequest *request){
-        request->send(LittleFS, "/favicon.ico", "image/x-icon");
-    });
-
+    // FIX: /logo.png und /favicon.ico laufen nun über serveStatic (oben) mit Cache
+    // server.on("/logo.png", HTTP_GET, ...);    // entfernt
+    // server.on("/favicon.ico", HTTP_GET, ...); // entfernt
 
     // Update LED Config (sicherer Upload-Handler)
     server.on("/api/updateConfig", HTTP_POST, 
@@ -333,81 +318,71 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
             if (index == 0) {
                 body = "";
                 if (total > 0) body.reserve(total);
+            }
+            body.concat((const char*)data, len);
+
+            if (index + len != total) return; // noch nicht alles empfangen
+
+            // --- JSON parsen ---
+            JsonDocument doc;
+            DeserializationError err = deserializeJson(doc, body);
+
+            // --- Debug Ausgabe optional ---
+            if (CONFIG.debugMode) {
+                Serial.println("Updated CONFIG:");
+                Serial.printf("LED: count=%d, pin=%d, brightness=%d, timeout=%d, color=0x%06X, colorError=0x%06X, colorPulse=0x%06X\n", 
+                              CONFIG.led.count, CONFIG.led.pin, CONFIG.led.brightness, CONFIG.led.timeout, CONFIG.led.color, CONFIG.led.colorError, CONFIG.led.colorPulse);
+                Serial.printf("NFC: count=%d, pin=%d, brightness=%d, timeout=%d, success=0x%06X, error=0x%06X, pulse=0x%06X\n",
+                              CONFIG.nfc.count, CONFIG.nfc.pin, CONFIG.nfc.brightness, CONFIG.nfc.timeout,
+                              CONFIG.nfc.colorSuccess, CONFIG.nfc.colorError, CONFIG.nfc.colorPulse);
+                Serial.printf("NFC Blink: enabled=%d, count=%d, ms=%d\n",
+                              CONFIG.nfc.successBlinkEnabled, CONFIG.nfc.successBlinkCount, CONFIG.nfc.successBlinkMs);
+                Serial.printf("Debug Mode: %s\n", CONFIG.debugMode ? "ON" : "OFF");
+            }
+            
+            if (err) {
+                req->send(400, "text/plain", "JSON Error");
+                if(CONFIG.debugMode) {
+                    Serial.print("updateConfig JSON error: ");
+                    Serial.println(err.c_str());
                 }
-                
-                body.concat((const char*)data, len);
+                return;
+            }
 
-                if (index + len != total) return; // noch nicht alles empfangen
+            // --- Update CONFIG ---
+            if (!updateConfigFromJson(doc)) {
+                req->send(400, "text/plain", "Invalid JSON structure");
+                return;
+            }
 
-                    // --- JSON parsen ---
-                    JsonDocument doc;
-                    DeserializationError err = deserializeJson(doc, body);
-
-                    // --- Debug Ausgabe optional ---
-                    if (CONFIG.debugMode) {
-                        Serial.println("Updated CONFIG:");
-                        Serial.printf("LED: count=%d, pin=%d, brightness=%d, timeout=%d, color=0x%06X, colorError=0x%06X, colorPulse=0x%06X\n", 
-                                    CONFIG.led.count, CONFIG.led.pin, CONFIG.led.brightness, CONFIG.led.timeout, CONFIG.led.color, CONFIG.led.colorError, CONFIG.led.colorPulse);
-                        Serial.printf("NFC: count=%d, pin=%d, brightness=%d, timeout=%d, success=0x%06X, error=0x%06X, pulse=0x%06X\n",
-                                    CONFIG.nfc.count, CONFIG.nfc.pin, CONFIG.nfc.brightness, CONFIG.nfc.timeout,
-                                    CONFIG.nfc.colorSuccess, CONFIG.nfc.colorError, CONFIG.nfc.colorPulse);
-                        Serial.printf("NFC Blink: enabled=%d, count=%d, ms=%d\n",
-                                    CONFIG.nfc.successBlinkEnabled, CONFIG.nfc.successBlinkCount, CONFIG.nfc.successBlinkMs);
-                        Serial.printf("Debug Mode: %s\n", CONFIG.debugMode ? "ON" : "OFF");
-                    }
-                    
-                    if (err) {
-                        req->send(400, "text/plain", "JSON Error");
-                        if(CONFIG.debugMode) {
-                            Serial.print("updateConfig JSON error: ");
-                            Serial.println(err.c_str());
-                        }
-                        return;
-                    }
-
-                    // --- Update CONFIG ---
-                    if (!updateConfigFromJson(doc)) {
-                        req->send(400, "text/plain", "Invalid JSON structure");
-                        return;
-                    }
-
-                    
-
-                    req->send(200, "application/json", "{\"status\":\"ok\"}");
-                }
+            req->send(200, "application/json", "{\"status\":\"ok\"}");
+        }
     );
 
-
     server.on("/api/reboot", HTTP_POST, [](AsyncWebServerRequest *request){
-            const unsigned long nowMs = millis();
+        const unsigned long nowMs = millis();
 
-            if (!rebootPending) {
-                // Akustik + Countdown starten
-                buzzer_double_beep();
-                rebootPending = true;
-                rebootAt      = nowMs + REBOOT_DELAY_WEBIF_MS;
+        if (!rebootPending) {
+            // Akustik + Countdown starten
+            buzzer_double_beep();
+            rebootPending = true;
+            rebootAt      = nowMs + REBOOT_DELAY_WEBIF_MS;
 
-                // Button-States flushen, damit kein sofortiges Cancel aus altem Zustand kommt
-                gpiohw_reset_click_state();
+            // Button-States flushen, damit kein sofortiges Cancel aus altem Zustand kommt
+            gpiohw_reset_click_state();
 
-                // WICHTIG: sofort LEDs + UI „armen“ (idempotent)
-                renderRebootCountdown(nowMs);
-            }
-            // optional: Status-JSON zurückgeben
-            request->send(200, "application/json", "{\"status\":\"ok\",\"pending\":true}");
+            // WICHTIG: sofort LEDs + UI „armen“ (idempotent)
+            // FIX: compile-sicher dank Vorwärtsdeklaration oben
+            renderRebootCountdown(nowMs);
+        }
+        // optional: Status-JSON zurückgeben
+        request->send(200, "application/json", "{\"status\":\"ok\",\"pending\":true}");
     });
 
-
-
-
-    ws.onEvent(onWsEvent);
-    server.addHandler(&ws);
-
-    server.serveStatic("/settings.js", LittleFS, "/settings.js")
-          .setCacheControl("max-age=86400");
-
-    server.serveStatic("/settings.css", LittleFS, "/settings.css")
-          .setCacheControl("max-age=86400");
+    // [ORDER-FIX]: Catch-all (ROOT) *zuletzt*, damit nichts Wichtiges davor abgefangen wird
+    server.serveStatic("/", LittleFS, "/")
+        .setDefaultFile("index.html")
+        .setCacheControl("no-cache"); // Startseite immer revalidieren
 
     server.begin();
 }
