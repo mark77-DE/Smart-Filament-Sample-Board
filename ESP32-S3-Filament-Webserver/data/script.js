@@ -3,6 +3,8 @@ const activeTimers = {}; // UID -> TimeoutID
 const lastScanTimes = {}; // UID -> timestamp
 const DEBOUNCE_MS = 2000; // 2 Sekunden Entprellzeit
 
+let CONFIG =null;
+const DEFAULT_LED_TIMEOUT_MS = 5000; // Fallback, falls config.json fehlt
 let socket = null;
 let reconnectTimer = null;
 const RECONNECT_DELAY = 2000; // 2 Sekunden
@@ -44,10 +46,14 @@ function connectWS() {
     };
 
     socket.onmessage = (event) => {
-        const msg = JSON.parse(event.data);
-        highlightUID(msg.uid);
-        
-    };
+        try {
+            const msg = JSON.parse(event.data);
+            if (msg && msg.uid) highlightUID(msg.uid);
+    } catch (e) {
+        // ignore
+    }
+};
+
 }
 
 // sofort verbinden
@@ -62,12 +68,23 @@ function updateWSStatus(connected) {
     wsStatus = connected;
 }
 
+function getWebLedTimeoutMs() {
+    const v =
+        (CONFIG && CONFIG.options && typeof CONFIG.options.webLEDTimeout === "number")
+            ? CONFIG.options.webLEDTimeout
+            : (CONFIG && CONFIG.options && typeof CONFIG.options.ledTimeout === "number")
+                ? CONFIG.options.ledTimeout
+                : DEFAULT_LED_TIMEOUT_MS;
+
+    // etwas absichern (min/max wie du willst)
+    return Math.max(100, Math.min(600000, v)); // 100ms .. 10min
+}
+
 // --- Highlight-Funktion ---
 function highlightUID(uid) {
-    
     const now = Date.now();
 
-    if(lastScanTimes[uid] && now - lastScanTimes[uid] < DEBOUNCE_MS) return;
+    if (lastScanTimes[uid] && now - lastScanTimes[uid] < DEBOUNCE_MS) return;
     lastScanTimes[uid] = now;
 
     const grid = document.getElementById("filamentGrid");
@@ -84,12 +101,15 @@ function highlightUID(uid) {
 
     // Passende Kachel suchen
     const tile = Array.from(tiles).find(t => t.dataset.uid === uid);
-    if(tile) {
+    if (tile) {
         tile.classList.add("active");
-        activeTimers[uid] = setTimeout(() => tile.classList.remove("active"), 10000);
+
+        const timeoutMs = getWebLedTimeoutMs();
+        activeTimers[uid] = setTimeout(() => tile.classList.remove("active"), timeoutMs);
+
     } else {
         const popup = document.getElementById('unknown');
-        if(popup){
+        if (popup) {
             popup.textContent = "Unbekannter Tag: " + uid;
             popup.style.display = 'block';
             setTimeout(() => popup.style.display = 'none', 5000);
@@ -104,7 +124,7 @@ async function loadFilamentTiles() {
         fetch('/filaments.json')
     ]);
 
-    const CONFIG = await configRes.json();
+    CONFIG = await configRes.json();
     const filaments = await filamentsRes.json();
 
     const grid = document.getElementById("filamentGrid");
@@ -135,12 +155,15 @@ async function loadFilamentTiles() {
         // Klick-Handler: LED über WebSocket aktivieren
         tile.onclick = () => {
             if (socket.readyState === WebSocket.OPEN) {
-                socket.send(JSON.stringify({action: "highlightLED", uid: f.uid}));
+                socket.send(JSON.stringify({ action: "highlightLED", uid: f.uid }));
+
                 tile.classList.add("active");
-                setTimeout(() => tile.classList.remove("active"), CONFIG.options.ledTimeout);
+
+                const timeoutMs = getWebLedTimeoutMs();
+                setTimeout(() => tile.classList.remove("active"), timeoutMs);
             }
-            
-        };
+};
+
 
         grid.appendChild(tile);
     });

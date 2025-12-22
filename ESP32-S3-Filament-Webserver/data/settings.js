@@ -14,10 +14,10 @@ const buttonEnabledDiv      = document.getElementById("buttonEnabled");
 
 const buttonPinSelect       = document.getElementById("buttonPin");
 const buttonPullupInput     = document.getElementById("buttonPullup");
-const buttonDebounceInput   = document.getElementById("buttonDebounce");
-const buttonLongInput       = document.getElementById("buttonLong");
-const buttonDoubleInput     = document.getElementById("buttonDouble");
-const buttonHoldInput       = document.getElementById("buttonHold");
+const buttonDebounceInput   = document.getElementById("buttonDebounceMs");
+const buttonLongInput       = document.getElementById("buttonLongMs");
+const buttonDoubleInput     = document.getElementById("buttonDoubleMs");
+const buttonHoldInput       = document.getElementById("buttonHoldMs");
 
 const buzzerEnabledDiv      = document.getElementById("buzzerEnabled");
 
@@ -48,6 +48,10 @@ const nfcLedColorPulseInput = document.getElementById("nfcLedColorPulse");
 
 const ledTimeoutInput = document.getElementById("ledTimeout");
 const nfcLedTimeoutInput = document.getElementById("nfcLedTimeout");
+
+
+const webLedTimeoutInput = document.getElementById("webLedTimeout");
+
 
 const nfcLedSuccessBlinkEnabledInput = document.getElementById("nfcLedSuccessBlinkEnabled");
 const nfcLedSuccessBlinkCountInput   = document.getElementById("nfcLedSuccessBlinkCount");
@@ -329,6 +333,11 @@ async function loadTable() {
     ledTimeoutInput.value     = opts.ledTimeout ?? 3000;
     nfcLedTimeoutInput.value  = opts.nfcLedTimeout ?? 4000;
 
+    if (webLedTimeoutInput) {
+    webLedTimeoutInput.value = opts.webLEDTimeout ?? opts.ledTimeout ?? 5000; // NEU (Fallback)
+    }
+
+
     ledColorInput.value       = rgbToHex(opts.ledColor       ?? [255,0,0]);
     ledColorErrorInput.value  = rgbToHex(opts.ledColorError  ?? [255,0,0]);
     ledColorPulseInput.value  = rgbToHex(opts.ledColorPulse  ?? [0,51,170]);
@@ -447,6 +456,8 @@ document.getElementById("saveConfig").addEventListener("click", async () => {
     const ledColorError  = hexToRgb(document.getElementById("ledColorError").value);
     const ledColorPulse  = hexToRgb(document.getElementById("ledColorPulse").value);
     const ledTimeout     = Number(document.getElementById("ledTimeout").value);
+    const webLEDTimeout  = webLedTimeoutInput ? Number(webLedTimeoutInput.value) : ledTimeout; // NEU
+
 
     const debugMode      = debugToggle.checked;
 
@@ -490,7 +501,7 @@ document.getElementById("saveConfig").addEventListener("click", async () => {
             buttonPin, buttonPullup, buttonDebounceMs, buttonLongMs, buttonDoubleMs, buttonHoldMs,
             buzzerPin, buzzerPassive, buzzerActiveHigh, buzzerFreq,
             buzzerSingleMs, buzzerDoubleOnMs, buzzerDoubleGapMs, buzzerErrorOnMs, buzzerErrorGapMs, buzzerErrorCount,
-            debugMode
+            debugMode,webLEDTimeout
         });
     }
 
@@ -508,6 +519,9 @@ document.getElementById("saveConfig").addEventListener("click", async () => {
                     ledColorError,
                     ledColorPulse,
                     ledTimeout,
+
+                    //Dashboard Settings
+                    webLEDTimeout, // NEU
 
                     // NFC
                     nfcLedCount,

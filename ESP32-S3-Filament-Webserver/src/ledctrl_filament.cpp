@@ -75,6 +75,9 @@ unsigned long      LEDCTRL_FILAMENT::_idleBlockUntil   = 0;
 // FIX: Netzlast-Pause (Idle-Frames aussetzen)
 unsigned long      LEDCTRL_FILAMENT::_netPauseUntil    = 0;
 
+// WebIF-Hold: simulierte Präsenz (damit Timeout danach greift)
+static unsigned long s_webifHoldUntil = 0;
+
 // ============================================================================
 // Kleine Helper
 // ============================================================================
@@ -368,6 +371,22 @@ void LEDCTRL_FILAMENT::update() {
   if (!_leds) return;
   const unsigned long now = millis();
 
+    // --- WebIF-Hold Ablauf: virtuelle "Tag-Entfernung" auslösen ---
+    if (s_webifHoldUntil != 0 && (int32_t)(now - s_webifHoldUntil) >= 0) {
+      s_webifHoldUntil = 0;
+
+      // Simuliere: Tag wurde entfernt → Timeout kann starten
+      // Wir setzen direkt _tagHeld=false und starten Release-Timer, falls was aktiv ist.
+      if (_tagHeld) {
+        _tagHeld = false;
+        if (_errBlinkActive || _errSolidActive || bufAnyLit()) {
+          _releaseTs = now;
+        } else {
+          _releaseTs = 0;
+        }
+      }
+    }
+
   // 1) ERROR-BLINK
   if (_errBlinkActive) {
     const uint32_t intervals = (uint32_t)((now - _errBlinkStart) / _errBlinkMs); // Halbphasen
@@ -479,3 +498,17 @@ void LEDCTRL_FILAMENT::netBusyHint(uint16_t ms) {
   const unsigned long until = now + (unsigned long)ms;
   if (until > _netPauseUntil) _netPauseUntil = until;
 }
+
+void LEDCTRL_FILAMENT::webifHoldFor(uint16_t ms) {
+  const unsigned long now = millis();
+  s_webifHoldUntil = now + (unsigned long)ms;
+
+  // Virtuell "Tag ist da" → verhindert, dass sofort Timeout läuft
+  _tagHeld = true;
+  _lastTagSeen = now;
+  _releaseTs = 0;
+
+  // Idle kurz blocken, damit Pulse nicht reinmischt
+  _idleBlockUntil = now + 2;
+}
+

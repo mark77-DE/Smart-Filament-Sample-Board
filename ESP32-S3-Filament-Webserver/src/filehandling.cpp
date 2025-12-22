@@ -48,6 +48,12 @@ bool loadConfig() {
   CONFIG.led.brightness = opt["ledBrightness"] | 50;
   CONFIG.led.timeout    = opt["ledTimeout"]    | 3000;
 
+
+  // --- Dashboard (Virtuelle LED)---
+  CONFIG.webLEDTimeout = opt["webLEDTimeout"] | (uint32_t)CONFIG.led.timeout; // Fallback auf ledTimeout
+
+
+
   if (opt["ledColor"].is<JsonArray>()) {
     JsonArray c = opt["ledColor"];
     CONFIG.led.color = ((uint32_t)c[0] << 16) | ((uint32_t)c[1] << 8) | (uint32_t)c[2];
@@ -167,6 +173,9 @@ void applyConfig() {
     Serial.print(F(" LED_COLOR_ERROR = 0x")); Serial.println(CONFIG.led.colorError, HEX);
     Serial.print(F(" LED_COLOR_PULSE = 0x")); Serial.println(CONFIG.led.colorPulse, HEX);
 
+    Serial.print(F(" WEB_LED_TIMEOUT = ")); Serial.println(CONFIG.webLEDTimeout);
+
+
     Serial.print(F(" NFC_LED_COUNT = "));     Serial.println(CONFIG.nfc.count);
     Serial.print(F(" NFC_LED_PIN = "));       Serial.println(CONFIG.nfc.pin);
     Serial.print(F(" NFC_LED_TIMEOUT = "));   Serial.println(CONFIG.nfc.timeout);
@@ -211,6 +220,11 @@ bool updateConfigFromJson(JsonDocument& doc) {
   CONFIG.led.pin        = opt["ledPin"]        | CONFIG.led.pin;
   CONFIG.led.brightness = opt["ledBrightness"] | CONFIG.led.brightness;
   CONFIG.led.timeout    = opt["ledTimeout"]    | CONFIG.led.timeout;
+
+  // --- Dashboard (Virtuelle LED)---
+  CONFIG.webLEDTimeout  = opt["webLEDTimeout"] | CONFIG.webLEDTimeout;
+
+
 
   if (opt["ledColor"].is<JsonArrayConst>()) {
     JsonArrayConst arr = opt["ledColor"].as<JsonArrayConst>();
@@ -320,6 +334,12 @@ bool saveConfig() {
   setColorArray(opt, "ledColorError",  CONFIG.led.colorError);
   setColorArray(opt, "ledColorPulse",  CONFIG.led.colorPulse);
 
+
+
+  // --- Dashboard (Virtuelle LED)---
+  opt["webLEDTimeout"] = CONFIG.webLEDTimeout;
+
+
   // --- NFC ---
   opt["nfcLedCount"]       = CONFIG.nfc.count;
   opt["nfcLedPin"]         = CONFIG.nfc.pin;
@@ -422,6 +442,11 @@ bool importConfigJson(JsonObject src) {
     CONFIG.led.brightness = opt["ledBrightness"] | CONFIG.led.brightness;
     CONFIG.led.timeout    = opt["ledTimeout"]    | CONFIG.led.timeout;
 
+
+    // --- Dashboard (Virtuelle LED)---
+    CONFIG.webLEDTimeout  = opt["webLEDTimeout"] | CONFIG.webLEDTimeout;
+
+
     if (opt["ledColor"].is<JsonArray>()) {
       JsonArray arr = opt["ledColor"];
       CONFIG.led.color = ((uint32_t)arr[0] << 16) | ((uint32_t)arr[1] << 8) | (uint32_t)arr[2];
@@ -496,6 +521,11 @@ bool importConfigJson(JsonObject src) {
   setColorArray(options, "ledColor",      CONFIG.led.color);
   setColorArray(options, "ledColorError", CONFIG.led.colorError);
   setColorArray(options, "ledColorPulse", CONFIG.led.colorPulse);
+
+
+  // --- Dashboard (Virtuelle LED)---
+  options["webLEDTimeout"] = CONFIG.webLEDTimeout;
+
 
   // NFC
   options["nfcLedCount"]       = CONFIG.nfc.count;

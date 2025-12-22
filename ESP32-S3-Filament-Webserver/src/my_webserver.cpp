@@ -47,6 +47,8 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
         const char *action = doc["action"];
         if (strcmp(action, "highlightLED") == 0) {
             String uid = doc["uid"].as<String>();
+            // WebIF-Hold starten: nach LED_TIMEOUT soll wieder Idle kommen
+            LEDCTRL_FILAMENT::webifHoldFor((uint16_t)LED_TIMEOUT);
             handleUID(uid, UidSource::WEBIF); // zentrale handleUID()
         }
     }

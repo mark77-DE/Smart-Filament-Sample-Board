@@ -7,6 +7,9 @@
 // Konfigurationsstrukturen
 // ============================================================================
 
+
+
+
 /**
  * @brief LED-Konfiguration (Filament-Stripe)
  */
@@ -75,6 +78,7 @@ struct AppConfig {
   bool         darkmode;    ///< Darkmode aktiv
   bool         mqtt;        ///< MQTT aktiviert
   bool         debugMode;   ///< Debug-Modus aktiv
+  uint32_t webLEDTimeout;   // Default fürs Dashboard (ms)
 
   LedConfig    led;         ///< LED-Konfiguration (Filament)
   NfcLedConfig nfc;         ///< NFC-LED-Konfiguration

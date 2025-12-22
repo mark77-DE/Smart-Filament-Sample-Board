@@ -121,6 +121,10 @@ public:
    */
   static void netBusyHint(uint16_t ms); // FIX: hinzugefügt
 
+  // WebIF: virtuellen "Tag-Hold" starten, damit Timeout/Idle wieder greifen
+  static void webifHoldFor(uint16_t ms);
+
+
 private:
   // --------------------------------------------------------------------------
   // Hardware / Buffer
