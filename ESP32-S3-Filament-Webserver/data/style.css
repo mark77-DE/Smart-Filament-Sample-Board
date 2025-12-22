@@ -92,7 +92,7 @@ button {
 
 .tile {
     border: 1px solid #ccc;
-    padding: 10px;
+    padding: 5px;
     text-align: center;
     cursor: pointer;
     min-height: 60px;
@@ -102,37 +102,24 @@ button {
     align-items: center;
     border: 2px solid #2980b9;
     border-radius: 10px;
+    width: 150px;
 }
-
-.tile .color {
-    width: 20px;
-    height: 20px;
-    display: block;
-    margin: 5px 0;
-    
-}
-
-.tile.active {
-    border-color: orange;
-    box-shadow: 0 0 10px orange;
-}
-
-.tile.free {
-    background-color: #f5f5f5;
-    color: #aaa;
-}
-
-.tile span {
-    display: block;      /* jedes Element bekommt seine eigene Zeile */
-    margin: 2px 0;       /* optionaler Abstand */
-}
-
 
 
 .vendor {
     font-weight: bold; 
     font-size: 1.2em;
+    padding: 5px;
 }
+
+.color {
+    padding: 5px;
+}
+
+.type {
+    padding: 5px;
+}
+
 
 #style_head_uid, #style_uid, #style_head_led, #style_led {
     display: none;

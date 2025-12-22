@@ -116,15 +116,15 @@ async function loadFilamentTiles() {
         tile.dataset.uid = f.uid;
         tile.dataset.led = f.ledIndex;
 
-        const vendorSpan = document.createElement("span");
+        const vendorSpan = document.createElement("div");
         vendorSpan.className = "vendor";
         vendorSpan.textContent = f.vendor;
 
-        const colorSpan = document.createElement("span");
+        const colorSpan = document.createElement("div");
         colorSpan.className = "color";
         colorSpan.textContent = f.color; // Farbe als Hintergrund
 
-        const typeSpan = document.createElement("span");
+        const typeSpan = document.createElement("div");
         typeSpan.className = "type";
         typeSpan.textContent = f.type;
 
