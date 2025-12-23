@@ -76,7 +76,10 @@ static Step           s_buzSeq[8];        // reicht für Muster
 // Buzzer Low-Level
 // ----------------------------------------------------------------------------
 static inline void buzzer_output(bool on) {
-  if (!s_buzEnabled) return;
+  // WICHTIG: Beim Re-Init wollen wir "AUS" auch dann erzwingen,
+  // wenn s_buzEnabled gerade false ist.
+  if (!s_buzEnabled && on) return;
+
 
   if (CFG_BUZ_PASSIVE) {
   #ifdef ARDUINO_ARCH_ESP32
@@ -114,6 +117,36 @@ static inline void buzzer_start_sequence(const Step* seq, uint8_t len) {
 // Public: Init
 // ============================================================================
 void gpiohw_init() {
+    // --- RE-INIT CLEANUP (wichtig bei applyConfig/import) ---
+    // Sequencer hart stoppen + Ausgang AUS
+    s_buzLen = 0;
+    s_buzPos = 0;
+    s_buzStepUntil = 0;
+
+    // Wenn gerade ein Pattern lief: wirklich abschalten
+    buzzer_output(false);
+
+
+  #ifdef ARDUINO_ARCH_ESP32
+    // Falls vorher passiv (LEDC) aktiv war: sauber detach
+    if (s_ledcChannel >= 0) {
+      ledcWriteTone((uint8_t)s_ledcChannel, 0);
+    #if defined(ESP_ARDUINO_VERSION_MAJOR) && (ESP_ARDUINO_VERSION_MAJOR >= 3)
+      // ESP32 core v3: detach am Pin (wichtig!)
+      ledcDetach((uint8_t)CFG_BUZ_PIN);
+    #else
+      // core v2: detach Pin vom Kanal (wichtig!)
+      if (CFG_BUZ_PIN >= 0) ledcDetachPin((uint8_t)CFG_BUZ_PIN);
+    #endif
+      s_ledcChannel = -1;
+    }
+  #else
+    // AVR/andere: tone sicher aus
+    if (CFG_BUZ_PIN >= 0) noTone((uint8_t)CFG_BUZ_PIN);
+  #endif
+
+    // Button-Events/Click-State hart resetten (gegen Phantom-Events nach ReInit)
+    gpiohw_reset_click_state();
   // --- Button aus CONFIG übernehmen (falls vorhanden); sonst Defaults ---
   #ifdef CONFIG_HAS_GPIO
     CFG_BTN_PIN         = CONFIG.button.pin;
@@ -155,11 +188,26 @@ void gpiohw_init() {
 
     s_evShort = s_evLong = s_evDouble = s_evHold = false;
     s_evTapRelease = false;
+        // Wenn Button beim Init gerade gedrückt ist -> Events blocken bis Release
+    if (s_btnStable) {
+      s_pressStartTs = 0;
+      s_longFired = true;
+      s_doubleArmed = false;
+      s_shortCandidate = false;
+    }
+
+    
   }
 
   // --- Buzzer einrichten ---
   s_buzEnabled = (CFG_BUZ_PIN >= 0);
   if (s_buzEnabled) {
+    // Sicherheits-AUS nach (Re-)Init (verhindert "spinnt nach Import")
+    s_buzLen = 0;
+    s_buzPos = 0;
+    s_buzStepUntil = 0;
+    buzzer_output(false);
+
   #ifdef ARDUINO_ARCH_ESP32
     if (CFG_BUZ_PASSIVE) {
     #if defined(ESP_ARDUINO_VERSION_MAJOR) && (ESP_ARDUINO_VERSION_MAJOR >= 3)

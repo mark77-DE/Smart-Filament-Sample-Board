@@ -25,3 +25,13 @@ enum class UidSource {
     NFC,
     WEBIF
 };
+
+// NEU: WebIF Idle Timer (OLED Rücksprung)
+void webifArmIdleTimeout(uint32_t ms);
+void webifCancelIdleTimeout();
+bool webifIdleDue(uint32_t now);
+
+extern volatile bool g_applyConfigPending;
+extern volatile bool g_reloadFilamentsPending;
+
+

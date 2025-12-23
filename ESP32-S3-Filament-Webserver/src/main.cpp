@@ -59,6 +59,37 @@ bool isActive = false;
 // ----------------- Globale Variablen -----------------
 String activeUID = "";       // aktuell aktive UID
 
+volatile bool g_applyConfigPending = false;
+volatile bool g_reloadFilamentsPending = false;
+
+
+//globale WebIF-Timer-Variablen + Setter
+
+
+static bool     s_webifIdleArmed = false;
+static uint32_t s_webifIdleUntil = 0;
+
+void webifArmIdleTimeout(uint32_t ms) {
+  if (ms == 0) ms = 1;
+  s_webifIdleArmed = true;
+  s_webifIdleUntil = millis() + ms;
+}
+
+bool webifIsArmed() {
+  return s_webifIdleArmed;
+}
+
+void webifCancelIdleTimeout() {
+  s_webifIdleArmed = false;
+}
+
+bool webifIdleDue(uint32_t now) {
+  if (!s_webifIdleArmed) return false;
+  return (int32_t)(now - s_webifIdleUntil) >= 0;
+}
+
+
+
 // ----------------- Hilfsfunktionen -----------------
 
 // Reboot
@@ -213,6 +244,9 @@ void setup() {
 
   // 1) Konfiguration laden
   loadConfig();
+  applyConfig(); 
+  LEDCTRL_FILAMENT::allOff();
+  LEDCTRL_NFC::allOff();
 
   // 2) I2C + DISPLAY FRÜH initialisieren (alles, was malen will, braucht das)
   Wire.begin(SDA_PIN, SCL_PIN);
@@ -246,19 +280,8 @@ void setup() {
   initWebServer(server, ws);
   WiFi.setSleep(false);
 
-  // 6) LED/NFC Controller initialisieren (schreibt NICHT aufs Display)
-  LEDCTRL_FILAMENT::init(LED_COUNT, LED_PIN, LED_TIMEOUT, LED_BRIGHTNESS,
-                         LED_COLOR, LED_COLOR_ERROR, LED_COLOR_PULSE);
-  LEDCTRL_FILAMENT::allOff();
 
-  LEDCTRL_NFC::init(NFC_LED_COUNT, NFC_LED_PIN, NFC_LED_TIMEOUT,
-                    NFC_LED_BRIGHTNESS, NFC_LED_COLOR_SUCCESS,
-                    NFC_LED_COLOR_ERROR, NFC_LED_COLOR_PULSE,
-                    NFC_LED_SUCCESS_BLINK_ENABLED, NFC_LED_SUCCESS_BLINK_COUNT,
-                    NFC_LED_SUCCESS_BLINK_MS);
-  LEDCTRL_NFC::allOff();
-
-  // 7) FIRMWARE-BOOTSCREEN x s ANZEIGEN (WebIF ist bereits online)
+  // 6) FIRMWARE-BOOTSCREEN x s ANZEIGEN (WebIF ist bereits online)
   {
     MYDISPLAY::showBootVersion(FIRMWARE_VERSION, BUILD_DATE_SHORT);
     const uint32_t until = millis() + FIRMWARE_HOLD_MS; 
@@ -275,7 +298,7 @@ void setup() {
                                       SPLASH_CHAR_MS, SPLASH_LINE_MS, SPLASH_HOLD_MS);
 
 
-  // 8) PN532 JETZT initialisieren (kann im Fehlerfall aufs Display schreiben)
+  // 7) PN532 JETZT initialisieren (kann im Fehlerfall aufs Display schreiben)
   NFC::init(&nfc);  // begin() + SAMConfig()
   uint32_t version = nfc.getFirmwareVersion();
   if (!version) {
@@ -288,7 +311,7 @@ void setup() {
     Serial.print(" chip=0x"); Serial.println(version & 0xFFFF, HEX);
   }
 
-  // 9) Idle-Animation vorbereiten
+  // 8) Idle-Animation vorbereiten
   DisplayAnim::startIdleTextFirst(millis());
 }
 
@@ -320,11 +343,39 @@ void loop() {
     renderRebootCountdown(now);
   }
 
+  // 0d (Config)
+    if (g_applyConfigPending) {
+      g_applyConfigPending = false;
+
+      // 1) alles ruhig stellen
+      buzzer_stop();
+      gpiohw_reset_click_state();      // verhindert Phantom-Clicks
+      DisplayAnim::stop();
+
+      // 2) LEDs aus (damit kein alter Effekt reinfunkt)
+      LEDCTRL_NFC::allOff();
+      LEDCTRL_FILAMENT::allOff();
+
+      // 3) jetzt erst re-init (sicher im loop-Kontext!)
+      applyConfig();
+
+      // 4) optional: Idle sauber neu starten
+      isActive = false;
+      DisplayAnim::startIdleTextFirst(millis());
+    }
+
   // ---------------------------------------------------------------------------
   // 1) NFC-Polling + Guards + LED-Trigger
   // ---------------------------------------------------------------------------
   bool tagPresent = false;
   NFC::tick(now, isActive, lastTagTime, tagPresent);
+  
+// WebIF kann Idle auslösen (aber NICHT wenn Tag wirklich präsent ist)
+  if (!rebootPending && !tagPresent && webifIdleDue(now)) {
+    webifCancelIdleTimeout();
+    DisplayAnim::startIdleTextFirst(now);
+    isActive = false;
+  }
 
   // ---------------------------------------------------------------------------
   // 1b) Präsenz auch an den FILAMENT-Controller geben
@@ -365,8 +416,11 @@ void loop() {
   static bool prevIdle = false;
   const bool idleNow = LEDCTRL_NFC::isIdle();
   if (!rebootPending && idleNow && !prevIdle) {
-    DisplayAnim::startIdleTextFirst(now);
-    isActive = false;
+    // NICHT auf Idle, wenn WebIF gerade aktiv ist
+    if (!webifIsArmed()) {
+      DisplayAnim::startIdleTextFirst(now);
+      isActive = false;
+      }
   }
   prevIdle = idleNow;
 

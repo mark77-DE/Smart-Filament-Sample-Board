@@ -12,14 +12,20 @@
 #include "version_info.h"
 #include "reboot_handler.h"
 
-// FIX: Vorwärtsdeklaration, damit /api/reboot sofort rendern kann (Definition in main.cpp)
+
+extern void webifArmIdleTimeout(uint32_t ms);
+
+
+//Vorwärtsdeklaration
 extern void renderRebootCountdown(unsigned long nowMs);
+
+extern void handleUID(const String &uid, UidSource source);
+
 
 // ----------------- WebSocket Event -----------------
 void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
                AwsEventType type, void *arg, uint8_t *data, size_t len)
 {
-    // FIX: Während WS-Traffic Idle-Pulse kurz pausieren (beide Strips)
     LEDCTRL_FILAMENT::netBusyHint(350);
     LEDCTRL_NFC::netBusyHint(350);
 
@@ -28,31 +34,60 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
     AwsFrameInfo *info = (AwsFrameInfo*)arg;
     if (info->opcode != WS_TEXT) return;
 
-    String msg;
-    msg.reserve(len);
-    for (size_t i = 0; i < len; i++) msg += (char)data[i];
+    // --- FIX: WS-Fragmente zusammensetzen ---
+    static String wsBuf;
+    if (info->index == 0) {
+        wsBuf = "";
+        wsBuf.reserve(info->len);
+    }
 
-    // ausreichend Platz für WS-Nachrichten
-    JsonDocument doc;
+    wsBuf.concat((const char*)data, len);
 
-    DeserializationError err = deserializeJson(doc, msg);
-    if (err) {
-        Serial.print("WS JSON parse error: ");
-        Serial.println(err.c_str());
+    // Noch nicht komplett?
+    if (!(info->final && (info->index + len == info->len))) {
         return;
     }
 
-    // --------- HIGHLIGHT LED (Klick im UI) ----------
-    if (doc.containsKey("action") && doc["action"].is<const char*>()) {
-        const char *action = doc["action"];
-        if (strcmp(action, "highlightLED") == 0) {
-            String uid = doc["uid"].as<String>();
-            // WebIF-Hold starten: nach LED_TIMEOUT soll wieder Idle kommen
-            LEDCTRL_FILAMENT::webifHoldFor((uint16_t)LED_TIMEOUT);
-            handleUID(uid, UidSource::WEBIF); // zentrale handleUID()
+    // Jetzt ist wsBuf vollständig
+    JsonDocument doc;
+    DeserializationError err = deserializeJson(doc, wsBuf);
+    if (err) {
+        if (CONFIG.debugMode) {
+            Serial.print("WS JSON parse error: ");
+            Serial.println(err.c_str());
+            Serial.print("WS raw: ");
+            Serial.println(wsBuf);
         }
+        return;
     }
+
+    const char* action = doc["action"] | "";
+    if (strcmp(action, "highlightLED") == 0) {
+        // --- ACK sofort zurück an genau diesen Client ---
+        // (damit JS nicht retry-spamt)
+        uint32_t seq = doc["seq"] | 0;
+        if (seq != 0) {
+            StaticJsonDocument<64> ack;
+            ack["action"] = "ack";
+            ack["seq"]    = seq;
+
+            String out;
+            serializeJson(ack, out);
+            client->text(out);
+        }
+
+        // ab hier "heavy work"
+        String uid = doc["uid"].as<String>();
+        uint32_t t = (CONFIG.webLEDTimeout > 0) ? CONFIG.webLEDTimeout : (uint32_t)CONFIG.led.timeout;
+
+        LEDCTRL_FILAMENT::webifHoldFor((uint16_t)min<uint32_t>(t, 65535));
+        webifArmIdleTimeout(t);
+
+        handleUID(uid, UidSource::WEBIF);
+    }
+
 }
+
 
 // ------------------ Webserver Init -------------------
 void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)

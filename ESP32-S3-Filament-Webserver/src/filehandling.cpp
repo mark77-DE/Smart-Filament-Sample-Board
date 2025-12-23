@@ -2,10 +2,14 @@
 #include <LittleFS.h>
 #include <ArduinoJson.h>
 #include <Adafruit_NeoPixel.h>
+#include "globals.h"
 #include "ledctrl_filament.h"
 #include "ledctrl_nfc.h"
 #include "filament_db.h"
 #include "gpio_hardware.h"   // für gpiohw_init()
+
+
+
 
 // Globale Konfiguration
 AppConfig CONFIG;
@@ -128,7 +132,6 @@ bool loadConfig() {
 
   // Filament-DB laden & Konfiguration anwenden
   loadFilaments();
-  applyConfig();
   return true;
 }
 
@@ -315,7 +318,7 @@ bool updateConfigFromJson(JsonDocument& doc) {
 
   // Persistieren & anwenden
   saveConfig();
-  applyConfig();
+  g_applyConfigPending = true;
   return true;
 }
 
@@ -563,7 +566,7 @@ bool importConfigJson(JsonObject src) {
   serializeJson(root, f);
   f.close();
 
-  applyConfig();
+  g_applyConfigPending = true;
   return true;
 }
 
@@ -653,6 +656,7 @@ bool importFilamentsJson(JsonArray src) {
     Serial.printf("Filaments imported successfully. Count=%d\n",
                   FilamentDB::getAllCount());
   }
+  g_reloadFilamentsPending = true;
   return true;
 }
 
