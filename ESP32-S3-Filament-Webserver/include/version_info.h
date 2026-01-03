@@ -1,5 +1,5 @@
 #pragma once
-#define FIRMWARE_VERSION "v0.2.6-dev+95d0e8f"
-#define GIT_HASH "95d0e8f"
-#define BUILD_DATE "2025-12-23 02:45:32"
-#define BUILD_DATE_SHORT "23.12.25"
+#define FIRMWARE_VERSION "v0.2.6-dev+da6e9a5"
+#define GIT_HASH "da6e9a5"
+#define BUILD_DATE "2026-01-03 21:36:25"
+#define BUILD_DATE_SHORT "03.01.26"

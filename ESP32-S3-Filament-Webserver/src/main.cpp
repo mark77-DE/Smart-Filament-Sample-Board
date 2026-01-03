@@ -19,6 +19,7 @@
 #include "gpio_hardware.h"
 #include "version_info.h"
 #include "reboot_handler.h"
+#include "pins.h"
 
 constexpr uint32_t SPLASH_CHAR_MS = 35;
 constexpr uint32_t SPLASH_LINE_MS = 200;
@@ -38,16 +39,16 @@ AsyncWebSocket ws("/ws");
 DisplayType display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET_PIN);
 
 // ----------------- PN532 SPI Settings -----------------
-#define PN532_SCK 18
-#define PN532_MOSI 23
-#define PN532_MISO 19
-#define PN532_CS 5
-#define PN532_IRQ 2
+// #define PN532_SCK 18
+// #define PN532_MOSI 23
+// #define PN532_MISO 19
+// #define PN532_CS 5
+// #define PN532_IRQ 2
 Adafruit_PN532 nfc(PN532_SCK, PN532_MISO, PN532_MOSI, PN532_CS);
 
 // ----------------- I2C -----------------
-#define SDA_PIN 21
-#define SCL_PIN 22
+// #define SDA_PIN 21
+// #define SCL_PIN 22
 
 // ----------------- LED & Display Timing -----------------
 int targetLed = -1;
@@ -237,7 +238,7 @@ void handleUID(const String &uid, UidSource source) {
 // -----------------------------------------------------------------
 void setup() {
   Serial.begin(115200);
-  while (!Serial);
+  while (!Serial) delay(10);
 
   Serial.printf("Firmware Version: %s\n", FIRMWARE_VERSION);
   Serial.printf("Build Date: %s\n", BUILD_DATE_SHORT);
