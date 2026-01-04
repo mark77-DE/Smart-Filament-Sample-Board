@@ -11,6 +11,7 @@
 #include "gpio_hardware.h"
 #include "version_info.h"
 #include "reboot_handler.h"
+#include "nfc.h"
 
 
 extern void webifArmIdleTimeout(uint32_t ms);
@@ -20,6 +21,21 @@ extern void webifArmIdleTimeout(uint32_t ms);
 extern void renderRebootCountdown(unsigned long nowMs);
 
 extern void handleUID(const String &uid, UidSource source);
+
+
+SysInfo getSysInfo() {
+    SysInfo info;
+
+    // Enum -> String 
+    info.chipName = ESP.getChipModel();
+    info.cores = ESP.getChipCores();
+    info.revision = ESP.getChipRevision();
+    info.flashSize = ESP.getFlashChipSize();
+    info.fwVersion = FIRMWARE_VERSION;
+    info.buildDate = BUILD_DATE_SHORT;
+
+    return info;
+}
 
 
 // ----------------- WebSocket Event -----------------
@@ -67,7 +83,7 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
         // (damit JS nicht retry-spamt)
         uint32_t seq = doc["seq"] | 0;
         if (seq != 0) {
-            StaticJsonDocument<64> ack;
+            JsonDocument ack;
             ack["action"] = "ack";
             ack["seq"]    = seq;
 
@@ -132,15 +148,47 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
     // server.on("/favicon.ico", HTTP_GET, ...);
 
     server.on("/api/version", HTTP_GET, [](AsyncWebServerRequest *request) {
+
+        SysInfo info = getSysInfo();
+
         // FIX: Netzlast-Hinweis – JSON bauen/senden
         LEDCTRL_FILAMENT::netBusyHint(250);
         LEDCTRL_NFC::netBusyHint(250);
 
-        StaticJsonDocument<256> doc;
-        doc["firmware"] = FIRMWARE_VERSION;
-        doc["git_hash"] = GIT_HASH;
-        doc["build_date"] = BUILD_DATE;
-        doc["build_date_short"] = BUILD_DATE_SHORT;
+        JsonDocument doc;
+        doc["firmware"]                 = FIRMWARE_VERSION;
+        doc["git_hash"]                 = GIT_HASH;
+        doc["build_date"]               = BUILD_DATE;
+        doc["build_date_short"]         = BUILD_DATE_SHORT;
+        doc["chipName"]                 = info.chipName;
+        doc["cores"]                    = info.cores;
+        doc["revision"]                 = info.revision;
+        doc["flashSize"]                = info.flashSize;
+        doc["nfc_available"]            = g_nfcInfo.available;
+        doc["nfc_fwVerMajor"]           = g_nfcInfo.fwVerMajor;
+        doc["nfc_fwVerMinor"]           = g_nfcInfo.fwVerMinor;
+        char chipHex[6]; // genug für 0xFFFF
+        sprintf(chipHex, "0x%04X", g_nfcInfo.chipID);
+        doc["nfc_chipID"]               = chipHex; // als String
+        String mac                      = WiFi.macAddress();
+        doc["wifi_mac"]                 = mac;
+        doc["hostname"]                 = WiFi.getHostname();
+        doc["wifi_ip"]                  = WiFi.localIP().toString();
+        doc["wifi_gateway"]             = WiFi.gatewayIP().toString();
+        doc["wifi_subnet"]              = WiFi.subnetMask().toString();
+        doc["wifi_ssid"]                = WiFi.SSID();
+        doc["wifi_rssi"]                = WiFi.RSSI();
+        doc["wifi_bssid"]               = WiFi.BSSIDstr();
+        doc["wifi_channel"]             = WiFi.channel();
+        doc["wifi_dns1"]                = WiFi.dnsIP(0).toString();
+        doc["wifi_dns2"]                = WiFi.dnsIP(1).toString();
+        doc["uptime_ms"]                = millis();
+        doc["heap_size"]                = ESP.getHeapSize();
+        doc["free_heap"]                = ESP.getFreeHeap();
+        doc["sketch_size"]              = ESP.getSketchSize();
+        doc["free_sketch"]              = ESP.getFreeSketchSpace();
+        doc["spiffs_size"]              = LittleFS.totalBytes();
+        doc["free_spiffs"]              = LittleFS.usedBytes();
 
         String response;
         serializeJson(doc, response);
@@ -475,6 +523,9 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
         // optional: Status-JSON zurückgeben
         request->send(200, "application/json", "{\"status\":\"ok\",\"pending\":true}");
     });
+
+
+    
 
     // [ORDER-FIX]: Catch-all (ROOT) *zuletzt*, damit nichts Wichtiges davor abgefangen wird
     server.serveStatic("/", LittleFS, "/")

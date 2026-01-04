@@ -45,6 +45,7 @@ bool loadConfig() {
   CONFIG.darkmode  = opt["darkmode"]  | false;
   CONFIG.mqtt      = opt["mqtt"]      | false;
   CONFIG.debugMode = opt["debugMode"] | false;
+  CONFIG.hostname  = opt["hostname"]  | "FiSaBo";
 
   // --- Filament-LED ---
   CONFIG.led.count      = opt["ledCount"]      | 8;

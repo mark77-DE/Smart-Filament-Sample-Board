@@ -4,6 +4,8 @@
     "mqtt": false,
     "debugMode": true,
 
+    "hostname": "FilamentSampleBoard",
+
     "webLEDTimeout": 2000,
 
     "ledCount": 8,

@@ -5,6 +5,39 @@ const wsStatus = document.getElementById("wsStatus");
 const editToggle = document.getElementById("editToggle");
 const debugToggle = document.getElementById("debugToggle");
 
+
+
+
+
+const infoChipName      = document.getElementById("infoChipName");
+const infoCores         = document.getElementById("infoCores");
+const infoRevision      = document.getElementById("infoRevision");
+const infoFwVersion     = document.getElementById("infoFwVersion");
+const infoFlashSize     = document.getElementById("infoFlashSize");
+const infoNfcAvailable  = document.getElementById("infoNfcAvailable");
+const infoNfcFwVer      = document.getElementById("infoNfcFwVer");
+const infoNfcChipId     = document.getElementById("infoNfcChipId");
+const infoWifiMac       = document.getElementById("infoWifiMac");
+const infoWifiIp        = document.getElementById("infoWifiIp");
+const infoWifiGateway   = document.getElementById("infoWifiGateway");
+const infoWifiSsid      = document.getElementById("infoWifiSsid");
+const infoUptime        = document.getElementById("infoUptime");
+const infoWifiDns1      = document.getElementById("infoWifiDns1");
+const infoWifiDns2      = document.getElementById("infoWifiDns2");
+const infoWifiSubnet    = document.getElementById("infoWifiSubnet");
+const infoWifiRssi      = document.getElementById("infoWifiRssi");
+const infoHostname      = document.getElementById("infoHostname");
+const infoGitHash       = document.getElementById("infoGitHash");
+const infoBuildDate     = document.getElementById("infoBuildDate");
+const infoHeapSize      = document.getElementById("infoHeapSize");
+const infoFreeHeap      = document.getElementById("infoHeapFree");
+const infoSketchSize    = document.getElementById("infoSketchSize");
+const infoFreeSketch    = document.getElementById("infoFreeSketch");
+const infoSpiffsSize    = document.getElementById("infoSpiffsSize");
+const infoFreeSpiffs    = document.getElementById("infoFreeSpiffs");
+
+
+
 const ledPinSelect = document.getElementById("ledPin");
 const nfcLedPinSelect = document.getElementById("nfcLedPin");
 
@@ -66,10 +99,20 @@ const section = document.getElementById("sectionSettings");
 const uidInput = document.querySelector('input[name="uid"]');
 
 
+
+
 let EDIT_MODE = false;
 let CONFIG = null;
 let lastHighlightedRow = null;
 
+
+
+
+document.querySelectorAll(".infoTitle[data-toggle]").forEach(title => {
+    title.addEventListener("click", () => {
+        title.parentElement.classList.toggle("open");
+    });
+});
 
 // -------------------- WebSocket --------------------
 const socket = new WebSocket(`ws://${location.host}/ws`);
@@ -612,12 +655,6 @@ function updatePinOptions() {
   });
 }
 
-// Eventlistener hinzufügen
-ledPinSelect.addEventListener("change", updatePinOptions);
-nfcLedPinSelect.addEventListener("change", updatePinOptions);
-if (buttonPinSelect) buttonPinSelect.addEventListener("change", updatePinOptions);
-if (buzzerPinSelect) buzzerPinSelect.addEventListener("change", updatePinOptions);
-importFileInput.addEventListener("change", updateImportBtnVisibility);
 
 
 // -------------------- Color Presets (HEX) --------------------
@@ -804,9 +841,14 @@ function validateUIDSpan(span) {
 
 
 
-//----------------- Event Listeners ---------------------
 
 
+// Eventlistener hinzufügen
+ledPinSelect.addEventListener("change", updatePinOptions);
+nfcLedPinSelect.addEventListener("change", updatePinOptions);
+buttonPinSelect.addEventListener("change", updatePinOptions);
+buzzerPinSelect.addEventListener("change", updatePinOptions);
+importFileInput.addEventListener("change", updateImportBtnVisibility);
 
 buttonPinSelect.addEventListener("change", disableButton);
 buzzerPinSelect.addEventListener("change", disableBuzzer);
@@ -844,13 +886,87 @@ openSettings.onclick = () =>
 closeSettings.onclick = () =>
     settingsOverlay.classList.remove("active");
 
+sysInfoBtn.onclick = () => 
+    sysInfoDiv.classList.add("active");
+
+sysInfoCloseBtn.onclick = () => 
+    sysInfoDiv.classList.remove("active");
+
+function formatUptime(ms) {
+    let seconds = Math.floor(ms / 1000);
+    let minutes = Math.floor(seconds / 60);
+    let hours   = Math.floor(minutes / 60);
+    let days    = Math.floor(hours / 24);
+
+    seconds = seconds % 60;
+    minutes = minutes % 60;
+    hours   = hours % 24;
+
+    const parts = [];
+    if (days > 0)    parts.push(`${days} Tag${days > 1 ? 'e' : ''}`);
+    if (hours > 0)   parts.push(`${hours} Stunde${hours > 1 ? 'n' : ''}`);
+    if (minutes > 0) parts.push(`${minutes} Minute${minutes > 1 ? 'n' : ''}`);
+    if (seconds > 0) parts.push(`${seconds} Sekunde${seconds > 1 ? 'n' : ''}`);
+
+    return parts.join(' ');
+}
+
+function rssiToColor(rssi) {
+    if (rssi >= -60) return "green";      // stark
+    else if (rssi >= -75) return "yellow"; // mittel
+    else return "red";                     // schwach
+}
+
+// Funktion zum Aktualisieren der Anzeige
+function updateRssiDisplay(rssi) {
+    const rssiSpan = document.getElementById("infoWifiRssi");
+    rssiSpan.textContent = rssi + " dBm";
+    rssiSpan.style.color = rssiToColor(rssi);
+}
+
+
+
 function getVersion() {
     fetch("/api/version")
     .then(r => r.json())
     .then(data => {
-        document.getElementById("fwVersion").textContent = "FW-Version: " + data.firmware;
-        document.getElementById("gitHash").textContent = "Git hash: " + data.git_hash;
-        document.getElementById("build_date").textContent = "Build date: " + data.build_date;
+        document.getElementById("fwVersion").textContent        = data.firmware;
+        document.getElementById("gitHash").textContent          = data.git_hash;
+        document.getElementById("build_date").textContent       = data.build_date;
+
+        infoChipName.textContent            = data.chipName;
+        infoCores.textContent               = data.cores;
+        infoRevision.textContent            = data.revision;
+        infoFlashSize.textContent           = data.flashSize + " bytes";
+        infoFwVersion.textContent           = data.firmware;
+        infoGitHash.textContent             = data.git_hash;        
+        infoBuildDate.textContent           = data.build_date;
+        infoHostname.textContent            = data.hostname;
+
+        infoHeapSize.textContent           = data.heap_size + " bytes";
+        infoFreeHeap.textContent           = data.free_heap + " bytes";
+        infoSketchSize.textContent         = data.sketch_size + " bytes";
+        infoFreeSketch.textContent         = data.free_sketch + " bytes";
+        infoSpiffsSize.textContent         = data.spiffs_size + " bytes";
+        infoFreeSpiffs.textContent         = data.free_spiffs + " bytes";
+        
+        infoWifiSsid.textContent            = data.wifi_ssid;
+        infoWifiIp.textContent              = data.wifi_ip;
+        infoWifiGateway.textContent         = data.wifi_gateway;
+        infoWifiSubnet.textContent          = data.wifi_subnet;
+        infoWifiMac.textContent             = data.wifi_mac;
+        infoWifiDns1.textContent            = data.wifi_dns1;
+        infoWifiDns2.textContent            = data.wifi_dns2;
+        infoWifiRssi.textContent            = data.wifi_rssi + " dBm";
+        infoUptime.textContent              = formatUptime(data.uptime_ms);
+
+        infoNfcAvailable.textContent        = data.nfc_available;
+        infoNfcFwVer.textContent            = data.nfc_fwVerMajor +"." +data.nfc_fwVerMinor;
+        infoNfcChipId.textContent           = data.nfc_chipID;
+
+        updateRssiDisplay(data.wifi_rssi);
+
+        
     })
     .catch(err => console.error("Version fetch failed:", err));
 }

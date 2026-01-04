@@ -79,6 +79,7 @@ struct AppConfig {
   bool         mqtt;        ///< MQTT aktiviert
   bool         debugMode;   ///< Debug-Modus aktiv
   uint32_t webLEDTimeout;   // Default fürs Dashboard (ms)
+  String       hostname;    ///< Hostname für WLAN
 
   LedConfig    led;         ///< LED-Konfiguration (Filament)
   NfcLedConfig nfc;         ///< NFC-LED-Konfiguration

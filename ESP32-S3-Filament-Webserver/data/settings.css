@@ -434,3 +434,117 @@ span.uid.invalid {
     padding-left: 5px;
     padding-right: 5px;
 }
+
+/* Overlay */
+#sysInfoDiv {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0,0,0,0.5);
+    z-index: 1000;
+
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+}
+
+#sysInfoDiv.active {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* Info-Box */
+#sysInfoContentDiv {
+    position: relative;            /* damit der Button sich daran orientiert */
+    display: flex;
+    flex-direction: column;        /* Inhalte untereinander */
+    justify-content: flex-start;   /* Box-Inhalt oben anfangen */
+    background: #1e1e1e;
+    color: #f1f1f1;
+    padding: 24px 28px 64px;      /* extra Platz unten für Button */
+    border-radius: 14px;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.6);
+    width: 420px;
+    max-width: 90vw;
+}
+
+/* Info-Zeilen */
+#sysInfoContentDiv span {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 14px;
+}
+
+/* Sektionstitel */
+.infoTitle {
+    font-weight: bold;
+    font-size: 16px;
+    margin-top: 12px;
+    margin-bottom: 6px;
+    border-bottom: 1px solid #555;
+    padding-bottom: 4px;
+}
+
+/* Zeilen wie gehabt */
+.infoSection {
+    display: flex;
+    justify-content: flex-start;
+    gap: 12px;
+    margin-bottom: 6px;
+}
+
+.infoLabel {
+    font-weight: bold;
+    min-width: 120px;
+}
+
+.infoValue {
+    flex: 1;
+    word-break: break-all;
+}
+
+/* Close Button */
+#sysInfoCloseBtn {
+    position: absolute;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 6px 16px;
+    border-radius: 8px;
+    border: none;
+    background: #ff4c4c;
+    color: white;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+#sysInfoCloseBtn:hover {
+    background: #ff1a1a;
+}
+
+.infoBlockContent {
+    display: none;
+    margin-bottom: 12px;
+}
+
+.infoBlock.open .infoBlockContent {
+    display: block;
+}
+
+.infoTitle {
+    font-weight: bold;
+    cursor: pointer;
+    user-select: none;
+    padding: 6px 0;
+}
+
+.infoTitle::after {
+    content: "▸";
+    float: right;
+}
+
+.infoBlock.open .infoTitle::after {
+    content: "▾";
+}

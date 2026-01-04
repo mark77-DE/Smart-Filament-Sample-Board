@@ -27,6 +27,12 @@
         </div>
 
         <div class="sysGroup">
+            <button id="sysInfoBtn" class="primaryBtn">
+                Info
+            </button>
+        </div>
+
+        <div class="sysGroup">
             <button id="openSettings" class="primaryBtn">
                 Settings
             </button>
@@ -348,6 +354,180 @@
         <span id="gitHash" class="version"></span>
         <span id="build_date" class="version"></span>
     </div>
+
+    <div id="sysInfoDiv">
+    <div id="sysInfoContentDiv">
+
+        <!-- Host Section -->
+        <div class="infoBlock">
+    <div class="infoTitle" data-toggle>Host Information</div>
+
+    <div class="infoBlockContent">
+        <div class="infoSection">
+            <span class="infoLabel">Uptime:</span>
+            <span class="infoValue" id="infoUptime">infoUptime</span>
+        </div>
+
+        <div class="infoSection">
+            <span class="infoLabel">Heap size:</span>
+            <span class="infoValue" id="infoHeapSize">infoHeapSize</span>
+        </div>
+
+        <div class="infoSection">
+            <span class="infoLabel">Heap free:</span>
+            <span class="infoValue" id="infoHeapFree">infoHeapFree</span>
+        </div>
+
+        <div class="infoSection">
+            <span class="infoLabel">Sketch size:</span>
+            <span class="infoValue" id="infoSketchSize">infoSketchSize</span>
+        </div>
+
+        <div class="infoSection">
+            <span class="infoLabel">Sketch free:</span>
+            <span class="infoValue" id="infoFreeSketch">infoFreeSketch</span>
+        </div>
+
+        <div class="infoSection">
+            <span class="infoLabel">SPIFFS size:</span>
+            <span class="infoValue" id="infoSpiffsSize">infoSpiffsSize</span>
+        </div>
+
+        <div class="infoSection">
+            <span class="infoLabel">SPIFFS free:</span>
+            <span class="infoValue" id="infoFreeSpiffs">infoFreeSpiffs</span>
+        </div>
+    </div>
+</div>
+
+
+        <div class="infoBlock">
+    <div class="infoTitle" data-toggle>Network Information</div>
+
+    <div class="infoBlockContent">
+        <div class="infoSection">
+            <span class="infoLabel">Hostname:</span>
+            <span class="infoValue" id="infoHostname">infoHostname</span>
+        </div>
+        <div class="infoSection">
+            <span class="infoLabel">IP:</span>
+            <span class="infoValue" id="infoWifiIp">infoWifiIp</span>
+        </div>
+
+        <div class="infoSection">
+            <span class="infoLabel">Subnet:</span>
+            <span class="infoValue" id="infoWifiSubnet">infoWifiSubnet</span>
+        </div>
+
+        <div class="infoSection">
+            <span class="infoLabel">MAC:</span>
+            <span class="infoValue" id="infoWifiMac">infoWifiMac</span>
+        </div>
+
+        <div class="infoSection">
+            <span class="infoLabel">Gateway:</span>
+            <span class="infoValue" id="infoWifiGateway">infoWifiGateway</span>
+        </div>
+
+        <div class="infoSection">
+            <span class="infoLabel">SSID:</span>
+            <span class="infoValue" id="infoWifiSsid">infoWifiSsid</span>
+        </div>
+
+        <div class="infoSection">
+            <span class="infoLabel">DNS 1:</span>
+            <span class="infoValue" id="infoWifiDns1">infoWifiDns1</span>
+        </div>
+
+        <div class="infoSection">
+            <span class="infoLabel">DNS 2:</span>
+            <span class="infoValue" id="infoWifiDns2">infoWifiDns2</span>
+        </div>
+
+        <div class="infoSection">
+            <span class="infoLabel">RSSI:</span>
+            <span class="infoValue" id="infoWifiRssi">infoWifiRssi</span>
+        </div>
+    </div>
+</div>
+
+
+        <!-- FW Section -->
+       <div class="infoBlock">
+    <div class="infoTitle" data-toggle>FW Information</div>
+
+    <div class="infoBlockContent">
+        <div class="infoSection">
+            <span class="infoLabel">FW Version:</span>
+            <span class="infoValue" id="infoFwVersion">infoFwVersion</span>
+        </div>
+
+        <div class="infoSection">
+            <span class="infoLabel">Build Date:</span>
+            <span class="infoValue" id="infoBuildDate">infoBuildDate</span>
+        </div>
+
+        <div class="infoSection">
+            <span class="infoLabel">Git Hash:</span>
+            <span class="infoValue" id="infoGitHash">infoGitHash</span>
+        </div>
+    </div>
+</div>
+
+
+        <!-- Chip Section -->
+        <div class="infoBlock">
+            <div class="infoTitle" data-toggle>Chip Information</div>
+
+            <div class="infoBlockContent">
+                <div class="infoSection">
+                    <span class="infoLabel">Chip Name:</span>
+                    <span class="infoValue" id="infoChipName">infoChipName</span>
+                </div>
+
+                <div class="infoSection">
+                    <span class="infoLabel">Cores:</span>
+                    <span class="infoValue" id="infoCores">infoCores</span>
+                </div>
+
+                <div class="infoSection">
+                    <span class="infoLabel">Revision:</span>
+                    <span class="infoValue" id="infoRevision">infoRevision</span>
+                </div>
+
+                <div class="infoSection">
+                    <span class="infoLabel">Flash Size:</span>
+                    <span class="infoValue" id="infoFlashSize">infoFlashSize</span>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- NFC Section -->
+        <div class="infoBlock">
+            <div class="infoTitle" data-toggle>NFC Information</div>
+            <div class="infoBlockContent">
+                <div class="infoSection">
+                    <span class="infoLabel">NFC Available:</span>
+                    <span class="infoValue" id="infoNfcAvailable">infoNfcAvailable</span>
+                </div>
+                <div class="infoSection">
+                    <span class="infoLabel">NFC FW:</span>
+                    <span class="infoValue" id="infoNfcFwVer">infoNfcFwVer</span>
+                </div>
+                <div class="infoSection">
+                    <span class="infoLabel">NFC Chip ID:</span>
+                    <span class="infoValue" id="infoNfcChipId">infoNfcChipId</span>
+                </div>
+            </div>  
+        </div>
+        
+
+        <!-- Close Button -->
+        <button id="sysInfoCloseBtn">close</button>
+    </div>
+</div>
+
 
     <script src="/settings.js"></script>
 </body>
