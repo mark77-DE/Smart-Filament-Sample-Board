@@ -4,10 +4,12 @@
     "mqtt": false,
     "debugMode": true,
 
+    "hostname": "FilamentSampleBoard",
+
     "webLEDTimeout": 2000,
 
     "ledCount": 8,
-    "ledPin": 4,
+    "ledPin": 1,
     "ledBrightness": 50,
     "ledTimeout": 2000,
     "ledColor": [0, 255, 0],
@@ -15,7 +17,7 @@
     "ledColorPulse": [0, 64, 160],
 
     "nfcLedCount": 8,
-    "nfcLedPin": 15,
+    "nfcLedPin": 2,
     "nfcLedBrightness": 100,
     "nfcLedTimeout": 4000,
     "nfcLedColorSuccess": [0, 255, 0],
@@ -25,14 +27,14 @@
     "nfcLedSuccessBlinkCount": 3,
     "nfcLedSuccessBlinkMs": 150,
 
-    "buttonPin": 32,
+    "buttonPin": 3,
     "buttonPullup": true,
     "buttonDebounceMs": 30,
     "buttonLongMs": 800,
     "buttonDoubleMs": 400,
     "buttonHoldMs": 250,
 
-    "buzzerPin": 33,
+    "buzzerPin": 4,
     "buzzerActiveHigh": true,
     "buzzerFreq": 4000,
     "buzzerSingleMs": 80,

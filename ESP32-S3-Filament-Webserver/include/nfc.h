@@ -87,3 +87,14 @@ void NFC_OnPreempt(const String& uid);
  *        (z. B. um eine Idle-Animation zu beenden)
  */
 void NFC_OnActive();
+
+
+struct NFCInfo {
+    uint8_t fwVerMajor;
+    uint8_t fwVerMinor;
+    uint16_t chipID;
+    bool available;
+};
+
+// globale Instanz
+extern NFCInfo g_nfcInfo;

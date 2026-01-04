@@ -19,12 +19,18 @@
 #include "gpio_hardware.h"
 #include "version_info.h"
 #include "reboot_handler.h"
+#include "pins.h"
+#include "Arduino.h"
 
 constexpr uint32_t SPLASH_CHAR_MS = 35;
 constexpr uint32_t SPLASH_LINE_MS = 200;
 constexpr uint32_t SPLASH_HOLD_MS = 2000;
 
 constexpr uint32_t FIRMWARE_HOLD_MS = 5000;
+
+SysInfo g_sysInfo;
+
+NFCInfo g_nfcInfo = {0,0,0,false};
 
 
 //Debug
@@ -38,16 +44,16 @@ AsyncWebSocket ws("/ws");
 DisplayType display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET_PIN);
 
 // ----------------- PN532 SPI Settings -----------------
-#define PN532_SCK 18
-#define PN532_MOSI 23
-#define PN532_MISO 19
-#define PN532_CS 5
-#define PN532_IRQ 2
+// #define PN532_SCK 18
+// #define PN532_MOSI 23
+// #define PN532_MISO 19
+// #define PN532_CS 5
+// #define PN532_IRQ 2
 Adafruit_PN532 nfc(PN532_SCK, PN532_MISO, PN532_MOSI, PN532_CS);
 
 // ----------------- I2C -----------------
-#define SDA_PIN 21
-#define SCL_PIN 22
+// #define SDA_PIN 21
+// #define SCL_PIN 22
 
 // ----------------- LED & Display Timing -----------------
 int targetLed = -1;
@@ -233,14 +239,31 @@ void handleUID(const String &uid, UidSource source) {
 }
 
 
+
+void printChipInfo() {
+    
+    Serial.printf("ESP-Typ: %s\n", g_sysInfo.chipName);
+    Serial.printf("Cores: %d\n", g_sysInfo.cores);
+    Serial.printf("Rev: %d\n", g_sysInfo.revision);
+    Serial.printf("Flash Size: %lu bytes\n", g_sysInfo.flashSize);
+    Serial.println();
+    Serial.println();
+}
+
+
 // ----------------------------- Setup -----------------------------
 // -----------------------------------------------------------------
 void setup() {
   Serial.begin(115200);
-  while (!Serial);
+  while (!Serial) delay(10);
 
   Serial.printf("Firmware Version: %s\n", FIRMWARE_VERSION);
   Serial.printf("Build Date: %s\n", BUILD_DATE_SHORT);
+
+
+  g_sysInfo = getSysInfo();
+  
+  printChipInfo();
 
   // 1) Konfiguration laden
   loadConfig();
@@ -259,10 +282,16 @@ void setup() {
   // 3) WLAN verbinden (Anzeige davor setzen)
   MYDISPLAY::showCentered("VERBINDUNG...");
   WiFiManager wifiManager;
+  if (CONFIG.hostname.length() > 0) {
+    WiFi.setHostname(CONFIG.hostname.c_str());  // <- hier
+    Serial.printf("Hostname gesetzt: %s\n", CONFIG.hostname.c_str());
+  }
   if (!wifiManager.autoConnect("NFC-Setup-AP")) {
     ESP.restart();
   }
-  Serial.print("IP: "); Serial.println(WiFi.localIP());
+  Serial.printf("IP-Address: %s\n", WiFi.localIP().toString().c_str());
+  String mac = WiFi.macAddress();
+  Serial.printf("MAC-Address: %s\n", mac.c_str());
 
   // 4) IP kurz zeigen (nicht hart blockieren)
   {
@@ -304,8 +333,13 @@ void setup() {
   if (!version) {
     Serial.println("PN532 not found!");
     MYDISPLAY::showCentered("PN532 FEHLT!");
-    while (1) { delay(100); }
+    g_nfcInfo.available = false;
+    // while (1) { delay(100); }
   } else {
+    g_nfcInfo.available = true;
+    g_nfcInfo.fwVerMajor = (version >> 24) & 0xFF;
+    g_nfcInfo.fwVerMinor = (version >> 16) & 0xFF;
+    g_nfcInfo.chipID     = version & 0xFFFF, HEX;
     Serial.print("PN532 FW "); Serial.print((version>>24)&0xFF);
     Serial.print('.');        Serial.print((version>>16)&0xFF);
     Serial.print(" chip=0x"); Serial.println(version & 0xFFFF, HEX);
