@@ -390,12 +390,12 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
 
             if (FilamentDB::add(entry)) {
                 if(CONFIG.debugMode) {
-                    Serial.println("ADD: OK");
+                    Serial.println("ADD filament: OK");
                 }
                 saveFilamentsToFile();
             } else {
                 if(CONFIG.debugMode) {
-                    Serial.println("ADD: FAILED");
+                    Serial.println("ADD filament: FAILED");
                 }
             }
         }

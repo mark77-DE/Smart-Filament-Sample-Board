@@ -78,7 +78,7 @@ struct AppConfig {
   bool         darkmode;    ///< Darkmode aktiv
   bool         mqtt;        ///< MQTT aktiviert
   bool         debugMode;   ///< Debug-Modus aktiv
-  uint32_t webLEDTimeout;   // Default fürs Dashboard (ms)
+  uint32_t     webLEDTimeout;   // Default fürs Dashboard (ms)
   String       hostname;    ///< Hostname für WLAN
 
   LedConfig    led;         ///< LED-Konfiguration (Filament)

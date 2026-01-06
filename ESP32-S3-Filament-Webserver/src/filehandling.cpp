@@ -47,6 +47,8 @@ bool loadConfig() {
   CONFIG.debugMode = opt["debugMode"] | false;
   CONFIG.hostname  = opt["hostname"]  | "FiSaBo";
 
+  
+
   // --- Filament-LED ---
   CONFIG.led.count      = opt["ledCount"]      | 8;
   CONFIG.led.pin        = opt["ledPin"]        | 4;
@@ -168,6 +170,8 @@ void applyConfig() {
   if (CONFIG.debugMode) {
     Serial.println(F("--------------------"));
     Serial.println(F("Config applied:"));
+
+    Serial.print(F(" HOSTNAME = "));       Serial.println(CONFIG.hostname);
 
     Serial.print(F(" LED_COUNT = "));         Serial.println(CONFIG.led.count);
     Serial.print(F(" LED_PIN = "));           Serial.println(CONFIG.led.pin);

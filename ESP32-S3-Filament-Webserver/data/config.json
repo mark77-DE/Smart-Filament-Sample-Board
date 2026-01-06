@@ -10,7 +10,7 @@
     "webLEDTimeout": 2000,
 
     "ledCount": 8,
-    "ledPin": 1,
+    "ledPin": 2,
     "ledBrightness": 50,
     "ledTimeout": 2000,
     "ledColor": [0, 255, 0],
@@ -18,7 +18,7 @@
     "ledColorPulse": [0, 64, 160],
 
     "nfcLedCount": 8,
-    "nfcLedPin": 2,
+    "nfcLedPin": 1,
     "nfcLedBrightness": 100,
     "nfcLedTimeout": 4000,
     "nfcLedColorSuccess": [0, 255, 0],
@@ -28,14 +28,14 @@
     "nfcLedSuccessBlinkCount": 3,
     "nfcLedSuccessBlinkMs": 150,
 
-    "buttonPin": 3,
+    "buttonPin": 7,
     "buttonPullup": true,
     "buttonDebounceMs": 30,
     "buttonLongMs": 800,
     "buttonDoubleMs": 400,
     "buttonHoldMs": 250,
 
-    "buzzerPin": 4,
+    "buzzerPin": 8,
     "buzzerActiveHigh": true,
     "buzzerFreq": 4000,
     "buzzerSingleMs": 80,
