@@ -17,6 +17,15 @@ const RECONNECT_DELAY = 2000; // 2 Sekunden
 let wsStatus = false;
 const wsStatusElement = document.getElementById("wsStatus");
 
+//Filter vorbereiten
+let FILAMENTS = [];
+let activeFilters = {
+  vendor: "",
+  color: "",
+  type: ""
+};
+
+
 // ---------------- WebSocket ----------------
 function updateWSStatus(connected) {
   if (!wsStatusElement) return;
@@ -174,6 +183,8 @@ function flushCoalescedSend() {
 function sendHighlight(uid) {
   queuedUid = uid;
 
+  console.log("Highlight UID:", uid);
+
   // wenn gerade kein Coalesce läuft: sofort senden
   if (!sendCoalesceTimer) {
     flushCoalescedSend();
@@ -236,6 +247,21 @@ function highlightUID(uid, opts = {}) {
 }
 
 
+// Highlight mehrere UIDs gleichzeitig (z. B. Filter)
+function sendMultiHighlight(uids) {
+  if (!socket || socket.readyState !== WebSocket.OPEN) return;
+
+  try {
+    socket.send(JSON.stringify({
+      action: "highlightMultiLED",
+      uids: uids
+    }));
+  } catch (e) {
+    console.error("WebSocket send failed:", e);
+  }
+}
+
+
 // ---------------- Raster-Kacheln laden ----------------
 async function loadFilamentTiles() {
   const [configRes, filamentsRes] = await Promise.all([
@@ -244,8 +270,31 @@ async function loadFilamentTiles() {
   ]);
 
   CONFIG = await configRes.json();
-  const filaments = await filamentsRes.json();
+  FILAMENTS = await filamentsRes.json();
 
+  // Filter füllen
+  populateFilter("filterVendor", "vendor");
+  populateFilter("filterColor", "color");
+  populateFilter("filterType", "type");
+
+  // Initial alle Tiles rendern
+  updateGrid();
+}
+
+
+function getVersion() {
+  fetch("/api/version")
+    .then(r => r.json())
+    .then(data => {
+      document.getElementById("fwVersion").textContent = "FW-Version: " + data.firmware;
+      document.getElementById("gitHash").textContent = "Git hash: " + data.git_hash;
+      document.getElementById("build_date").textContent = "Build date: " + data.build_date;
+    })
+    .catch(err => console.error("Version fetch failed:", err));
+}
+
+
+function renderFilamentGrid(filaments) {
   const grid = document.getElementById("filamentGrid");
   if (!grid) return;
 
@@ -273,25 +322,120 @@ async function loadFilamentTiles() {
     tile.appendChild(colorSpan);
     tile.appendChild(typeSpan);
 
-    // Klick: sendHighlight (ACK/Retry) + UI sofort
     tile.onclick = () => sendHighlight(f.uid);
 
     grid.appendChild(tile);
   });
 }
 
-function getVersion() {
-  fetch("/api/version")
-    .then(r => r.json())
-    .then(data => {
-      document.getElementById("fwVersion").textContent = "FW-Version: " + data.firmware;
-      document.getElementById("gitHash").textContent = "Git hash: " + data.git_hash;
-      document.getElementById("build_date").textContent = "Build date: " + data.build_date;
-    })
-    .catch(err => console.error("Version fetch failed:", err));
+function applyFilters() {
+  return FILAMENTS.filter(f => {
+    if (activeFilters.vendor && f.vendor !== activeFilters.vendor) return false;
+    if (activeFilters.color  && f.color  !== activeFilters.color)  return false;
+    if (activeFilters.type   && f.type   !== activeFilters.type)   return false;
+    return true;
+  });
 }
+
+function updateGrid() {
+  renderFilamentGrid(applyFilters());
+}
+
+function populateFilter(selectId, key) {
+  const select = document.getElementById(selectId);
+  if (!select) return;
+
+  // Vorherige Optionen entfernen
+  select.innerHTML = "";
+
+  // Mapping für schöne Labels
+  const FILTER_LABELS = {
+    vendor: "Hersteller",
+    color:  "Farbe",
+    type:   "Typ"
+  };
+
+  // Leere Option für „Alle“
+  const emptyOpt = document.createElement("option");
+  emptyOpt.value = "";
+  emptyOpt.textContent = "Alle " + (FILTER_LABELS[key] || key);
+  select.appendChild(emptyOpt);
+
+  // Alle eindeutigen Werte für dieses Feld
+  const values = [...new Set(FILAMENTS.map(f => f[key]))].sort();
+
+  values.forEach(v => {
+    const opt = document.createElement("option");
+    opt.value = v;
+    opt.textContent = v;
+    select.appendChild(opt);
+  });
+}
+
+function highlightFilteredLEDs() {
+  const filtered = FILAMENTS.filter(f => {
+    if (activeFilters.vendor && f.vendor !== activeFilters.vendor) return false;
+    if (activeFilters.color  && f.color  !== activeFilters.color)  return false;
+    if (activeFilters.type   && f.type   !== activeFilters.type)   return false;
+    return true;
+  });
+
+  
+    ;
+  
+    if (activeFilters.vendor == "" && activeFilters.color == "" && activeFilters.type == "") {
+
+        console.log("No filters applied");
+
+    } else {
+
+      console.log("Highlighting filtered LEDs for filters:", activeFilters);
+      console.log("Filtered UIDs:", filtered.map(f => f.uid))
+
+      const uids = filtered.map(f => f.uid);
+        // LEDs per WebSocket aktivieren
+        sendMultiHighlight(uids);      
+
+    }
+
+  
+}
+
+
+
+
+
+
+document.getElementById("filterVendor").onchange = e => {
+  activeFilters.vendor = e.target.value;
+  
+    console.log("Filter Vendor changed to:", activeFilters.vendor);
+  
+  updateGrid();           // Tiles anzeigen/ausblenden
+  highlightFilteredLEDs(); // LEDs leuchten
+};
+
+document.getElementById("filterColor").onchange = e => {
+  activeFilters.color = e.target.value;
+  
+    console.log("Filter Color changed to:", activeFilters.color);
+  
+  updateGrid();
+  highlightFilteredLEDs();
+};
+
+document.getElementById("filterType").onchange = e => {
+  activeFilters.type = e.target.value;
+  
+    console.log("Filter Type changed to:", activeFilters.type);
+  
+  updateGrid();
+  highlightFilteredLEDs();
+};
+
 
 
 connectWS();
 loadFilamentTiles();
 getVersion();
+

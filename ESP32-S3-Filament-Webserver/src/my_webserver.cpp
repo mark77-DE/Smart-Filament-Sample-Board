@@ -3,15 +3,14 @@
 #include <LittleFS.h>
 #include "ledctrl_filament.h"
 #include "ledctrl_nfc.h"
-#include <vector>
-#include "display.h"
 #include "globals.h"
 #include "filament_db.h"
 #include "filehandling.h"
-#include "gpio_hardware.h"
 #include "version_info.h"
 #include "reboot_handler.h"
 #include "nfc.h"
+#include "gpio_hardware.h"
+
 
 
 extern void webifArmIdleTimeout(uint32_t ms);
@@ -78,6 +77,11 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
     }
 
     const char* action = doc["action"] | "";
+    if(CONFIG.debugMode) {
+        Serial.print("WS action: ");
+        Serial.println(action);
+    }   
+
     if (strcmp(action, "highlightLED") == 0) {
         // --- ACK sofort zurück an genau diesen Client ---
         // (damit JS nicht retry-spamt)
@@ -100,7 +104,72 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
         webifArmIdleTimeout(t);
 
         handleUID(uid, UidSource::WEBIF);
+
+
+    } else if (strcmp(action, "highlightMultiLED") == 0) {
+
+    // --- ACK sofort zurück an genau diesen Client ---
+    uint32_t seq = doc["seq"] | 0;
+    if (seq != 0) {
+        JsonDocument ack;
+        ack["action"] = "ack";
+        ack["seq"]    = seq;
+
+        String out;
+        serializeJson(ack, out);
+        client->text(out);
     }
+
+    // --- Timeout bestimmen ---
+    uint32_t t = (CONFIG.webLEDTimeout > 0)
+                   ? CONFIG.webLEDTimeout
+                   : (uint32_t)CONFIG.led.timeout;
+
+    uint16_t holdMs = (uint16_t)min<uint32_t>(t, 65535);
+
+    LEDCTRL_FILAMENT::webifHoldFor(holdMs);
+    webifArmIdleTimeout(t);
+
+    // --- UIDs verarbeiten ---
+    JsonArray uids = doc["uids"].as<JsonArray>();
+
+    FilamentEntry entry;
+    int16_t index = 0;
+    bool anyHit = false;
+
+    for (JsonVariant uidVar : uids) {
+        String uid = uidVar.as<String>();
+
+        if (CONFIG.debugMode) {
+            Serial.print(index++);
+            Serial.print(": WS highlightUID: ");
+            Serial.println(uid);
+        }
+
+        if (FilamentDB::findByUID(uid, entry)) {
+            LEDCTRL_FILAMENT::setPixel(entry.ledIndex, CONFIG.led.color);
+            anyHit = true;
+
+            if (CONFIG.debugMode) {
+                Serial.printf(
+                    "  -> LED %u (%s %s %s)\n",
+                    entry.ledIndex,
+                    entry.vendor.c_str(),
+                    entry.type.c_str(),
+                    entry.color.c_str()
+                );
+            }
+        } else if (CONFIG.debugMode) {
+            Serial.print("  !! UID not found: ");
+            Serial.println(uid);
+        }
+    }
+
+    if (!anyHit && CONFIG.debugMode) {
+        Serial.println("WS highlightMultiLED: no matching UIDs");
+    }
+}
+
 
 }
 

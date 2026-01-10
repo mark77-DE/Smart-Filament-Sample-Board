@@ -5,5 +5,19 @@
     "type": "PLA",
     "color": "red",
     "ledIndex": 0
+  },
+  {
+    "uid": "04:8A:BD:2E:4F:61:82",
+    "vendor": "change me 2",
+    "type": "PLA+",
+    "color": "blau",
+    "ledIndex": 1
+  },
+  {
+    "uid": "04:8A:BD:2E:4F:61:83",
+    "vendor": "change me 3",
+    "type": "PLA+",
+    "color": "yellow",
+    "ledIndex": 2
   }
 ]
