@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>OTA Update</title>
+</head>
+<body>
+  <h1>ESP32 OTA Update for "My Filament Sample Board"</h1>
+  <form id="uploadForm">
+    <input type="file" id="firmwareFile" />
+    <button type="button" onclick="uploadFirmware()">Upload</button>
+  </form>
+  
+
+  <h2>ESP32 LittleFS Update - Create Backup First or data will be lost!!!</h2>
+<form id="uploadFSForm">
+  <input type="file" id="fsFile" />
+  <button type="button" onclick="uploadFS()">Upload FS</button>
+</form>
+
+<pre id="status"></pre>
+
+<script>
+async function uploadFS() {
+  const fileInput = document.getElementById('fsFile');
+  if (!fileInput.files.length) return alert("Bitte Datei auswählen");
+
+  const file = fileInput.files[0];
+  const status = document.getElementById('status');
+  status.textContent = "Uploading FS...";
+
+  try {
+    const response = await fetch("/api/uploadFS", {
+      method: "POST",
+      body: file
+    });
+
+    if (response.ok) {
+      status.textContent = "FS Upload erfolgreich!";
+    } else {
+      status.textContent = "FS Upload fehlgeschlagen: " + response.statusText;
+    }
+  } catch (err) {
+    status.textContent = "FS Upload Error: " + err;
+  }
+}
+
+
+
+    async function uploadFirmware() {
+      const fileInput = document.getElementById('firmwareFile');
+      if (!fileInput.files.length) return alert("Bitte Datei auswählen");
+
+      const file = fileInput.files[0];
+      const status = document.getElementById('status');
+      status.textContent = "Uploading...";
+
+      const formData = new FormData();
+      formData.append("firmware", file);
+
+      try {
+        const response = await fetch("/api/otaUpdate", {
+          method: "POST",
+          body: file // wir senden direkt die Datei als Body
+        });
+
+        if (response.ok) {
+          status.textContent = "Upload erfolgreich! ESP rebootet...";
+        } else {
+          status.textContent = "Upload fehlgeschlagen: " + response.statusText;
+        }
+      } catch (err) {
+        status.textContent = "Upload Error: " + err;
+      }
+    }
+  </script>
+</body>
+</html>

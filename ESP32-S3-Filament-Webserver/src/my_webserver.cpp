@@ -1,5 +1,6 @@
 #include "my_webserver.h"
 #include <ArduinoJson.h>
+#include <Update.h>
 #include <LittleFS.h>
 #include "ledctrl_filament.h"
 #include "ledctrl_nfc.h"
@@ -11,7 +12,7 @@
 #include "nfc.h"
 #include "gpio_hardware.h"
 
-
+File fsFile; // global oder in cpp außerhalb des Lambdas
 
 extern void webifArmIdleTimeout(uint32_t ms);
 
@@ -177,6 +178,16 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
 // ------------------ Webserver Init -------------------
 void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
 {
+    
+    // LittleFS mounten
+    if (!LittleFS.begin(true)) {  // true = format if mount fails
+        Serial.println("LittleFS mount failed!");
+    } else {
+        Serial.println("LittleFS mounted successfully!");
+        Serial.print("Total Bytes: "); Serial.println(LittleFS.totalBytes());
+        Serial.print("Used Bytes:  "); Serial.println(LittleFS.usedBytes());
+    }
+
     // [ORDER-FIX]: WebSocket zuerst registrieren, damit /ws nicht vom Catch-all "/" abgefangen wird
     ws.onEvent(onWsEvent);
     server.addHandler(&ws);
@@ -205,6 +216,9 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
 
     server.serveStatic("/favicon.ico", LittleFS, "/favicon.ico")
         .setCacheControl("public, max-age=2592000");
+
+    server.serveStatic("/update.html", LittleFS, "/update.html")
+        .setCacheControl("no-cache");        
 
     // ALT: Direkte Handler für statische Files entfernt (durch serveStatic ersetzt)
     // server.on("/", HTTP_GET, ...);
@@ -592,6 +606,69 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
         // optional: Status-JSON zurückgeben
         request->send(200, "application/json", "{\"status\":\"ok\",\"pending\":true}");
     });
+
+
+
+    server.on("/api/otaUpdate", HTTP_POST, 
+    [](AsyncWebServerRequest *req){ req->send(200,"text/plain","Upload started"); },
+    nullptr,
+    [](AsyncWebServerRequest *req, uint8_t *data, size_t len, size_t index, size_t total){
+        if(index == 0){
+            if(!Update.begin(total)){
+                Serial.println("OTA begin failed");
+                return;
+            }
+        }
+        Update.write(data, len);
+        if(index + len == total){
+            if (Update.end(true)) {  // true = Reboot automatisch
+                Serial.println("OTA Success, rebooting...");
+                delay(100);           // kleine Pause, damit Serial flushen kann
+                ESP.restart();
+            } else {
+                Serial.println("OTA failed");
+            }
+        }
+    }
+);
+
+
+server.on("/api/uploadFS", HTTP_POST,
+    [](AsyncWebServerRequest *req){ 
+        req->send(200,"text/plain","FS Upload started"); 
+    },
+    nullptr,
+    [](AsyncWebServerRequest *req, uint8_t *data, size_t len, size_t index, size_t total){
+        if(index == 0){
+            Serial.printf("Starting FS OTA update: %u bytes\n", total);
+            if(!Update.begin(total, U_SPIFFS)) {  // <-- U_SPIFFS für FS-OTA
+                Serial.printf("Update begin failed! Error: %d\n", Update.getError());
+                return;
+            }
+        }
+
+        // Chunk schreiben
+        if(Update.write(data, len) != len){
+            Serial.printf("Update write failed! Error: %d\n", Update.getError());
+            return;
+        }
+
+        // Letzter Chunk
+        if(index + len == total){
+            if(Update.end(true)){  // true = automatisch reboot
+                Serial.println("FS OTA applied successfully!");
+                delay(200);             // kurze Pause, damit Serial flushen kann
+                ESP.restart();          // automatischer Reboot
+            } else {
+                Serial.printf("FS OTA failed! Error: %d\n", Update.getError());
+            }
+        }
+    }
+);
+
+
+
+
 
 
     
