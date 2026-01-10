@@ -20,6 +20,7 @@ AppConfig CONFIG;
 
 bool loadConfig() {
   // LittleFS mounten (mit Format-on-fail = true, wie bisher genutzt)
+  Serial.println("Mounting LittleFS...");
   if (!LittleFS.begin(true)) {
     if (CONFIG.debugMode) {
       Serial.println(F("LittleFS mount failed!"));

@@ -22,6 +22,7 @@
 #include "pins.h"
 #include "Arduino.h"
 
+
 constexpr uint32_t SPLASH_CHAR_MS = 35;
 constexpr uint32_t SPLASH_LINE_MS = 200;
 constexpr uint32_t SPLASH_HOLD_MS = 2000;
@@ -251,13 +252,20 @@ void printChipInfo() {
 }
 
 
+
+
+
+
+
 // ----------------------------- Setup -----------------------------
 // -----------------------------------------------------------------
 void setup() {
   Serial.begin(115200);
   while (!Serial) delay(10);
 
-  Serial.printf("Firmware Version: %s\n", FIRMWARE_VERSION);
+  
+
+  Serial.printf("Firmware Version Info: %s\n", FIRMWARE_VERSION);
   Serial.printf("Build Date: %s\n", BUILD_DATE_SHORT);
 
 
