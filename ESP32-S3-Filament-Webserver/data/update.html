@@ -1,77 +1,64 @@
 <!DOCTYPE html>
-<html>
+<html lang="de">
+
 <head>
-  <title>OTA Update</title>
+    <meta charset="UTF-8">
+    <title>Spot My Filament - OTA Update</title>
+    <link rel="stylesheet" href="/update.css">
 </head>
 <body>
-  <h1>ESP32 OTA Update for "My Filament Sample Board"</h1>
-  <form id="uploadForm">
-    <input type="file" id="firmwareFile" />
-    <button type="button" onclick="uploadFirmware()">Upload</button>
-  </form>
+    
+    <div id="header">
+        <div id="logo">
+            <img src="/logo.png" alt="Logo" class="logo">
+        </div>
+        <div id="headline">
+            Spot My Filament - Update
+            <div id="subheadline">Smart Filament Sample Board - OTA Update</div>
+        </div>
+    </div>
+
+<div id="export">
+    <div class="exportHint">Bevor doing <span class="alert">firmware</span> updates, please export settings, because data <span class="alert">might</span> be lost.</div>
+    <div class="exportHint">Bevor doing <span class="alert">filesystemt</span> updates, please export settings, because data <span class="alert">will</span> be lost.</div>
+    <!-- Export -->
+    <button id="exportAllBtn">Export</button>
+</div>
   
 
-  <h2>ESP32 LittleFS Update - Create Backup First or data will be lost!!!</h2>
-<form id="uploadFSForm">
-  <input type="file" id="fsFile" />
-  <button type="button" onclick="uploadFS()">Upload FS</button>
-</form>
+<div id="fwUpdateSection">
+    <div class="updateHeader">Firmware Update</div>
+    <form id="uploadForm">
+        <label for="firmwareFile" id="uploadLabel" class="upload-btn">Choose file</label>
+        <input type="file" id="firmwareFile" accept="firmware.bin"/>
+        <button type="button" onclick="uploadFirmware()">Upload FW</button>
+    </form>
+</div>
+
+
+<div id="fsUpdateSection">
+    <div class="updateHeader">Filesystem Update</div>
+    <form id="uploadFSForm">
+        <label for="fsFile" id="uploadLabel" class="upload-btn">Choose file</label>
+        <input type="file" id="fsFile" accept="littlefs.bin"/>
+        <button type="button" onclick="uploadFS()">Upload FS</button>
+    </form>
+</div>
 
 <pre id="status"></pre>
 
-<script>
-async function uploadFS() {
-  const fileInput = document.getElementById('fsFile');
-  if (!fileInput.files.length) return alert("Bitte Datei auswählen");
+<div class="sysGroup">
+            <button onclick="window.location.href='/'">
+                Dashboard
+            </button>
+        </div>
 
-  const file = fileInput.files[0];
-  const status = document.getElementById('status');
-  status.textContent = "Uploading FS...";
+        <div class="sysGroup">
+            <button onclick="window.location.href='/settings.html'">
+                Settings
+            </button>
+        </div>
 
-  try {
-    const response = await fetch("/api/uploadFS", {
-      method: "POST",
-      body: file
-    });
-
-    if (response.ok) {
-      status.textContent = "FS Upload erfolgreich!";
-    } else {
-      status.textContent = "FS Upload fehlgeschlagen: " + response.statusText;
-    }
-  } catch (err) {
-    status.textContent = "FS Upload Error: " + err;
-  }
-}
-
-
-
-    async function uploadFirmware() {
-      const fileInput = document.getElementById('firmwareFile');
-      if (!fileInput.files.length) return alert("Bitte Datei auswählen");
-
-      const file = fileInput.files[0];
-      const status = document.getElementById('status');
-      status.textContent = "Uploading...";
-
-      const formData = new FormData();
-      formData.append("firmware", file);
-
-      try {
-        const response = await fetch("/api/otaUpdate", {
-          method: "POST",
-          body: file // wir senden direkt die Datei als Body
-        });
-
-        if (response.ok) {
-          status.textContent = "Upload erfolgreich! ESP rebootet...";
-        } else {
-          status.textContent = "Upload fehlgeschlagen: " + response.statusText;
-        }
-      } catch (err) {
-        status.textContent = "Upload Error: " + err;
-      }
-    }
-  </script>
+<script src="/update.js"></script>
 </body>
 </html>

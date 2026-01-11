@@ -11,6 +11,8 @@
 #include "reboot_handler.h"
 #include "nfc.h"
 #include "gpio_hardware.h"
+#include "display.h"
+#include "display_anim.h"
 
 File fsFile; // global oder in cpp außerhalb des Lambdas
 
@@ -218,7 +220,13 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
         .setCacheControl("public, max-age=2592000");
 
     server.serveStatic("/update.html", LittleFS, "/update.html")
-        .setCacheControl("no-cache");        
+        .setCacheControl("no-cache");      
+        
+    server.serveStatic("/update.css", LittleFS, "/update.css")
+        .setCacheControl("no-cache");
+
+    server.serveStatic("/update.js", LittleFS, "/update.js")
+        .setCacheControl("no-cache");
 
     // ALT: Direkte Handler für statische Files entfernt (durch serveStatic ersetzt)
     // server.on("/", HTTP_GET, ...);
@@ -610,23 +618,59 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
 
 
     server.on("/api/otaUpdate", HTTP_POST, 
-    [](AsyncWebServerRequest *req){ req->send(200,"text/plain","Upload started"); },
-    nullptr,
-    [](AsyncWebServerRequest *req, uint8_t *data, size_t len, size_t index, size_t total){
+        [](AsyncWebServerRequest *req){ req->send(200,"text/plain","Upload started"); },
+        nullptr,
+        [](AsyncWebServerRequest *req, uint8_t *data, size_t len, size_t index, size_t total){
         if(index == 0){
+            Serial.printf("Starting FW OTA update: %u bytes\n", total);
+            DisplayAnim::stop();
+            MYDISPLAY::showThreeCentered(
+                F("started"),
+                F("FW OTA"),
+                F("update")
+            );
+
             if(!Update.begin(total)){
                 Serial.println("OTA begin failed");
+                
+                MYDISPLAY::showThreeCentered(
+                    F("FW OTA"),
+                    F("update"),
+                    F("failed")
+                );
                 return;
             }
         }
-        Update.write(data, len);
-        if(index + len == total){
-            if (Update.end(true)) {  // true = Reboot automatisch
-                Serial.println("OTA Success, rebooting...");
-                delay(100);           // kleine Pause, damit Serial flushen kann
-                ESP.restart();
+        // Chunk schreiben
+        if(Update.write(data, len) != len){
+            Serial.printf("FW update write failed! Error: %d\n", Update.getError());
+            MYDISPLAY::showThreeCentered(
+                    F("FW OTA"),
+                    F("update"),
+                    F("failed")
+                );
+            return;
+        }
+        if (index + len == total) {
+
+            if (Update.end(false)) {   // WICHTIG: false = KEIN automatischer Reboot
+                Serial.println("FW OTA applied successfully");
+                MYDISPLAY::showThreeCentered(
+                    F("FW OTA"),
+                    F("update"),
+                    F("success")
+                );
+
+                req->send(200, "application/json",
+                    "{\"status\":\"ok\",\"msg\":\"FW update successful, rebooting\"}");
+
+                // Reboot verzögert auslösen
+        
+                rebootPending = true;
+                rebootAt = millis() + 3000;
             } else {
-                Serial.println("OTA failed");
+                req->send(500, "application/json",
+                    "{\"status\":\"error\",\"msg\":\"FW update failed\"}");
             }
         }
     }
@@ -641,26 +685,50 @@ server.on("/api/uploadFS", HTTP_POST,
     [](AsyncWebServerRequest *req, uint8_t *data, size_t len, size_t index, size_t total){
         if(index == 0){
             Serial.printf("Starting FS OTA update: %u bytes\n", total);
+            DisplayAnim::stop();
+            MYDISPLAY::showThreeCentered(
+                F("started"),
+                F("FS OTA"),
+                F("update")
+            );
             if(!Update.begin(total, U_SPIFFS)) {  // <-- U_SPIFFS für FS-OTA
                 Serial.printf("Update begin failed! Error: %d\n", Update.getError());
+                MYDISPLAY::showThreeCentered(
+                    F("FS OTA"),
+                    F("update"),
+                    F("failed")
+                );
                 return;
             }
         }
 
         // Chunk schreiben
         if(Update.write(data, len) != len){
-            Serial.printf("Update write failed! Error: %d\n", Update.getError());
+            Serial.printf("FS update write failed! Error: %d\n", Update.getError());
+            MYDISPLAY::showThreeCentered(
+                    F("FS OTA"),
+                    F("update"),
+                    F("failed")
+                );
             return;
         }
 
         // Letzter Chunk
-        if(index + len == total){
-            if(Update.end(true)){  // true = automatisch reboot
-                Serial.println("FS OTA applied successfully!");
-                delay(200);             // kurze Pause, damit Serial flushen kann
-                ESP.restart();          // automatischer Reboot
+        if (index + len == total) {
+
+            if (Update.end(false)) {   // WICHTIG: false = KEIN automatischer Reboot
+                Serial.println("FS OTA applied successfully");
+
+                req->send(200, "application/json",
+                    "{\"status\":\"ok\",\"msg\":\"FS update successful, rebooting\"}");
+
+                // Reboot verzögert auslösen
+        
+                rebootPending = true;
+                rebootAt = millis() + 3000;
             } else {
-                Serial.printf("FS OTA failed! Error: %d\n", Update.getError());
+                req->send(500, "application/json",
+                    "{\"status\":\"error\",\"msg\":\"FS update failed\"}");
             }
         }
     }

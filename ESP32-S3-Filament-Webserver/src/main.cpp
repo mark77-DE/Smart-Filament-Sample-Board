@@ -147,6 +147,8 @@ LEDCTRL_FILAMENT::tagPresenceTick(true);
       F("Press to Cancel")
     );
   }
+
+  
 }
 
 
@@ -429,6 +431,13 @@ void loop() {
   // ---------------------------------------------------------------------------
   // 
   if (rebootPending && now > rebootAt) {
+    
+    MYDISPLAY::showThreeCentered(
+      F("-----------"),
+      F("Reboot now!"),
+      F("-----------")
+    );
+  
     ESP.restart();
   }
 
