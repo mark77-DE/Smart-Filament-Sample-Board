@@ -1,0 +1,66 @@
+body {
+    font-family: sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #071325;
+    color: #7f8c8d;
+}
+
+#header {
+    display: flex;
+    align-items: center;  /* vertikal zentrieren */
+    gap: 15px;            /* Abstand zwischen Logo und Headline */
+    padding: 10px 20px;   /* optional, innen Abstand */
+}
+
+#headline {
+    font-size: 24px; /* Haupttextgröße */
+    font-weight: bold;
+    text-align: center;
+}
+
+#subheadline {
+    font-size: 50%; /* halbe Schriftgröße des Elterntexts */
+    font-weight: normal;
+    text-align: center;
+    color: #666; /* optional etwas dezenter */
+}
+
+.exportHint {
+    
+    margin-left: 20px;
+}
+
+.alert {
+    font-weight: bold;
+    color: red;
+}
+
+#exportAllBtn {
+    margin-top: 10px;
+    margin-left: 50px;
+    
+}
+
+
+
+
+
+button {
+    width: 100px; 
+    padding: 8px 10px; 
+    margin: 0; 
+    border: none; 
+    border-radius: 4px; 
+    cursor: pointer; 
+    font-size: 0.9em;
+}
+
+.primaryBtn:hover, .upload-btn:hover { background-color: #0069d9; }
+
+
+
+
+#fwUpdateSection, #fsUpdateSection {
+    margin: 20px;
+}
