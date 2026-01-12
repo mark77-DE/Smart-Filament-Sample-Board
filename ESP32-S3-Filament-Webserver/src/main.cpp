@@ -21,6 +21,7 @@
 #include "reboot_handler.h"
 #include "pins.h"
 #include "Arduino.h"
+#include "esp_ota_ops.h"
 
 
 constexpr uint32_t SPLASH_CHAR_MS = 35;
@@ -32,6 +33,42 @@ constexpr uint32_t FIRMWARE_HOLD_MS = 5000;
 SysInfo g_sysInfo;
 
 NFCInfo g_nfcInfo = {0,0,0,false};
+
+static void printOtaInfo() {
+  const esp_partition_t* boot = esp_ota_get_boot_partition();
+  const esp_partition_t* run  = esp_ota_get_running_partition();
+
+  Serial.printf("OTA boot: name=%s addr=0x%06X subtype=0x%02X\n",
+                boot ? boot->label : "null",
+                boot ? (unsigned)boot->address : 0,
+                boot ? (unsigned)boot->subtype : 0);
+
+  Serial.printf("OTA run : name=%s addr=0x%06X subtype=0x%02X\n",
+                run ? run->label : "null",
+                run ? (unsigned)run->address : 0,
+                run ? (unsigned)run->subtype : 0);
+
+  if (run) {
+    esp_ota_img_states_t st{};
+    if (esp_ota_get_state_partition(run, &st) == ESP_OK) {
+      Serial.printf("OTA state: %d (PENDING_VERIFY=%d)\n",
+                    (int)st, (int)ESP_OTA_IMG_PENDING_VERIFY);
+    }
+  }
+}
+
+static void markOtaImageValidIfNeeded() {
+  const esp_partition_t* running = esp_ota_get_running_partition();
+  if (!running) return;
+
+  esp_ota_img_states_t state{};
+  if (esp_ota_get_state_partition(running, &state) != ESP_OK) return;
+
+  if (state == ESP_OTA_IMG_PENDING_VERIFY) {
+    Serial.println("OTA: marking app valid (cancel rollback)...");
+    esp_ota_mark_app_valid_cancel_rollback();
+  }
+}
 
 
 //Debug
@@ -45,16 +82,8 @@ AsyncWebSocket ws("/ws");
 DisplayType display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET_PIN);
 
 // ----------------- PN532 SPI Settings -----------------
-// #define PN532_SCK 18
-// #define PN532_MOSI 23
-// #define PN532_MISO 19
-// #define PN532_CS 5
-// #define PN532_IRQ 2
-Adafruit_PN532 nfc(PN532_SCK, PN532_MISO, PN532_MOSI, PN532_CS);
 
-// ----------------- I2C -----------------
-// #define SDA_PIN 21
-// #define SCL_PIN 22
+Adafruit_PN532 nfc(PN532_SCK, PN532_MISO, PN532_MOSI, PN532_CS);
 
 // ----------------- LED & Display Timing -----------------
 int targetLed = -1;
@@ -71,7 +100,6 @@ volatile bool g_reloadFilamentsPending = false;
 
 
 //globale WebIF-Timer-Variablen + Setter
-
 
 static bool     s_webifIdleArmed = false;
 static uint32_t s_webifIdleUntil = 0;
@@ -98,6 +126,23 @@ bool webifIdleDue(uint32_t now) {
 
 
 // ----------------- Hilfsfunktionen -----------------
+
+// WiFiManager: wird aufgerufen, sobald das Config-Portal/AP gestartet ist.
+// Zweck: Wenn der ESP "neu" ist und (noch) nicht am Router hängt, soll sofort die AP-IP angezeigt werden,
+// damit der User weiß, wo er verbinden muss (typisch: http://192.168.4.1).
+// NEU: Zusätzlich die SSID in der zweiten Zeile anzeigen.
+static void onWiFiManagerConfigPortalStarted(WiFiManager* wm) {
+  (void)wm;
+  const IPAddress apIp = WiFi.softAPIP();
+  Serial.printf("WiFiManager AP started. AP IP: %s\n", apIp.toString().c_str());
+
+  // Anzeige NICHT blockieren: autoConnect() läuft weiter; Display bleibt bis zur nächsten Anzeigeänderung so stehen.
+  MYDISPLAY::showThreeCentered(
+    F("WLAN-SETUP AP"),
+    F("SSID: NFC-Setup-AP"),
+    apIp.toString()
+  );
+}
 
 // Reboot
 void renderRebootCountdown(unsigned long nowMs) {
@@ -150,10 +195,6 @@ LEDCTRL_FILAMENT::tagPresenceTick(true);
 
   
 }
-
-
-
-
 
 
 void activateLed(int index) {
@@ -254,16 +295,15 @@ void printChipInfo() {
 }
 
 
-
-
-
-
-
 // ----------------------------- Setup -----------------------------
 // -----------------------------------------------------------------
 void setup() {
   Serial.begin(115200);
-  while (!Serial) delay(10);
+  delay(50);
+
+  printOtaInfo();
+  markOtaImageValidIfNeeded();
+  printOtaInfo();
 
   
 
@@ -289,16 +329,31 @@ void setup() {
   }
   MYDISPLAY::init(&display);
 
-  // 3) WLAN verbinden (Anzeige davor setzen)
-  MYDISPLAY::showCentered("VERBINDUNG...");
+  // 3) WLAN verbinden
+  //    Gewünschtes Verhalten:
+  //    - Wenn er NICHT verbunden ist und WiFiManager das AP-Config-Portal startet:
+  //      -> AP-IP sofort anzeigen (Callback), damit der User weiß, wo er verbinden muss.
+  //    - Erst WENN er mit dem Router verbunden ist:
+  //      -> "VERBINDUNG..." zeigen und anschließend die Router-IP.
   WiFiManager wifiManager;
+  wifiManager.setAPCallback(onWiFiManagerConfigPortalStarted);
+
   if (CONFIG.hostname.length() > 0) {
     WiFi.setHostname(CONFIG.hostname.c_str());  // <- hier
     Serial.printf("Hostname gesetzt: %s\n", CONFIG.hostname.c_str());
   }
+
+  // Optional: neutrale Anzeige während autoConnect() entscheidet (Router vs. AP-Portal).
+  // Wenn AP startet, überschreibt der Callback diese Anzeige automatisch.
+  MYDISPLAY::showCentered("WLAN...");
+
   if (!wifiManager.autoConnect("NFC-Setup-AP")) {
     ESP.restart();
   }
+
+  // Ab hier: Router verbunden
+  MYDISPLAY::showCentered("VERBINDUNG...");
+
   Serial.printf("IP-Address: %s\n", WiFi.localIP().toString().c_str());
   String mac = WiFi.macAddress();
   Serial.printf("MAC-Address: %s\n", mac.c_str());
@@ -358,7 +413,6 @@ void setup() {
   // 8) Idle-Animation vorbereiten
   DisplayAnim::startIdleTextFirst(millis());
 }
-
 
 
 void loop() {

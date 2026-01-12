@@ -9,7 +9,7 @@
 #define PN532_MOSI 23
 #endif
 #ifndef PN532_CS
-#define PN532_CS 5
+#define PN532_CS 26
 #endif
 
 
