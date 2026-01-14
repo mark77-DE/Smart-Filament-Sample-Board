@@ -351,8 +351,8 @@ function populateFilter(selectId, key) {
   // Mapping für schöne Labels
   const FILTER_LABELS = {
     vendor: "Hersteller",
-    color:  "Farbe",
-    type:   "Typ"
+    color:  "Farben",
+    type:   "Typen"
   };
 
   // Leere Option für „Alle“
