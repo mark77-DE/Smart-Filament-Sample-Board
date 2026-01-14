@@ -24,6 +24,7 @@
 #include "esp_ota_ops.h"
 
 
+
 constexpr uint32_t SPLASH_CHAR_MS = 35;
 constexpr uint32_t SPLASH_LINE_MS = 200;
 constexpr uint32_t SPLASH_HOLD_MS = 2000;
@@ -33,6 +34,8 @@ constexpr uint32_t FIRMWARE_HOLD_MS = 5000;
 SysInfo g_sysInfo;
 
 NFCInfo g_nfcInfo = {0,0,0,false};
+
+
 
 static void printOtaInfo() {
   const esp_partition_t* boot = esp_ota_get_boot_partition();
@@ -295,6 +298,7 @@ void printChipInfo() {
 }
 
 
+
 // ----------------------------- Setup -----------------------------
 // -----------------------------------------------------------------
 void setup() {
@@ -303,9 +307,8 @@ void setup() {
 
   printOtaInfo();
   markOtaImageValidIfNeeded();
-  printOtaInfo();
-
   
+
 
   Serial.printf("Firmware Version Info: %s\n", FIRMWARE_VERSION);
   Serial.printf("Build Date: %s\n", BUILD_DATE_SHORT);

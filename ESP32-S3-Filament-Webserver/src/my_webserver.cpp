@@ -13,6 +13,9 @@
 #include "gpio_hardware.h"
 #include "display.h"
 #include "display_anim.h"
+#include "esp_image_format.h"
+
+
 
 File fsFile; // global oder in cpp außerhalb des Lambdas
 
@@ -278,9 +281,13 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
         doc["free_heap"]                = ESP.getFreeHeap();
         doc["sketch_size"]              = ESP.getSketchSize();
         doc["free_sketch"]              = ESP.getFreeSketchSpace();
+        
         doc["spiffs_size"]              = LittleFS.totalBytes();
         doc["free_spiffs"]              = LittleFS.usedBytes();
+        
+    
 
+        
         String response;
         serializeJson(doc, response);
         request->send(200, "application/json", response);
@@ -618,11 +625,30 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
 
 
     server.on("/api/otaUpdate", HTTP_POST, 
-        [](AsyncWebServerRequest *req){ req->send(200,"text/plain","Upload started"); },
-        nullptr,
-        [](AsyncWebServerRequest *req, uint8_t *data, size_t len, size_t index, size_t total){
-        if(index == 0){
+    [](AsyncWebServerRequest *req){
+        req->send(200, "text/plain", "Upload started");
+    },
+    nullptr,
+    [](AsyncWebServerRequest *req, uint8_t *data, size_t len, size_t index, size_t total){
+
+        SysInfo info = getSysInfo();
+
+        if (req->hasParam("filename", true)) { // falls dein JS FormData verwendet
+            String fname = req->getParam("filename", true)->value();
+            if(fname != "firmware.bin"){
+                req->send(400, "text/plain", "Wrong filename! Expected: firmware.bin");
+                return;
+            }
+        }
+
+        if (index == 0) {
+
+
+            // =====================================================
+            // 1) OTA START
+            // =====================================================
             Serial.printf("Starting FW OTA update: %u bytes\n", total);
+
             DisplayAnim::stop();
             MYDISPLAY::showThreeCentered(
                 F("started"),
@@ -630,9 +656,9 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
                 F("update")
             );
 
-            if(!Update.begin(total)){
+            if (!Update.begin(total)) {
                 Serial.println("OTA begin failed");
-                
+
                 MYDISPLAY::showThreeCentered(
                     F("FW OTA"),
                     F("update"),
@@ -641,20 +667,29 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
                 return;
             }
         }
-        // Chunk schreiben
-        if(Update.write(data, len) != len){
+
+        // =====================================================
+        // 2) CHUNK SCHREIBEN
+        // =====================================================
+        if (Update.write(data, len) != len) {
             Serial.printf("FW update write failed! Error: %d\n", Update.getError());
+
             MYDISPLAY::showThreeCentered(
-                    F("FW OTA"),
-                    F("update"),
-                    F("failed")
-                );
+                F("FW OTA"),
+                F("update"),
+                F("failed")
+            );
             return;
         }
+
+        // =====================================================
+        // 3) OTA FINALISIEREN
+        // =====================================================
         if (index + len == total) {
 
-            if (Update.end(false)) {   // WICHTIG: false = KEIN automatischer Reboot
+            if (Update.end(false)) {   // kein Auto-Reboot
                 Serial.println("FW OTA applied successfully");
+
                 MYDISPLAY::showThreeCentered(
                     F("FW OTA"),
                     F("update"),
@@ -664,10 +699,9 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
                 req->send(200, "application/json",
                     "{\"status\":\"ok\",\"msg\":\"FW update successful, rebooting\"}");
 
-                // Reboot verzögert auslösen
-        
                 rebootPending = true;
                 rebootAt = millis() + 3000;
+
             } else {
                 req->send(500, "application/json",
                     "{\"status\":\"error\",\"msg\":\"FW update failed\"}");
@@ -677,12 +711,23 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
 );
 
 
+
 server.on("/api/uploadFS", HTTP_POST,
     [](AsyncWebServerRequest *req){ 
         req->send(200,"text/plain","FS Upload started"); 
     },
     nullptr,
     [](AsyncWebServerRequest *req, uint8_t *data, size_t len, size_t index, size_t total){
+
+        if (req->hasParam("filename", true)) { // falls dein JS FormData verwendet
+            String fname = req->getParam("filename", true)->value();
+            if(fname != "littlefs.bin"){
+                req->send(400, "text/plain", "Wrong filename! Expected: littlefs.bin");
+                return;
+            }
+        }
+
+
         if(index == 0){
             Serial.printf("Starting FS OTA update: %u bytes\n", total);
             DisplayAnim::stop();
@@ -748,3 +793,6 @@ server.on("/api/uploadFS", HTTP_POST,
 
     server.begin();
 }
+
+
+

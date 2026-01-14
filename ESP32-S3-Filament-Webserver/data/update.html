@@ -18,36 +18,9 @@
         </div>
     </div>
 
-<div id="export">
-    <div class="exportHint">Bevor doing <span class="alert">firmware</span> updates, please export settings, because data <span class="alert">might</span> be lost.</div>
-    <div class="exportHint">Bevor doing <span class="alert">filesystemt</span> updates, please export settings, because data <span class="alert">will</span> be lost.</div>
-    <!-- Export -->
-    <button id="exportAllBtn">Export</button>
-</div>
-  
-
-<div id="fwUpdateSection">
-    <div class="updateHeader">Firmware Update</div>
-    <form id="uploadForm">
-        <label for="firmwareFile" id="uploadLabel" class="upload-btn">Choose file</label>
-        <input type="file" id="firmwareFile" accept="firmware.bin"/>
-        <button type="button" onclick="uploadFirmware()">Upload FW</button>
-    </form>
-</div>
-
-
-<div id="fsUpdateSection">
-    <div class="updateHeader">Filesystem Update</div>
-    <form id="uploadFSForm">
-        <label for="fsFile" id="uploadLabel" class="upload-btn">Choose file</label>
-        <input type="file" id="fsFile" accept="littlefs.bin"/>
-        <button type="button" onclick="uploadFS()">Upload FS</button>
-    </form>
-</div>
-
-<pre id="status"></pre>
-
-<div class="sysGroup">
+    <div class="btnGrp">
+    
+        <div class="sysGroup">
             <button onclick="window.location.href='/'">
                 Dashboard
             </button>
@@ -58,6 +31,56 @@
                 Settings
             </button>
         </div>
+        
+        <div class="sysGroup">
+            <button id="exportAllBtn">
+                Export
+            </button>
+        </div>
+
+    </div>
+
+    <div id="about">
+        <span id="fwVersion" class="version">Version</span>
+        <span id="gitHash" class="version">Git hash</span>
+        <span id="build_date" class="version">Build date</span>
+    </div>
+
+
+    <div id="hintSection">
+        <div class="exportHint">Bevor doing <span class="alert">firmware</span> updates, please export config, because data <span class="alert">might</span> be lost.</div>
+        <div class="exportHint">Bevor doing <span class="alert">filesystem</span> updates, please export config, because data <span class="alert">will</span> be lost.</div>
+    </div>
+  
+
+    <div id="fwUpdateSection">
+        <div class="updateHeader">Firmware Update</div>
+        <form id="uploadForm">
+            <label for="firmwareFile" class="upload-btn">Choose file</label>
+            <span id="fwFileName" class="fileName">no file selected</span>
+            <input type="file" id="firmwareFile" accept=".bin"/>
+            <button type="button" onclick="uploadFirmware()">Upload FW</button>
+        </form>
+    </div>
+
+    <div id="fsUpdateSection">
+        <div class="updateHeader">Filesystem Update</div>
+        <form id="uploadFSForm">
+            <label for="fsFile" class="upload-btn">Choose file</label>
+            <span id="fsFileName" class="fileName">no file selected</span>
+            <input type="file" id="fsFile" accept=".bin"/>
+            <button type="button" onclick="uploadFS()">Upload FS</button>
+        </form> 
+    </div>
+
+    <div id="statusSection">
+        <div class="updateHeader">Status</div>
+        <pre id="status"></pre>
+    </div>
+
+    
+
+
 
 <script src="/update.js"></script>
 </body>
