@@ -19,7 +19,7 @@ fsInput.addEventListener("change", () => {
 document.getElementById("exportAllBtn").addEventListener("click", async () => {
     try {
         const res = await fetch("/api/exportAll");
-        if (!res.ok) throw new Error("Export fehlgeschlagen");
+        if (!res.ok) throw new Error("Export failed: " + res.statusText);
 
         const blob = await res.blob();
         const url = URL.createObjectURL(blob);
@@ -44,13 +44,13 @@ document.getElementById("exportAllBtn").addEventListener("click", async () => {
 
 async function uploadFS() {
   const fileInput = document.getElementById('fsFile');
-  if (!fileInput.files.length) return alert("Bitte Datei auswählen");
+  if (!fileInput.files.length) return alert("Please choose file");
 
   const file = fileInput.files[0];
 
   // einfache Flüchtigkeitsprüfung
   if (file.name !== "littlefs.bin") {
-    return alert("Die FS-Datei muss 'littlefs.bin' heißen!");
+    return alert("The FS file must be named 'littlefs.bin'!");
   }
 
   const status = document.getElementById('status');
@@ -75,14 +75,15 @@ async function uploadFS() {
 
 async function uploadFirmware() {
   const fileInput = document.getElementById('firmwareFile');
-  if (!fileInput.files.length) return alert("Bitte Datei auswählen");
+  if (!fileInput.files.length) return alert("Please choose file");
 
   const file = fileInput.files[0];
 
   // einfache Flüchtigkeitsprüfung
-  if (file.name !== "firmware.bin") {
-    return alert("Die Firmware-Datei muss 'firmware.bin' heißen!");
+  if (!file.name.startsWith("firmware") || !file.name.endsWith(".bin")) {
+    return alert("Firmware file needs to start with 'firmware' and end with '.bin'!");
   }
+
 
   const status = document.getElementById('status');
   status.textContent = "Uploading...";

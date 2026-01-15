@@ -633,13 +633,15 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
 
         SysInfo info = getSysInfo();
 
-        if (req->hasParam("filename", true)) { // falls dein JS FormData verwendet
+        if (req->hasParam("filename", true)) { // true = von FormData
             String fname = req->getParam("filename", true)->value();
-            if(fname != "firmware.bin"){
-                req->send(400, "text/plain", "Wrong filename! Expected: firmware.bin");
-                return;
+
+            if (!fname.startsWith("firmware") || !fname.endsWith(".bin")) {
+                req->send(400, "text/plain", "Wrong filename! Must start with 'firmware' and end with '.bin'");
+            return;
             }
         }
+
 
         if (index == 0) {
 

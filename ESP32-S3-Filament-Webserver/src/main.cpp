@@ -22,6 +22,7 @@
 #include "pins.h"
 #include "Arduino.h"
 #include "esp_ota_ops.h"
+#include "config.h"
 
 
 
@@ -73,9 +74,6 @@ static void markOtaImageValidIfNeeded() {
   }
 }
 
-
-//Debug
-bool DEBUG_MODE = false;
 
 // ----------------- Server & WS -----------------
 AsyncWebServer server(80);
@@ -321,6 +319,9 @@ void setup() {
   // 1) Konfiguration laden
   loadConfig();
   applyConfig(); 
+  loadConfigV2();
+  applyConfigV2();
+  
   LEDCTRL_FILAMENT::allOff();
   LEDCTRL_NFC::allOff();
 
@@ -341,9 +342,9 @@ void setup() {
   WiFiManager wifiManager;
   wifiManager.setAPCallback(onWiFiManagerConfigPortalStarted);
 
-  if (CONFIG.hostname.length() > 0) {
-    WiFi.setHostname(CONFIG.hostname.c_str());  // <- hier
-    Serial.printf("Hostname gesetzt: %s\n", CONFIG.hostname.c_str());
+  if (CONFIGV2.system.hostname.length() > 0) {
+    WiFi.setHostname(CONFIGV2.system.hostname.c_str());  // <- hier
+    Serial.printf("Hostname gesetzt: %s\n", CONFIGV2.system.hostname.c_str());
   }
 
   // Optional: neutrale Anzeige während autoConnect() entscheidet (Router vs. AP-Portal).

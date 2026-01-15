@@ -85,13 +85,19 @@ struct MqttConfig {
 // dass Button/Buzzer in CONFIG vorhanden sind:
 #define CONFIG_HAS_GPIO
 
+struct systemConfig {
+  int version = 2;
+  bool         darkmode;    ///< Darkmode aktiv
+  bool         debugMode;   ///< Debug-Modus aktiv
+  uint32_t     webLEDTimeout;   // Default fürs Dashboard (ms)
+  String       hostname;    ///< Hostname für WLAN
+};
+
 /**
  * @brief Haupt-Konfigurationsstruktur der App
  */
 struct AppConfig {
-  bool         darkmode;    ///< Darkmode aktiv
-  bool         mqtt;        ///< MQTT aktiviert
-  bool         debugMode;   ///< Debug-Modus aktiv
+  systemConfig system;     ///< System-Konfiguration
   uint32_t     webLEDTimeout;   // Default fürs Dashboard (ms)
   String       hostname;    ///< Hostname für WLAN
 
@@ -103,7 +109,7 @@ struct AppConfig {
 };
 
 // Globale, aktuell geladene Konfiguration
-extern AppConfig CONFIG;
+extern AppConfig CONFIGV2;
 
 // ============================================================================
 // High-Level API
@@ -113,24 +119,24 @@ extern AppConfig CONFIG;
  * @brief Lädt die Konfiguration aus /config.json in CONFIG
  * @return true bei Erfolg, sonst false
  */
-bool loadConfig();
+bool loadConfigV2();
 
 /**
  * @brief Wendet die aktuelle CONFIG auf die Hardware/Module an
  */
-void applyConfig();
+void applyConfigV2();
 
 /**
  * @brief Speichert CONFIG in /config.json
  * @return true bei Erfolg, sonst false
  */
-bool saveConfig();
+bool saveConfigV2();
 
 /**
  * @brief Lädt die Filament-Datenbank in den Speicher (FilamentDB)
  * @return true bei Erfolg, sonst false
  */
-bool loadFilaments();
+bool loadFilamentsV2();
 
 // ============================================================================
 // JSON Hilfs-API
@@ -141,42 +147,42 @@ bool loadFilaments();
  * @param doc JSON-Dokument mit Konfigurationswerten
  * @return true bei Erfolg, sonst false
  */
-bool updateConfigFromJson(JsonDocument& doc);
+bool updateConfigFromJsonV2(JsonDocument& doc);
 
 /**
  * @brief Lädt die Konfiguration als JSON-Objekt in ein bestehendes Dokument
  * @param target Ziel-JsonObject (wird befüllt)
  * @return true bei Erfolg, sonst false
  */
-bool loadConfigAsJson(JsonObject target);
+bool loadConfigAsJsonV2(JsonObject target);
 
 /**
  * @brief Lädt die Filament-Datenbank als JsonArray in ein bestehendes Dokument
  * @param target Ziel-JsonArray (wird befüllt)
  * @return true bei Erfolg, sonst false
  */
-bool loadFilamentsAsJson(JsonArray target);
+bool loadFilamentsAsJsonV2(JsonArray target);
 
 /**
  * @brief Lädt die Konfiguration als String (z. B. für Download)
  * @param out Rückgabe-String
  * @return true bei Erfolg, sonst false
  */
-bool loadConfigAsString(String& out);
+bool loadConfigAsStringV2(String& out);
 
 /**
  * @brief Importiert eine Konfiguration aus einem JSON-Objekt (schreibt Datei)
  * @param src Quell-JsonObject
  * @return true bei Erfolg, sonst false
  */
-bool importConfigJson(JsonObject src);
+bool importConfigJsonV2(JsonObject src);
 
 /**
  * @brief Importiert Filamente aus einem JSON-Array (DB + Datei)
  * @param src Quell-JsonArray
  * @return true bei Erfolg, sonst false
  */
-bool importFilamentsJson(JsonArray src);
+bool importFilamentsJsonV2(JsonArray src);
 
 // ============================================================================
 // Sonstiges
@@ -190,13 +196,13 @@ bool importFilamentsJson(JsonArray src);
  * @return true bei Erfolg, sonst false
  * @note Nur deklariert – Implementierung ggf. an anderer Stelle (abhängig von FilamentDB-API).
  */
-bool loadFilamentDB(FilamentEntry* dst, size_t maxEntries, size_t& outCount);
+bool loadFilamentDBV2(FilamentEntry* dst, size_t maxEntries, size_t& outCount);
 
 /**
  * @brief Speichert die aktuelle Filament-DB in /filaments.json
  * @return true bei Erfolg, sonst false
  */
-bool saveFilamentsToFile();
+bool saveFilamentsToFileV2();
 
 /**
  * @brief Schreibt eine 0xRRGGBB-Farbe als [r,g,b]-Array in ein JsonObject
@@ -204,4 +210,4 @@ bool saveFilamentsToFile();
  * @param key Schlüssel, unter dem das Array erzeugt wird
  * @param color 0xRRGGBB
  */
-void setColorArray(JsonObject& opt, const char* key, uint32_t color);
+void setColorArrayV2(JsonObject& opt, const char* key, uint32_t color);

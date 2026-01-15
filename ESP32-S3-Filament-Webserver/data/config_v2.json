@@ -1,0 +1,58 @@
+{
+    "version": 2,
+    "system": {
+        "darkmode": false,
+        "debugMode": true,
+        "webLEDTimeout": 3000,
+        "hostname": "filament-board"
+        },
+    "led": {
+        "count": 8,
+        "pin": 2,
+        "brightness": 50,
+        "timeout": 2000,
+        "color": [0, 255, 0],
+        "colorError": [255, 0, 255],
+        "colorPulse": [0, 64, 160]
+    },
+    "nfc": {
+        "count": 8,
+        "pin": 1,
+        "brightness": 50,
+        "timeout": 4000,
+        "colorSuccess": [255, 255, 255],
+        "colorError": [255, 0, 0],
+        "colorPulse": [0, 0, 255],
+        "successBlinkEnabled": true,
+        "successBlinkCount": 3,
+        "successBlinkMs": 200
+    },
+    "button": {
+        "pin": 7,
+        "pullup": true,
+        "debounceMs": 30,
+        "longMs": 800,
+        "doubleMs": 400,
+        "holdMs": 250
+    },
+    "buzzer": {
+        "pin": 8,
+        "activeHigh": true,
+        "freq": 4000,
+        "singleMs": 80,
+        "doubleOnMs": 60,
+        "doubleGapMs": 80,
+        "errorOnMs": 50,
+        "errorGapMs": 60,
+        "errorCount": 3
+    },
+    "mqttConfig": {
+        "enabled": true,
+        "server": "192.168.1.10",
+        "port": 1883,
+        "user": "mqttuser",
+        "password": "mqttpass",
+        "baseTopic": "spotmyfilament",
+        "clientId": "filament-board-1"
+    }
+}
