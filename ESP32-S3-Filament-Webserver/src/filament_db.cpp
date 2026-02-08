@@ -2,6 +2,7 @@
 #include <LittleFS.h>
 #include <ArduinoJson.h>
 #include "filehandling.h"
+#include "config.h"
 
 static FilamentEntry db[100];   // max 100 Einträge
 static int dbCount = 0;
@@ -84,7 +85,7 @@ bool loadFromJsonArray(JsonArray arr) {
         dbCount++;
     }
 
-    if (CONFIG.debugMode) {
+    if (CONFIGV2.system.debugMode) {
         Serial.printf("Filament DB loaded: %d entries\n", dbCount);
     }
 

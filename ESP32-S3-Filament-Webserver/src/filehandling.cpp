@@ -170,7 +170,7 @@ void applyConfig() {
 
   if (CONFIG.debugMode) {
     Serial.println(F("--------------------"));
-    Serial.println(F("Config applied:"));
+    Serial.println(F("Config V1 applied:"));
 
     Serial.print(F(" HOSTNAME = "));       Serial.println(CONFIG.hostname);
 

@@ -103,6 +103,7 @@ const uidInput = document.querySelector('input[name="uid"]');
 
 let EDIT_MODE = false;
 let CONFIG = null;
+let CONFIGV2 = null;
 let lastHighlightedRow = null;
 
 
@@ -180,7 +181,7 @@ async function handleWSMessage(ev){
     try { 
         data = JSON.parse(ev.data); 
     } catch (err) { 
-        if(CONFIG?.options?.debugMode) {
+        if(CONFIG_V2?.system?.debugMode) {
             console.error("Fehler beim Parsen der WS-Daten:", ev.data, err);
         }
         return; 
@@ -300,7 +301,10 @@ addForm.addEventListener("submit", async e=>{
 
 // -------------------- Table / LED --------------------
 async function loadTable() {
-    await loadConfig();
+    //----------------------------usecase to be checked---------------------------------------------------------------------------------
+    //await loadConfig();
+    //await loadConfig_V2();
+    //--------------------------------------------------------------------------------------------------------------------------
     const res = await fetch("/filaments.json");
     if (!res.ok) {
         dbDiv.innerHTML = "<p>Fehler beim Laden der Daten.</p>";
@@ -351,48 +355,53 @@ async function loadTable() {
     applyEditMode(); // Buttons / selects im Edit-Modus korrekt setzen
 
     // ---- UI aus CONFIG füllen ----
-    const opts = CONFIG.options || {};
+    const sys   = CONFIGV2.system || {};
+    const led   = CONFIGV2.led || {};
+    const nfc   = CONFIGV2.nfc || {};
+    const buz   = CONFIGV2.buzzer || {};
+    const btn   = CONFIGV2.button || {};
+    const mqtt  = CONFIGV2.mqtt || {};
 
-    debugToggle.checked = !!(opts.debugMode);
+    debugToggle.checked = !!(sys.debugMode);
 
     // --- Mögliche fehlende Pins in den Dropdowns ergänzen ---
-    ensureOption(ledPinSelect,        opts.ledPin);
-    ensureOption(nfcLedPinSelect,     opts.nfcLedPin);
-    if (buttonPinSelect) ensureOption(buttonPinSelect, opts.buttonPin ?? 32);
-    if (buzzerPinSelect) ensureOption(buzzerPinSelect, opts.buzzerPin ?? 33);
+    ensureOption(ledPinSelect,        led.pin);
+    ensureOption(nfcLedPinSelect,     nfc.pin);
+    if (buttonPinSelect) ensureOption(buttonPinSelect, btn.pin ?? -1);
+    if (buzzerPinSelect) ensureOption(buzzerPinSelect, buz.pin ?? -1);
 
     // --- Werte setzen ---
-    ledPinSelect.value        = String(opts.ledPin);
-    nfcLedPinSelect.value     = String(opts.nfcLedPin);
-    if (buttonPinSelect) buttonPinSelect.value = String(opts.buttonPin ?? 32);
-    if (buzzerPinSelect) buzzerPinSelect.value = String(opts.buzzerPin ?? 33);
+    ledPinSelect.value        = String(led.pin);
+    nfcLedPinSelect.value     = String(nfc.pin);
+    if (buttonPinSelect) buttonPinSelect.value = String(btn.pin ?? -1);
+    if (buzzerPinSelect) buzzerPinSelect.value = String(buz.pin ?? -1);
 
-    ledBrightnessInput.value  = ledValueToPercent(opts.ledBrightness ?? 50);
-    nfcLedBrightnessInput.value = ledValueToPercent(opts.nfcLedBrightness ?? 100);
+    ledBrightnessInput.value  = ledValueToPercent(led.brightness ?? 99);
+    nfcLedBrightnessInput.value = ledValueToPercent(nfc.brightness ?? 99);
 
-    maxLEDInput.value         = opts.ledCount ?? 8;
-    nfcMaxLEDInput.value      = opts.nfcLedCount ?? 8;
+    maxLEDInput.value         = led.count ?? 1;
+    nfcMaxLEDInput.value      = nfc.count ?? 1;
 
-    ledTimeoutInput.value     = opts.ledTimeout ?? 3000;
-    nfcLedTimeoutInput.value  = opts.nfcLedTimeout ?? 4000;
+    ledTimeoutInput.value     = led.timeout ?? 1111;
+    nfcLedTimeoutInput.value  = nfc.timeout ?? 3333;
 
     if (webLedTimeoutInput) {
-    webLedTimeoutInput.value = opts.webLEDTimeout ?? opts.ledTimeout ?? 5000; // NEU (Fallback)
+    webLedTimeoutInput.value = sys.webLEDTimeout ?? led.timeout ?? 4999; // NEU (Fallback)
     }
 
 
-    ledColorInput.value       = rgbToHex(opts.ledColor       ?? [255,0,0]);
-    ledColorErrorInput.value  = rgbToHex(opts.ledColorError  ?? [255,0,0]);
-    ledColorPulseInput.value  = rgbToHex(opts.ledColorPulse  ?? [0,51,170]);
+    ledColorInput.value       = rgbToHex(led.color       ?? [255,0,0]);
+    ledColorErrorInput.value  = rgbToHex(led.colorError  ?? [255,0,0]);
+    ledColorPulseInput.value  = rgbToHex(led.colorPulse  ?? [0,51,170]);
 
-    nfcLedColorSuccessInput.value = rgbToHex(opts.nfcLedColorSuccess ?? [0,255,0]);
-    nfcLedColorErrorInput.value   = rgbToHex(opts.nfcLedColorError   ?? [255,0,0]);
-    nfcLedColorPulseInput.value   = rgbToHex(opts.nfcLedColorPulse   ?? [0,51,170]);
+    nfcLedColorSuccessInput.value = rgbToHex(nfc.colorSuccess ?? [0,255,0]);
+    nfcLedColorErrorInput.value   = rgbToHex(nfc.colorError   ?? [255,0,0]);
+    nfcLedColorPulseInput.value   = rgbToHex(nfc.colorPulse   ?? [0,51,170]);
 
     // --- Success Blink UI ---
-    nfcLedSuccessBlinkEnabledInput.checked = opts.nfcLedSuccessBlinkEnabled ?? true;
-    nfcLedSuccessBlinkCountInput.value     = opts.nfcLedSuccessBlinkCount   ?? 3;
-    nfcLedSuccessBlinkMsInput.value        = opts.nfcLedSuccessBlinkMs      ?? 150;
+    nfcLedSuccessBlinkEnabledInput.checked = nfc.successBlinkEnabled ?? true;
+    nfcLedSuccessBlinkCountInput.value     = nfc.successBlinkCount   ?? 1;
+    nfcLedSuccessBlinkMsInput.value        = nfc.successBlinkMs      ?? 111;
 
     const syncBlinkUi = () => {
         const en = !!nfcLedSuccessBlinkEnabledInput.checked;
@@ -403,35 +412,35 @@ async function loadTable() {
     syncBlinkUi();
 
     // --- Button UI ---
-    if (buttonPullupInput)     buttonPullupInput.checked   = (opts.buttonPullup ?? true);
-    if (buttonDebounceInput)   buttonDebounceInput.value   = opts.buttonDebounceMs ?? 30;
-    if (buttonLongInput)       buttonLongInput.value       = opts.buttonLongMs     ?? 800;
-    if (buttonDoubleInput)     buttonDoubleInput.value     = opts.buttonDoubleMs   ?? 400;
-    if (buttonHoldInput)       buttonHoldInput.value       = opts.buttonHoldMs     ?? 250;
+    if (buttonPullupInput)     buttonPullupInput.checked   = (btn.pullup ?? true);
+    if (buttonDebounceInput)   buttonDebounceInput.value   = btn.debounceMs ?? 33;
+    if (buttonLongInput)       buttonLongInput.value       = btn.longMs     ?? 888;
+    if (buttonDoubleInput)     buttonDoubleInput.value     = btn.doubleMs   ?? 444;
+    if (buttonHoldInput)       buttonHoldInput.value       = btn.holdMs     ?? 222;
 
     // --- Buzzer UI ---
-    if (buzzerPassiveInput)     buzzerPassiveInput.checked    = (opts.buzzerPassive ?? false);
-    if (buzzerActiveHighInput)  buzzerActiveHighInput.checked = (opts.buzzerActiveHigh ?? true);
-    if (buzzerFreqInput)        buzzerFreqInput.value         = opts.buzzerFreq        ?? 4000;
-    if (buzzerSingleMsInput)    buzzerSingleMsInput.value     = opts.buzzerSingleMs    ?? 80;
-    if (buzzerDoubleOnMsInput)  buzzerDoubleOnMsInput.value   = opts.buzzerDoubleOnMs  ?? 60;
-    if (buzzerDoubleGapMsInput) buzzerDoubleGapMsInput.value  = opts.buzzerDoubleGapMs ?? 80;
-    if (buzzerErrorOnMsInput)   buzzerErrorOnMsInput.value    = opts.buzzerErrorOnMs   ?? 50;
-    if (buzzerErrorGapMsInput)  buzzerErrorGapMsInput.value   = opts.buzzerErrorGapMs  ?? 60;
-    if (buzzerErrorCountInput)  buzzerErrorCountInput.value   = opts.buzzerErrorCount  ?? 3;
+    if (buzzerPassiveInput)     buzzerPassiveInput.checked    = (buz.passive ?? false);
+    if (buzzerActiveHighInput)  buzzerActiveHighInput.checked = (buz.activeHigh ?? true);
+    if (buzzerFreqInput)        buzzerFreqInput.value         = buz.freq        ?? 4444;
+    if (buzzerSingleMsInput)    buzzerSingleMsInput.value     = buz.singleMs    ?? 88;
+    if (buzzerDoubleOnMsInput)  buzzerDoubleOnMsInput.value   = buz.doubleOnMs  ?? 66;
+    if (buzzerDoubleGapMsInput) buzzerDoubleGapMsInput.value  = buz.doubleGapMs ?? 88;
+    if (buzzerErrorOnMsInput)   buzzerErrorOnMsInput.value    = buz.errorOnMs   ?? 55;
+    if (buzzerErrorGapMsInput)  buzzerErrorGapMsInput.value   = buz.errorGapMs  ?? 66;
+    if (buzzerErrorCountInput)  buzzerErrorCountInput.value   = buz.errorCount  ?? 1;
 
     // Nach dem Setzen: Sperrlogik ausführen
     updatePinOptions();
 }
 
 function getTypeOptions(selected){
-  return ["PLA","PLA+","PLA-CF","PLA-Matte","PETG","PETG-CF","ABS","ASA","TPU","Nylon","Holz"]
+  return ["PLA","PLA+","PLA-CF","PLA-Matte","PLA-Silk","PETG","PETG-CF","ABS","ASA","TPU","Nylon","Holz"]
     .map(t=>`<option value="${t}" ${t===selected?"selected":""}>${t}</option>`).join("");
 }
 
 function buildLedDropdown(currentLED, usedLEDs, disabled=false) {
     let html = `<select data-field="ledIndex" ${disabled ? "disabled" : ""}>`;
-    for (let i = 0; i < CONFIG.options.ledCount; i++) {
+    for (let i = 0; i < CONFIGV2.led.Count; i++) {
         if (!usedLEDs.has(i) || i === currentLED) {
             html += `<option value="${i}" ${i === currentLED ? "selected" : ""}>LED ${i+1}</option>`;
         }
@@ -473,7 +482,7 @@ function activateButtons(){
 async function updateAddFormLEDs(){ 
     const data=await (await fetch("/filaments.json")).json(); 
     const free=[]; 
-    for(let i=0;i<CONFIG.options.ledCount;i++){
+    for(let i=0;i<CONFIGV2.led.count;i++){
         if(!data.find(e=>Number(e.ledIndex)===i)) free.push(i);
     }
     const sel=document.getElementById("ledIndexSelect"); 
@@ -553,56 +562,54 @@ document.getElementById("saveConfig").addEventListener("click", async () => {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                options: {
-                    // LED
-                    ledCount,
-                    ledPin,
-                    ledBrightness,
-                    ledColor,
-                    ledColorError,
-                    ledColorPulse,
-                    ledTimeout,
-
-                    //Dashboard Settings
-                    webLEDTimeout, // NEU
-
-                    // NFC
-                    nfcLedCount,
-                    nfcLedPin,
-                    nfcLedBrightness,
-                    nfcLedColorSuccess,
-                    nfcLedColorError,
-                    nfcLedColorPulse,
-                    nfcLedTimeout,
-
-                    nfcLedSuccessBlinkEnabled,
-                    nfcLedSuccessBlinkCount,
-                    nfcLedSuccessBlinkMs,
-
-                    // Button
-                    buttonPin,
-                    buttonPullup,
-                    buttonDebounceMs,
-                    buttonLongMs,
-                    buttonDoubleMs,
-                    buttonHoldMs,
-
-                    // Buzzer
-                    buzzerPin,
-                    buzzerPassive,
-                    buzzerActiveHigh,
-                    buzzerFreq,
-                    buzzerSingleMs,
-                    buzzerDoubleOnMs,
-                    buzzerDoubleGapMs,
-                    buzzerErrorOnMs,
-                    buzzerErrorGapMs,
-                    buzzerErrorCount,
-
-                    // misc
-                    debugMode
+                system: {
+                    darkmode: false,
+                    debugMode,
+                    webLEDTimeout,
+                    hostname: CONFIGV2?.settings?.hostname || "filament-board"
+                },
+                led: {
+                    count: ledCount,
+                    pin: ledPin,
+                    brightness: ledBrightness,
+                    timeout: ledTimeout,
+                    color: ledColor,
+                    colorError: ledColorError,
+                    colorPulse: ledColorPulse
+                },
+                nfc: {
+                    count: nfcLedCount,
+                    pin: nfcLedPin,
+                    brightness: nfcLedBrightness,
+                    timeout: nfcLedTimeout,
+                    colorSuccess: nfcLedColorSuccess,
+                    colorError: nfcLedColorError,
+                    colorPulse: nfcLedColorPulse,
+                    successBlinkEnabled: nfcLedSuccessBlinkEnabled,
+                    successBlinkCount: nfcLedSuccessBlinkCount,
+                    successBlinkMs: nfcLedSuccessBlinkMs
+                },
+                button: {
+                    pin: buttonPin,
+                    pullup: buttonPullup,
+                    debounceMs: buttonDebounceMs,
+                    longMs: buttonLongMs,
+                    doubleMs: buttonDoubleMs,
+                    holdMs: buttonHoldMs
+                },
+                buzzer: {
+                    pin: buzzerPin,
+                    activeHigh: buzzerActiveHigh,
+                    freq: buzzerFreq,
+                    singleMs: buzzerSingleMs,
+                    doubleOnMs: buzzerDoubleOnMs,
+                    doubleGapMs: buzzerDoubleGapMs,
+                    errorOnMs: buzzerErrorOnMs,
+                    errorGapMs: buzzerErrorGapMs,
+                    errorCount: buzzerErrorCount
                 }
             })
+
         });
     } catch(e){
         // ESP schon offline – kein Problem
@@ -616,6 +623,14 @@ async function loadConfig() {
     if(!res.ok) throw new Error("Config konnte nicht geladen werden");
     const json = await res.json();
     CONFIG = json;
+}
+
+// -------------------- Config laden --------------------
+async function loadConfig_V2() {
+    const res = await fetch("/config_v2.json");
+    if(!res.ok) throw new Error("Config V2 konnte nicht geladen werden");
+    const json = await res.json();
+    CONFIGV2 = json;
 }
 
 
@@ -748,8 +763,7 @@ function initColorPresets() {
 function disableButton() {
     const pin = parseInt(buttonPinSelect.value, 10);
 
-    console.log("Pin: " + pin);
-
+    
     if (pin === -1) {
         buttonEnabledDiv.classList.add("disabled");
     } else {
@@ -760,8 +774,7 @@ function disableButton() {
 function disableBuzzer() {
     const pin = parseInt(buzzerPinSelect.value, 10);
 
-    console.log("Pin: " + pin);
-
+    
     if (pin === -1) {
         buzzerEnabledDiv.classList.add("disabled");
     } else {
@@ -974,7 +987,8 @@ function getVersion() {
 
 // -------------------- Init --------------------
 async function init() {
-    await loadConfig();
+    //await loadConfig();
+    await loadConfig_V2();
     await loadTable();
     await updateAddFormLEDs();
     updatePinOptions();
@@ -982,7 +996,7 @@ async function init() {
     initColorPresets();
     disableButton();
     disableBuzzer();
-    getVersion();
+    //getVersion();
 }
 
 init();

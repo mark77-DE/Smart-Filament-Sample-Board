@@ -317,8 +317,9 @@ void setup() {
   printChipInfo();
 
   // 1) Konfiguration laden
-  loadConfig();
-  applyConfig(); 
+  //loadConfig();
+  //applyConfig(); 
+
   loadConfigV2();
   applyConfigV2();
   
@@ -459,7 +460,7 @@ void loop() {
       LEDCTRL_FILAMENT::allOff();
 
       // 3) jetzt erst re-init (sicher im loop-Kontext!)
-      applyConfig();
+      applyConfigV2();
 
       // 4) optional: Idle sauber neu starten
       isActive = false;

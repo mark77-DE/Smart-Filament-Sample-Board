@@ -13,7 +13,7 @@
 /**
  * @brief LED-Konfiguration (Filament-Stripe)
  */
-struct LedConfig {
+struct LedConfigV2 {
   int      count;       ///< Anzahl LEDs
   int      pin;         ///< GPIO-Pin
   int      brightness;  ///< Helligkeit [0..255]
@@ -26,7 +26,7 @@ struct LedConfig {
 /**
  * @brief NFC-LED-Konfiguration
  */
-struct NfcLedConfig {
+struct NfcLedConfigV2 {
   int      count;                 ///< Anzahl LEDs
   int      pin;                   ///< GPIO-Pin
   int      brightness;            ///< Helligkeit [0..255]
@@ -42,7 +42,7 @@ struct NfcLedConfig {
 /**
  * @brief Button-Konfiguration
  */
-struct ButtonConfig {
+struct ButtonConfigV2 {
   int  pin           = -1;   ///< GPIO des Buttons (-1 = aus)
   bool pullup        = true; ///< interner PullUp -> active-low
   int  debounceMs    = 30;   ///< Entprellzeit
@@ -54,7 +54,7 @@ struct ButtonConfig {
 /**
  * @brief Buzzer-Konfiguration
  */
-struct BuzzerConfig {
+struct BuzzerConfigV2 {
   int  pin           = -1;    ///< GPIO des Buzzers (-1 = aus)
   bool activeHigh    = true;  ///< Aktivpegel HIGH?
   bool passive       = false; ///< false = aktiver Buzzer, true = passiver (PWM)
@@ -71,7 +71,7 @@ struct BuzzerConfig {
  * @brief MQTT-Konfiguration
  */
 
-struct MqttConfig {
+struct MqttConfigV2 {
   bool enabled;
   String server;
   uint16_t port;
@@ -96,20 +96,20 @@ struct systemConfig {
 /**
  * @brief Haupt-Konfigurationsstruktur der App
  */
-struct AppConfig {
+struct AppConfigV2 {
   systemConfig system;     ///< System-Konfiguration
   uint32_t     webLEDTimeout;   // Default fürs Dashboard (ms)
   String       hostname;    ///< Hostname für WLAN
 
-  LedConfig    led;         ///< LED-Konfiguration (Filament)
-  NfcLedConfig nfc;         ///< NFC-LED-Konfiguration
-  ButtonConfig button;      ///< Pushbutton-Konfiguration
-  BuzzerConfig buzzer;      ///< Buzzer-Konfiguration
-  MqttConfig   mqttConfig;  ///< MQTT-Konfiguration
+  LedConfigV2    led;         ///< LED-Konfiguration (Filament)
+  NfcLedConfigV2 nfc;         ///< NFC-LED-Konfiguration
+  ButtonConfigV2 button;      ///< Pushbutton-Konfiguration
+  BuzzerConfigV2 buzzer;      ///< Buzzer-Konfiguration
+  MqttConfigV2   mqttConfig;  ///< MQTT-Konfiguration
 };
 
 // Globale, aktuell geladene Konfiguration
-extern AppConfig CONFIGV2;
+extern AppConfigV2 CONFIGV2;
 
 // ============================================================================
 // High-Level API
@@ -210,4 +210,7 @@ bool saveFilamentsToFileV2();
  * @param key Schlüssel, unter dem das Array erzeugt wird
  * @param color 0xRRGGBB
  */
+
+uint32_t colorFromArrayV2(JsonArrayConst arr);
+
 void setColorArrayV2(JsonObject& opt, const char* key, uint32_t color);

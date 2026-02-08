@@ -18,7 +18,7 @@ static void mqttCallback(char* topic, byte* payload, unsigned int length) {
 
     if (t.endsWith("/animation/set")) {
         if (msg == "ON") {
-            DisplayAnim::startIdle();
+            DisplayAnim::startIdle(millis());
         } else if (msg == "OFF") {
             DisplayAnim::stop();
         }
@@ -53,12 +53,12 @@ static void mqttReconnect() {
         mqttClient.subscribe((base + "/leds/set").c_str());
 
         // Home Assistant Discovery
-        publishHADiscovery();
+        publishHADiscovery(mqttClient);
     }
 }
 
 void mqttLoop() {
-    if (!mqttCfg.enabled) return;
+    if (!CONFIGV2.mqttConfig.enabled) return;
 
     if (!mqttClient.connected()) {
         mqttReconnect();

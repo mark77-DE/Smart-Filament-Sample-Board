@@ -14,6 +14,7 @@
 #include "display.h"
 #include "display_anim.h"
 #include "esp_image_format.h"
+#include "config.h"
 
 
 
@@ -73,7 +74,7 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
     JsonDocument doc;
     DeserializationError err = deserializeJson(doc, wsBuf);
     if (err) {
-        if (CONFIG.debugMode) {
+        if (CONFIGV2.system.debugMode) {
             Serial.print("WS JSON parse error: ");
             Serial.println(err.c_str());
             Serial.print("WS raw: ");
@@ -83,7 +84,7 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
     }
 
     const char* action = doc["action"] | "";
-    if(CONFIG.debugMode) {
+    if(CONFIGV2.system.debugMode) {
         Serial.print("WS action: ");
         Serial.println(action);
     }   
@@ -104,7 +105,7 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
 
         // ab hier "heavy work"
         String uid = doc["uid"].as<String>();
-        uint32_t t = (CONFIG.webLEDTimeout > 0) ? CONFIG.webLEDTimeout : (uint32_t)CONFIG.led.timeout;
+        uint32_t t = (CONFIGV2.system.webLEDTimeout > 0) ? CONFIGV2.system.webLEDTimeout : (uint32_t)CONFIGV2.led.timeout;
 
         LEDCTRL_FILAMENT::webifHoldFor((uint16_t)min<uint32_t>(t, 65535));
         webifArmIdleTimeout(t);
@@ -127,9 +128,9 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
     }
 
     // --- Timeout bestimmen ---
-    uint32_t t = (CONFIG.webLEDTimeout > 0)
-                   ? CONFIG.webLEDTimeout
-                   : (uint32_t)CONFIG.led.timeout;
+    uint32_t t = (CONFIGV2.system.webLEDTimeout > 0)
+                   ? CONFIGV2.system.webLEDTimeout
+                   : (uint32_t)CONFIGV2.led.timeout;
 
     uint16_t holdMs = (uint16_t)min<uint32_t>(t, 65535);
 
@@ -146,17 +147,17 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
     for (JsonVariant uidVar : uids) {
         String uid = uidVar.as<String>();
 
-        if (CONFIG.debugMode) {
+        if (CONFIGV2.system.debugMode) {
             Serial.print(index++);
             Serial.print(": WS highlightUID: ");
             Serial.println(uid);
         }
 
         if (FilamentDB::findByUID(uid, entry)) {
-            LEDCTRL_FILAMENT::setPixel(entry.ledIndex, CONFIG.led.color);
+            LEDCTRL_FILAMENT::setPixel(entry.ledIndex, CONFIGV2.led.color);
             anyHit = true;
 
-            if (CONFIG.debugMode) {
+            if (CONFIGV2.system.debugMode) {
                 Serial.printf(
                     "  -> LED %u (%s %s %s)\n",
                     entry.ledIndex,
@@ -165,13 +166,13 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
                     entry.color.c_str()
                 );
             }
-        } else if (CONFIG.debugMode) {
+        } else if (CONFIGV2.system.debugMode) {
             Serial.print("  !! UID not found: ");
             Serial.println(uid);
         }
     }
 
-    if (!anyHit && CONFIG.debugMode) {
+    if (!anyHit && CONFIGV2.system.debugMode) {
         Serial.println("WS highlightMultiLED: no matching UIDs");
     }
 }
@@ -330,7 +331,7 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
 
         // config
         JsonObject cfg = outDoc["config"].to<JsonObject>();
-        loadConfigAsJson(cfg);
+        loadConfigAsJsonV2(cfg);
 
         // filaments
         JsonArray fils = outDoc["filaments"].to<JsonArray>();
@@ -364,14 +365,14 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
             DeserializationError err = deserializeJson(doc, body);
             if (err) {
                 req->send(400, "text/plain", "JSON parse failed");
-                if(CONFIG.debugMode) {
+                if(CONFIGV2.system.debugMode) {
                     Serial.println("importAll JSON parse failed");
                 }
                 return;
             }
 
             if (doc.containsKey("config") && doc["config"].is<JsonObject>())
-                importConfigJson(doc["config"].as<JsonObject>());
+                importConfigJsonV2(doc["config"].as<JsonObject>());
 
             if (doc.containsKey("filaments") && doc["filaments"].is<JsonArray>())
                 importFilamentsJson(doc["filaments"].as<JsonArray>());
@@ -402,14 +403,14 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
             body.concat((const char*)data, len);
             if(index + len != total) return;
 
-            if(CONFIG.debugMode) {
+            if(CONFIGV2.system.debugMode) {
                 Serial.println("Update received: " + body);
             }
 
             JsonDocument doc;
             DeserializationError err = deserializeJson(doc, body);
             if(err){
-                if(CONFIG.debugMode) {
+                if(CONFIGV2.system.debugMode) {
                     Serial.print("update JSON parse failed: ");
                     Serial.println(err.c_str());
                 }
@@ -419,7 +420,7 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
             // Index aus JSON auslesen
             int idx = doc["idx"] | -1;
             if(idx < 0){
-                if(CONFIG.debugMode) {
+                if(CONFIGV2.system.debugMode) {
                     Serial.println("Update failed: missing index");
                 }
                 return;
@@ -435,11 +436,11 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
             // Update über Index
             if(FilamentDB::updateAtIndex(idx, entry)){
                 saveFilamentsToFile();
-                if(CONFIG.debugMode) {
+                if(CONFIGV2.system.debugMode) {
                     Serial.println("DB updated and saved");
                 }
             } else {
-                if(CONFIG.debugMode) {
+                if(CONFIGV2.system.debugMode) {
                     Serial.println("DB update failed");
                 }
             }
@@ -472,7 +473,7 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
 
             DeserializationError err = deserializeJson(doc, body);
             if (err) {
-                if(CONFIG.debugMode) {
+                if(CONFIGV2.system.debugMode) {
                     Serial.print("ADD: JSON parse failed: ");
                     Serial.println(err.c_str());
                 }
@@ -487,12 +488,12 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
             entry.ledIndex = doc["ledIndex"].as<int>();
 
             if (FilamentDB::add(entry)) {
-                if(CONFIG.debugMode) {
+                if(CONFIGV2.system.debugMode) {
                     Serial.println("ADD filament: OK");
                 }
                 saveFilamentsToFile();
             } else {
-                if(CONFIG.debugMode) {
+                if(CONFIGV2.system.debugMode) {
                     Serial.println("ADD filament: FAILED");
                 }
             }
@@ -536,6 +537,19 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
         request->send(LittleFS, "/config.json", "application/json");
     });
 
+    // Config als JSON ausliefern
+    server.on("/config_v2.json", HTTP_GET, [](AsyncWebServerRequest *request){
+        // FIX: Netzlast-Hinweis – FS-Read + JSON
+        LEDCTRL_FILAMENT::netBusyHint(250);
+        LEDCTRL_NFC::netBusyHint(250);
+
+        if (!LittleFS.exists("/config_v2.json")) {
+            request->send(404, "application/json", "{\"error\":\"config_v2.json missing\"}");
+            return;
+        }
+        request->send(LittleFS, "/config_v2.json", "application/json");
+    });
+
     // FIX: /logo.png und /favicon.ico laufen nun über serveStatic (oben) mit Cache
     // server.on("/logo.png", HTTP_GET, ...);    // entfernt
     // server.on("/favicon.ico", HTTP_GET, ...); // entfernt
@@ -566,30 +580,19 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
             JsonDocument doc;
             DeserializationError err = deserializeJson(doc, body);
 
-            // --- Debug Ausgabe optional ---
-            if (CONFIG.debugMode) {
-                Serial.println("Updated CONFIG:");
-                Serial.printf("LED: count=%d, pin=%d, brightness=%d, timeout=%d, color=0x%06X, colorError=0x%06X, colorPulse=0x%06X\n", 
-                              CONFIG.led.count, CONFIG.led.pin, CONFIG.led.brightness, CONFIG.led.timeout, CONFIG.led.color, CONFIG.led.colorError, CONFIG.led.colorPulse);
-                Serial.printf("NFC: count=%d, pin=%d, brightness=%d, timeout=%d, success=0x%06X, error=0x%06X, pulse=0x%06X\n",
-                              CONFIG.nfc.count, CONFIG.nfc.pin, CONFIG.nfc.brightness, CONFIG.nfc.timeout,
-                              CONFIG.nfc.colorSuccess, CONFIG.nfc.colorError, CONFIG.nfc.colorPulse);
-                Serial.printf("NFC Blink: enabled=%d, count=%d, ms=%d\n",
-                              CONFIG.nfc.successBlinkEnabled, CONFIG.nfc.successBlinkCount, CONFIG.nfc.successBlinkMs);
-                Serial.printf("Debug Mode: %s\n", CONFIG.debugMode ? "ON" : "OFF");
-            }
+            
             
             if (err) {
                 req->send(400, "text/plain", "JSON Error");
-                if(CONFIG.debugMode) {
+                if(CONFIGV2.system.debugMode) {
                     Serial.print("updateConfig JSON error: ");
                     Serial.println(err.c_str());
                 }
                 return;
-            }
+            }       
 
             // --- Update CONFIG ---
-            if (!updateConfigFromJson(doc)) {
+            if (!updateConfigFromJsonV2(doc)) {
                 req->send(400, "text/plain", "Invalid JSON structure");
                 return;
             }
