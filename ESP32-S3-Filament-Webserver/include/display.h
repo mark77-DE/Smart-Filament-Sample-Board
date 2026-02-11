@@ -51,6 +51,11 @@ public:
   // --- Neu: Bootscreen mit Firmware-Version/Hash ---
   static void showBootVersion(const char* version, const char* dateShort);
 
+    /**
+      * @brief Bildschirm löschen (z.B. vor Idle-Animation).
+      */
+  static void clear();
+
 private:
   static DisplayType* _display;
 };

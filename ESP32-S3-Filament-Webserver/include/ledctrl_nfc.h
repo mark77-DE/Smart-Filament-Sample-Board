@@ -113,10 +113,17 @@ public:
    */
   static void netBusyHint(uint16_t ms); // FIX: hinzugefügt
 
+
+  static void standBy(bool state);
+  static bool isStandby();
+
 private:
   // Interner Pointer auf den NeoPixel-Strip (lebenszyklisch von init()/allOff() verwaltet)
   static Adafruit_NeoPixel* _leds;
 
   // FIX: Während Netzlast (HTTP/WS) zusätzlich Idle-Frames pausieren
   static unsigned long      s_netPauseUntil; // bis wann Idle unterdrücken
+
+
+  static bool _standby;
 };

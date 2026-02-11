@@ -12,4 +12,11 @@
  *
  * Muss aufgerufen werden, sobald MQTT verbunden ist.
  */
-void publishHADiscovery(PubSubClient& client);
+#pragma once
+#include <PubSubClient.h>
+
+void publishHADiscovery(
+    PubSubClient& client,
+    const String& discoveryPrefix
+);
+

@@ -1,8 +1,10 @@
+#include "globals.h"
 #include "filament_db.h"
 #include <LittleFS.h>
 #include <ArduinoJson.h>
 #include "filehandling.h"
 #include "config.h"
+#include "mqtt_manager.h"
 
 static FilamentEntry db[100];   // max 100 Einträge
 static int dbCount = 0;

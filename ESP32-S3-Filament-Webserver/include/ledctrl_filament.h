@@ -124,6 +124,17 @@ public:
   // WebIF: virtuellen "Tag-Hold" starten, damit Timeout/Idle wieder greifen
   static void webifHoldFor(uint16_t ms);
 
+  
+
+   /**
+    * @brief Alle Anzeigen ausschalten und in einen passiven Standby-Zustand wechseln.
+    *        (Derzeit: Idle-Pulse deaktivieren, damit bei längerer Inaktivität nicht
+    *        ständig die LEDs an- und ausgehen.)
+    */
+    static void standBy(bool state);
+    
+    static bool _standby;            // Standby-Zustand aktiv?
+    static bool _idlePulseEnabled;   // Idle-Pulse aktiv?
 
 private:
   // --------------------------------------------------------------------------
@@ -162,7 +173,7 @@ private:
   // --------------------------------------------------------------------------
   // Idle-Breath-Pulse
   // --------------------------------------------------------------------------
-  static bool               _idlePulseEnabled;   // Idle-Pulse aktiv?
+  
   static float              _minBrightness;      // Minimaler Helligkeitsfaktor [0..1]
   static unsigned long      _lastPulseUpdate;    // letzter Renderzeitpunkt
   static const uint16_t     PULSE_INTERVAL_MS;   // ~Frame-Intervall (z. B. 16 ms ≈ 60 FPS)
@@ -180,5 +191,9 @@ private:
   // --------------------------------------------------------------------------
   static void ensureBuf(int n);                       // Buffer (re)alloziieren
   static void renderAllFromBuf(Adafruit_NeoPixel* s); // Buffer → Strip übertragen
-  static bool bufAnyLit();                            // Irgendein Pixel ≠ 0?
+  static bool bufAnyLit();      
+  
+  
+ 
+  
 };

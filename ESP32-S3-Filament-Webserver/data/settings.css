@@ -371,6 +371,35 @@ input[type="color"] { padding: 0; height: 34px; }
     padding: 20px;
 }
 
+
+
+
+#mqttOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+#mqttOverlay.active {
+    display: flex;
+}
+
+#mqttOverlay .settingsBox {
+    background: #071325;
+    border-radius: 10px;
+    max-width: 900px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 20px;
+}
+
+
+
 /* -------------------- Kleine, hilfreiche Extras -------------------- */
 
 /* disabled-Optik für gesperrte Felder */

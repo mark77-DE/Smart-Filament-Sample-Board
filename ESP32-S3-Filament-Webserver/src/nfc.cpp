@@ -1,5 +1,6 @@
 #include "nfc.h"
 #include "ledctrl_nfc.h"
+#include "ledctrl_filament.h"
 
 // ============================================================================
 // Debug
@@ -212,6 +213,10 @@ void tick(unsigned long now,
   // 4) Rising-Edge: jetzt entscheiden, ob wir handleUID() auslösen
   // --------------------------------------------------------------------------
   if (tagPresent && !s_prevTagPresent) {
+    
+    LEDCTRL_FILAMENT::standBy(false);
+    LEDCTRL_NFC::standBy(false);
+
     const bool ledIdle   = LEDCTRL_NFC::isIdle();
     const bool haveFresh = tagPresentRaw; // nur mit frischer UID triggern
 

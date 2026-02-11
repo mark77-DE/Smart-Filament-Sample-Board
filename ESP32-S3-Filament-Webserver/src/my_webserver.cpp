@@ -361,7 +361,7 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
             body.concat((const char*)data, len);
             if (index + len != total) return;
 
-            DynamicJsonDocument doc(8192);
+            JsonDocument doc;
             DeserializationError err = deserializeJson(doc, body);
             if (err) {
                 req->send(400, "text/plain", "JSON parse failed");
@@ -371,10 +371,10 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
                 return;
             }
 
-            if (doc.containsKey("config") && doc["config"].is<JsonObject>())
+            if (doc["config"].is<JsonObject>())
                 importConfigJsonV2(doc["config"].as<JsonObject>());
 
-            if (doc.containsKey("filaments") && doc["filaments"].is<JsonArray>())
+            if (doc["filaments"].is<JsonArray>())
                 importFilamentsJson(doc["filaments"].as<JsonArray>());
 
             req->send(200, "text/plain", "Import OK");

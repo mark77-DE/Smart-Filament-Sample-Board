@@ -23,6 +23,8 @@
 #include "Arduino.h"
 #include "esp_ota_ops.h"
 #include "config.h"
+#include "mqtt_manager.h"
+
 
 
 
@@ -235,6 +237,10 @@ void handleUID(const String &uid, UidSource source) {
         // Display mit Filament-Infos
         MYDISPLAY::show(entry);
 
+        if (CONFIGV2.mqttConfig.enabled) {
+            publishFilamentState(entry);
+        }
+
         // NFC-Feedback (grün mit optionalem Blink → solid → Timeout ab Entfernung)
         if (isNfc) {
             LEDCTRL_NFC::showSuccess();
@@ -301,25 +307,34 @@ void printChipInfo() {
 // -----------------------------------------------------------------
 void setup() {
   Serial.begin(115200);
-  delay(50);
+  delay(5000);
+
+  Serial.println();
+  Serial.println();
+  Serial.println("++-------------------------------++");
+  Serial.println("++  SMART FILAMENT SAMPLE BOARD  ++");
+  Serial.println("++-------------------------------++");
+  Serial.println();
+  Serial.println("Booting...");
+  Serial.println();
 
   printOtaInfo();
+  
   markOtaImageValidIfNeeded();
   
 
-
+  Serial.println();
   Serial.printf("Firmware Version Info: %s\n", FIRMWARE_VERSION);
   Serial.printf("Build Date: %s\n", BUILD_DATE_SHORT);
-
+  Serial.println();
 
   g_sysInfo = getSysInfo();
   
   printChipInfo();
+  Serial.println();
+  Serial.println("Setup starting...");
 
-  // 1) Konfiguration laden
-  //loadConfig();
-  //applyConfig(); 
-
+  
   loadConfigV2();
   applyConfigV2();
   
@@ -379,6 +394,20 @@ void setup() {
   initWebServer(server, ws);
   WiFi.setSleep(false);
 
+  //init MQTT
+  if(CONFIGV2.mqttConfig.enabled) {
+    Serial.println("MQTT is enabled, initializing...");
+  
+    if (WiFi.status() == WL_CONNECTED) {
+      mqttInit();
+    }
+  
+
+
+  } else {
+    Serial.println("MQTT is disabled, skipping initialization.");
+  }
+  
 
   // 6) FIRMWARE-BOOTSCREEN x s ANZEIGEN (WebIF ist bereits online)
   {
@@ -421,6 +450,13 @@ void setup() {
 
 
 void loop() {
+
+  if (CONFIGV2.mqttConfig.enabled) {
+    mqttLoop();
+  }
+  
+  
+
   // ---------------------------------------------------------------------------
   // 0) Zeitbasis
   // ---------------------------------------------------------------------------
@@ -538,4 +574,7 @@ void loop() {
   // 7) (Optional) yield()
   // ---------------------------------------------------------------------------
   yield();
+
+
+
 }

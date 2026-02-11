@@ -91,6 +91,11 @@ static const uint16_t SUCCESS_DEBOUNCE_MS = 200;
 // FIX: Netzlast-Pause (Idle-Frames aussetzen)
 unsigned long LEDCTRL_NFC::s_netPauseUntil = 0;
 
+
+// standby: Alle LEDs aus, kein Update (auch kein Idle-Pulse)
+static bool _standby = false;
+bool LEDCTRL_NFC::_standby = false;
+
 // ============================================================================
 // Strip-Instanz (intern) – implementiert in ledctrl_nfc.h
 // ============================================================================
@@ -275,6 +280,12 @@ void LEDCTRL_NFC::allOff() {
 // Präsenz-Tracking (Timeout startet erst bei echter Entfernung)
 // ---------------------------------------------------------------------------
 void LEDCTRL_NFC::tagPresenceTick(bool present) {
+
+  if (_standby && present) {
+        standBy(false);  // Wake-Up bei Tag-Erkennung
+  }
+
+
   const unsigned long now = millis();
 
   if (present) {
@@ -370,6 +381,8 @@ void LEDCTRL_NFC::showError()   { confirmError();   }
 // ---------------------------------------------------------------------------
 void LEDCTRL_NFC::update() {
   if (!_leds) return;
+  if (_standby) return;
+
   const unsigned long now = millis();
 
   // === SUCCESS (Solid)
@@ -480,4 +493,26 @@ void LEDCTRL_NFC::netBusyHint(uint16_t ms) {
   const unsigned long now = millis();
   const unsigned long until = now + (unsigned long)ms;
   if (until > s_netPauseUntil) s_netPauseUntil = until;
+}
+
+
+
+void LEDCTRL_NFC::standBy(bool state) {
+    if (_standby == state) return;
+    _standby = state;
+
+    if (_standby) {
+        idlePulseEnabled = false;
+        s_holdActive     = false;
+        s_tagHeld        = false;
+        s_releaseTs      = 0;
+        currentState     = LED_OFF;
+        allOff();
+        DBG("Standby ON: LEDs OFF");
+    } else {
+        idlePulseEnabled   = true;
+        s_lastPulseUpdate  = millis();
+        s_idleBlockUntil   = millis() + 2;
+        DBG("Standby OFF: normal operation resumed");
+    }
 }

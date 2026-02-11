@@ -5,6 +5,7 @@
 #include "ledctrl_nfc.h"
 #include "gpio_hardware.h"   // für gpiohw_init()
 #include "globals.h"
+#include "filehandling.h"
 
 AppConfigV2 CONFIGV2;
 
@@ -173,8 +174,16 @@ bool loadConfigV2()
     CONFIGV2.mqttConfig.password            = mqtt["password"] | "";
     CONFIGV2.mqttConfig.clientId            = mqtt["clientId"] | "ESP32-SMFS";
     CONFIGV2.mqttConfig.baseTopic           = mqtt["baseTopic"] | "spotmyfilament";
+    CONFIGV2.mqttConfig.haDiscovery         = mqtt["haDiscovery"] | false;
+    CONFIGV2.mqttConfig.haDiscoveryPrefix   = mqtt["haDiscoveryPrefix"] | "homeassistant";
 
     // Filament-DB laden & Konfiguration anwenden
+    if(CONFIGV2.system.debugMode) {
+        Serial.println(F("Config V2 loaded successfully."));
+        Serial.println();
+        Serial.println("Next loading filaments...");
+    }
+
     loadFilaments();
     return true;
 }
@@ -184,6 +193,10 @@ bool loadConfigV2()
 //----------------------------------------------------------------------------
 
 void applyConfigV2() {
+
+    if(CONFIGV2.system.debugMode) {
+        Serial.println(F("Applying Config V2 to hardware..."));
+    }
 
   // Filament-LEDs
   LEDCTRL_FILAMENT::init(
@@ -211,14 +224,17 @@ void applyConfigV2() {
   );
 
   // GPIO-Hardware (Button/Buzzer)
-  gpiohw_init();  // liest CONFIG.button / CONFIG.buzzer, richtet Pins & ISR/Timer ein
+  gpiohw_init();  // liest CONFIGV2.button / CONFIGV2.buzzer, richtet Pins & ISR/Timer ein
 
   if (CONFIGV2.system.debugMode) {
     Serial.println(F("--------------------"));
     Serial.println(F("Config V2 applied:"));
 
     Serial.print(F(" HOSTNAME = "));       Serial.println(CONFIGV2.system.hostname);
+    Serial.print(F(" WEB_LED_TIMEOUT = ")); Serial.println(CONFIGV2.webLEDTimeout);
 
+    Serial.println();
+    Serial.println(F("LED Settings:"));
     Serial.print(F(" LED_COUNT = "));         Serial.println(CONFIGV2.led.count);
     Serial.print(F(" LED_PIN = "));           Serial.println(CONFIGV2.led.pin);
     Serial.print(F(" LED_TIMEOUT = "));       Serial.println(CONFIGV2.led.timeout);
@@ -227,9 +243,10 @@ void applyConfigV2() {
     Serial.print(F(" LED_COLOR_ERROR = 0x")); Serial.println(CONFIGV2.led.colorError, HEX);
     Serial.print(F(" LED_COLOR_PULSE = 0x")); Serial.println(CONFIGV2.led.colorPulse, HEX);
 
-    Serial.print(F(" WEB_LED_TIMEOUT = ")); Serial.println(CONFIGV2.webLEDTimeout);
+    
 
-
+    Serial.println();
+    Serial.println(F("NFC LED Settings:"));
     Serial.print(F(" NFC_LED_COUNT = "));     Serial.println(CONFIGV2.nfc.count);
     Serial.print(F(" NFC_LED_PIN = "));       Serial.println(CONFIGV2.nfc.pin);
     Serial.print(F(" NFC_LED_TIMEOUT = "));   Serial.println(CONFIGV2.nfc.timeout);
@@ -239,25 +256,43 @@ void applyConfigV2() {
     Serial.print(F(" NFC_LED_COLOR_PULSE = 0x"));   Serial.println(CONFIGV2.nfc.colorPulse, HEX);
     Serial.print(F(" DEBUG_MODE = "));        Serial.println(CONFIGV2.system.debugMode ? F("true") : F("false"));
 
-    Serial.print(F(" BUTTON pin="));          Serial.print(CONFIGV2.button.pin);
-    Serial.print(F(" pullup="));              Serial.print(CONFIGV2.button.pullup);
-    Serial.print(F(" debounce="));            Serial.print(CONFIGV2.button.debounceMs);
-    Serial.print(F("ms long="));              Serial.print(CONFIGV2.button.longMs);
-    Serial.print(F("ms double="));            Serial.print(CONFIGV2.button.doubleGapMs);
-    Serial.print(F("ms holdRep="));           Serial.print(CONFIGV2.button.holdRepeatMs);
-    Serial.println(F("ms"));
+    Serial.println();
+    Serial.println(F("Button Settings:"));
+    Serial.print(F(" BUTTON pin="));          Serial.println(CONFIGV2.button.pin);
+    Serial.print(F(" pullup="));              Serial.println(CONFIGV2.button.pullup);
+    Serial.print(F(" debounce="));            Serial.println(CONFIGV2.button.debounceMs);
+    Serial.print(F(" ms long="));              Serial.println(CONFIGV2.button.longMs);
+    Serial.print(F(" ms double="));            Serial.println(CONFIGV2.button.doubleGapMs);
+    Serial.print(F(" ms holdRep="));           Serial.println(CONFIGV2.button.holdRepeatMs);
 
-    Serial.print(F(" BUZZER pin="));          Serial.print(CONFIGV2.buzzer.pin);
-    Serial.print(F(" activeHigh="));          Serial.print(CONFIGV2.buzzer.activeHigh);
-    Serial.print(F(" freq="));                Serial.print(CONFIGV2.buzzer.freqHz);
-    Serial.print(F("Hz single="));            Serial.print(CONFIGV2.buzzer.singleMs);
-    Serial.print(F("ms dblOn="));             Serial.print(CONFIGV2.buzzer.doubleOnMs);
-    Serial.print(F("ms dblGap="));            Serial.print(CONFIGV2.buzzer.doubleGapMs);
-    Serial.print(F("ms errOn="));             Serial.print(CONFIGV2.buzzer.errorOnMs);
-    Serial.print(F("ms errGap="));            Serial.print(CONFIGV2.buzzer.errorGapMs);
-    Serial.print(F("ms errCount="));          Serial.println(CONFIG.buzzer.errorCount);
+    Serial.println();
+    Serial.println(F("Buzzer Settings:"));
+    Serial.print(F(" BUZZER pin="));          Serial.println(CONFIGV2.buzzer.pin);
+    Serial.print(F(" activeHigh="));          Serial.println(CONFIGV2.buzzer.activeHigh);
+    Serial.print(F(" freq="));                Serial.println(CONFIGV2.buzzer.freqHz);
+    Serial.print(F(" Hz single="));            Serial.println(CONFIGV2.buzzer.singleMs);
+    Serial.print(F(" ms dblOn="));             Serial.print(CONFIGV2.buzzer.doubleOnMs);
+    Serial.print(F(" ms dblGap="));            Serial.println(CONFIGV2.buzzer.doubleGapMs);
+    Serial.print(F(" ms errOn="));             Serial.println(CONFIGV2.buzzer.errorOnMs);
+    Serial.print(F(" ms errGap="));            Serial.println(CONFIGV2.buzzer.errorGapMs);
+    Serial.print(F(" ms errCount="));          Serial.println(CONFIGV2.buzzer.errorCount);
+
+    Serial.println();
+    Serial.println(F("MQTT Settings:"));
+    Serial.print(F(" MQTT enabled="));       Serial.println(CONFIGV2.mqttConfig.enabled ? F("true") : F("false"));
+    Serial.print(F(" MQTT server="));        Serial.println(CONFIGV2.mqttConfig.server);
+    Serial.print(F(" MQTT port="));          Serial.println(CONFIGV2.mqttConfig.port);
+    Serial.print(F(" MQTT user="));          Serial.println(CONFIGV2.mqttConfig.user);
+    Serial.print(F(" MQTT password="));      Serial.println(CONFIGV2.mqttConfig.password);
+    Serial.print(F(" MQTT baseTopic="));     Serial.println(CONFIGV2.mqttConfig.baseTopic);
+    Serial.print(F(" MQTT clientId="));      Serial.println(CONFIGV2.mqttConfig.clientId);
+    Serial.print(F(" MQTT HA Discovery="));      Serial.println(CONFIGV2.mqttConfig.haDiscovery ? F("true") : F("false"));
+    Serial.print(F(" MQTT HA Discovery Prefix="));      Serial.println(CONFIGV2.mqttConfig.haDiscoveryPrefix);
+
+
 
     Serial.println(F("--------------------"));
+    Serial.println();
   }
 }
 
@@ -410,14 +445,17 @@ bool updateConfigFromJsonV2(JsonDocument& doc) {
     // --- MQTT ---
     if (cfg["mqttConfig"].is<JsonObject>()) {
         JsonObject mqtt = cfg["mqttConfig"];
-        CONFIGV2.mqttConfig.enabled   = mqtt["enabled"]   | CONFIGV2.mqttConfig.enabled;
-        CONFIGV2.mqttConfig.server    = mqtt["server"]    | CONFIGV2.mqttConfig.server;
-        CONFIGV2.mqttConfig.port      = mqtt["port"]      | CONFIGV2.mqttConfig.port;
-        CONFIGV2.mqttConfig.user      = mqtt["user"]      | CONFIGV2.mqttConfig.user;
-        CONFIGV2.mqttConfig.password  = mqtt["password"]  | CONFIGV2.mqttConfig.password;
-        CONFIGV2.mqttConfig.baseTopic = mqtt["baseTopic"] | CONFIGV2.mqttConfig.baseTopic;
-        CONFIGV2.mqttConfig.clientId  = mqtt["clientId"]  | CONFIGV2.mqttConfig.clientId;
+        CONFIGV2.mqttConfig.enabled             = mqtt["enabled"]   | CONFIGV2.mqttConfig.enabled;
+        CONFIGV2.mqttConfig.server              = mqtt["server"]    | CONFIGV2.mqttConfig.server;
+        CONFIGV2.mqttConfig.port                = mqtt["port"]      | CONFIGV2.mqttConfig.port;
+        CONFIGV2.mqttConfig.user                = mqtt["user"]      | CONFIGV2.mqttConfig.user;
+        CONFIGV2.mqttConfig.password            = mqtt["password"]  | CONFIGV2.mqttConfig.password;
+        CONFIGV2.mqttConfig.baseTopic           = mqtt["baseTopic"] | CONFIGV2.mqttConfig.baseTopic;
+        CONFIGV2.mqttConfig.clientId            = mqtt["clientId"]  | CONFIGV2.mqttConfig.clientId;
+        CONFIGV2.mqttConfig.haDiscovery         = mqtt["haDiscovery"] | CONFIGV2.mqttConfig.haDiscovery;
+        CONFIGV2.mqttConfig.haDiscoveryPrefix   = mqtt["haDiscoveryPrefix"] | CONFIGV2.mqttConfig.haDiscoveryPrefix;
 
+        
         Serial.println(F("MQTT configuration updated:"));
         Serial.print(F("MQTT enabled set to: "));      Serial.println(CONFIGV2.mqttConfig.enabled ? F("true") : F("false"));
         Serial.print(F("MQTT server set to: "));       Serial.println(CONFIGV2.mqttConfig.server);
@@ -425,6 +463,9 @@ bool updateConfigFromJsonV2(JsonDocument& doc) {
         Serial.print(F("MQTT user set to: "));         Serial.println(CONFIGV2.mqttConfig.user);
         Serial.print(F("MQTT baseTopic set to: "));    Serial.println(CONFIGV2.mqttConfig.baseTopic);
         Serial.print(F("MQTT clientId set to: "));     Serial.println(CONFIGV2.mqttConfig.clientId);
+        Serial.print(F("MQTT HA Discovery set to: "));     Serial.println(CONFIGV2.mqttConfig.haDiscovery ? F("true") : F("false"));
+        Serial.print(F("MQTT HA Discovery Prefix set to: "));     Serial.println(CONFIGV2.mqttConfig.haDiscoveryPrefix);
+
     }
 
     saveConfigV2();
@@ -522,6 +563,8 @@ bool saveConfigV2() {
     mqtt["password"]  = CONFIGV2.mqttConfig.password;
     mqtt["baseTopic"] = CONFIGV2.mqttConfig.baseTopic;
     mqtt["clientId"]  = CONFIGV2.mqttConfig.clientId;
+    mqtt["haDiscovery"] = CONFIGV2.mqttConfig.haDiscovery;
+    mqtt["haDiscoveryPrefix"] = CONFIGV2.mqttConfig.haDiscoveryPrefix;
 
     // =========================
     // Schreiben
@@ -787,15 +830,3 @@ bool loadConfigAsJsonV2(JsonObject target) {
   return true;
 }
 
-bool loadConfigAsStringV2(String& out) {
-  if (!LittleFS.exists("/config_v2.json")) {
-    out = "{}";
-    return false;
-  }
-  File f = LittleFS.open("/config_v2.json", "r");
-  if (!f) return false;
-
-  out = f.readString();
-  f.close();
-  return true;
-}

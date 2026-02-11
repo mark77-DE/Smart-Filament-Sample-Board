@@ -47,12 +47,15 @@
         "errorCount": 3
     },
     "mqttConfig": {
-        "enabled": true,
+        "enabled": false,
         "server": "192.168.1.10",
         "port": 1883,
-        "user": "mqttuser",
-        "password": "mqttpass",
+        "user": "m",
+        "password": "",
         "baseTopic": "spotmyfilament",
-        "clientId": "filament-board-1"
+        "clientId": "filament-board-1",
+        "haDiscovery": false,
+        "haDiscoveryPrefix": "homeassistant"
     }
 }
+

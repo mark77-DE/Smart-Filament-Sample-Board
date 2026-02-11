@@ -1,4 +1,5 @@
 #include "gpio_hardware.h"
+#include "config.h"
 
 // ------------------------ Debug ------------------------
 #ifdef GPIO_HW_DEBUG
@@ -149,23 +150,23 @@ void gpiohw_init() {
     gpiohw_reset_click_state();
   // --- Button aus CONFIG übernehmen (falls vorhanden); sonst Defaults ---
   #ifdef CONFIG_HAS_GPIO
-    CFG_BTN_PIN         = CONFIG.button.pin;
-    CFG_BTN_PULLUP      = CONFIG.button.pullup;
-    CFG_BTN_DEBOUNCE_MS = CONFIG.button.debounceMs;
-    CFG_BTN_LONG_MS     = CONFIG.button.longMs;
-    CFG_BTN_DOUBLE_MS   = CONFIG.button.doubleGapMs;
-    CFG_BTN_HOLD_MS     = CONFIG.button.holdRepeatMs;
+    CFG_BTN_PIN         = CONFIGV2.button.pin;
+    CFG_BTN_PULLUP      = CONFIGV2.button.pullup;
+    CFG_BTN_DEBOUNCE_MS = CONFIGV2.button.debounceMs;
+    CFG_BTN_LONG_MS     = CONFIGV2.button.longMs;
+    CFG_BTN_DOUBLE_MS   = CONFIGV2.button.doubleGapMs;
+    CFG_BTN_HOLD_MS     = CONFIGV2.button.holdRepeatMs;
 
-    CFG_BUZ_PIN            = CONFIG.buzzer.pin;
-    CFG_BUZ_ACTIVE_HIGH    = CONFIG.buzzer.activeHigh;
-    CFG_BUZ_PASSIVE        = CONFIG.buzzer.passive;
-    CFG_BUZ_FREQ_HZ        = CONFIG.buzzer.freqHz;
-    CFG_BUZ_SINGLE_ON_MS   = CONFIG.buzzer.singleMs;
-    CFG_BUZ_DOUBLE_ON_MS   = CONFIG.buzzer.doubleOnMs;
-    CFG_BUZ_DOUBLE_GAP_MS  = CONFIG.buzzer.doubleGapMs;
-    CFG_BUZ_ERR_ON_MS      = CONFIG.buzzer.errorOnMs;
-    CFG_BUZ_ERR_GAP_MS     = CONFIG.buzzer.errorGapMs;
-    CFG_BUZ_ERR_COUNT      = CONFIG.buzzer.errorCount;
+    CFG_BUZ_PIN            = CONFIGV2.buzzer.pin;
+    CFG_BUZ_ACTIVE_HIGH    = CONFIGV2.buzzer.activeHigh;
+    CFG_BUZ_PASSIVE        = CONFIGV2.buzzer.passive;
+    CFG_BUZ_FREQ_HZ        = CONFIGV2.buzzer.freqHz;
+    CFG_BUZ_SINGLE_ON_MS   = CONFIGV2.buzzer.singleMs;
+    CFG_BUZ_DOUBLE_ON_MS   = CONFIGV2.buzzer.doubleOnMs;
+    CFG_BUZ_DOUBLE_GAP_MS  = CONFIGV2.buzzer.doubleGapMs;
+    CFG_BUZ_ERR_ON_MS      = CONFIGV2.buzzer.errorOnMs;
+    CFG_BUZ_ERR_GAP_MS     = CONFIGV2.buzzer.errorGapMs;
+    CFG_BUZ_ERR_COUNT      = CONFIGV2.buzzer.errorCount;
   #endif
 
   // --- Button einrichten ---

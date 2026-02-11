@@ -3,6 +3,7 @@
 #include <Arduino.h>
 #include "globals.h"
 #include "version_info.h"
+#include "config.h"
 
 DisplayType* MYDISPLAY::_display = nullptr;
 
@@ -229,10 +230,14 @@ void MYDISPLAY::show(const FilamentEntry& entry) {
   _display->setTextSize(1);
 
   // Debug
-  Serial.print(F("DISPLAY: "));
-  Serial.print(entry.vendor); Serial.print(' ');
-  Serial.print(entry.type);   Serial.print(' ');
-  Serial.println(entry.color);
+  if (CONFIGV2.system.debugMode) {
+    Serial.println();
+    Serial.println(F("[DISPLAY] SHOW:"));
+    Serial.print(" Vendor: "); Serial.println(entry.vendor);
+    Serial.print(" Type:   "); Serial.println(entry.type);
+    Serial.print(" Color:  "); Serial.println(entry.color);
+  }
+  
 }
 
 // ------------------------------------------------------------
@@ -349,5 +354,9 @@ void MYDISPLAY::showBootVersion(const char* version, const char* dateShort) {
 
 
 
-//String l2 = String(F("FW ")) + (fw ? fw : "unknown");
-//String l3 = String(F("Git ")) + (hash ? String(hash).substring(0, 7) : "nogit");
+void MYDISPLAY::clear() {
+  if (_display) {
+    _display->clearDisplay();
+    _display->display();
+  }
+}

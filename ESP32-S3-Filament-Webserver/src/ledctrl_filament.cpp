@@ -1,10 +1,14 @@
+#include "globals.h"
 #include <Arduino.h>
 #include <LittleFS.h>
 #include <ArduinoJson.h>
 #include <Adafruit_NeoPixel.h>
 #include <math.h>
 #include "ledctrl_filament.h"
+#include "ledctrl_nfc.h"
 #include "neopixel_guard.h"
+#include "config.h"
+#include "mqtt_manager.h"
 
 // Debug-Ausgaben einschalten mit -DLED_FIL_DEBUG (build_flags)
 #ifdef LED_FIL_DEBUG
@@ -12,6 +16,7 @@
 #else
   #define FILDBG(...) do {} while (0)
 #endif
+
 
 // ============================================================================
 // Öffentliche Konfig-Variablen (werden von loadLedConfig() überschrieben)
@@ -77,6 +82,10 @@ unsigned long      LEDCTRL_FILAMENT::_netPauseUntil    = 0;
 
 // WebIF-Hold: simulierte Präsenz (damit Timeout danach greift)
 static unsigned long s_webifHoldUntil = 0;
+
+bool LEDCTRL_FILAMENT::_standby = false;
+
+
 
 // ============================================================================
 // Kleine Helper
@@ -243,8 +252,13 @@ void LEDCTRL_FILAMENT::init(int count, int pin, int timeout_ms, int brightness, 
 }
 
 void LEDCTRL_FILAMENT::setPixel(int index, uint32_t color) {
+  
   if (!_leds || !_buf) return;
   if (index < 0 || index >= _bufCount) return;
+
+  LEDCTRL_FILAMENT::standBy(false);
+  LEDCTRL_NFC::standBy(false);
+  
 
   // Wenn wir AUS einem Error-Zustand kommen → erst alles löschen,
   // damit keine roten Restpixel stehen bleiben.
@@ -369,6 +383,12 @@ void LEDCTRL_FILAMENT::errorBlink() {
 
 void LEDCTRL_FILAMENT::update() {
   if (!_leds) return;
+
+  if (_standby) {
+    return;
+  }
+
+
   const unsigned long now = millis();
 
     // --- WebIF-Hold Ablauf: virtuelle "Tag-Entfernung" auslösen ---
@@ -510,6 +530,45 @@ void LEDCTRL_FILAMENT::webifHoldFor(uint16_t ms) {
 
   // Idle kurz blocken, damit Pulse nicht reinmischt
   _idleBlockUntil = now + 2;
+}
+
+
+void LEDCTRL_FILAMENT::standBy(bool state) {
+  if (_standby == state) return;
+  _standby = state;
+
+  if (_standby) {
+    // 🔇 ALLES hart stoppen
+    _idlePulseEnabled = false;
+    _errBlinkActive  = false;
+    _errSolidActive  = false;
+    _tagHeld         = false;
+    _releaseTs       = 0;
+
+    allOff();
+
+    if(CONFIGV2.system.debugMode) {
+      Serial.println("Standby ON: LEDs OFF, update blocked");
+    } 
+    
+  } else {
+    // ▶️ Wieder freigeben
+    _idlePulseEnabled = true;
+    _lastPulseUpdate  = millis();
+    _idleBlockUntil   = millis() + 2;
+
+    
+
+    if(CONFIGV2.system.debugMode) {
+      Serial.println("Standby OFF: normal operation resumed");
+    }
+
+  }
+
+  // MQTT-Status senden
+  publishAnimationStatus(!state); // true=ON, false=OFF
+
+
 }
 
 

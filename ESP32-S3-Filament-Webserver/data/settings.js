@@ -98,6 +98,19 @@ const section = document.getElementById("sectionSettings");
 
 const uidInput = document.querySelector('input[name="uid"]');
 
+const mqttEnabledDiv = document.getElementById("mqttEnabled");
+const mqttBrokerInput = document.getElementById("mqttBroker");
+const mqttPortInput = document.getElementById("mqttPort");
+const mqttUserInput = document.getElementById("mqttUser");
+const mqttPasswordInput = document.getElementById("mqttPassword");
+const mqttClientIdInput = document.getElementById("mqttClientId");
+const mqttBaseTopicInput = document.getElementById("mqttBaseTopic");
+const mqttHADiscoveryCheck = document.getElementById("mqttHADiscovery");
+const mqttHADiscoveryPrefixInput = document.getElementById("mqttHADiscoveryPrefix");
+
+
+
+
 
 
 
@@ -360,7 +373,7 @@ async function loadTable() {
     const nfc   = CONFIGV2.nfc || {};
     const buz   = CONFIGV2.buzzer || {};
     const btn   = CONFIGV2.button || {};
-    const mqtt  = CONFIGV2.mqtt || {};
+    const mqtt  = CONFIGV2.mqttConfig || {};
 
     debugToggle.checked = !!(sys.debugMode);
 
@@ -429,6 +442,17 @@ async function loadTable() {
     if (buzzerErrorGapMsInput)  buzzerErrorGapMsInput.value   = buz.errorGapMs  ?? 66;
     if (buzzerErrorCountInput)  buzzerErrorCountInput.value   = buz.errorCount  ?? 1;
 
+    // --- MQTT UI ---
+    if (mqttEnabledDiv) mqttEnabledDiv.checked = !!mqtt.enabled;
+    if (mqttBrokerInput) mqttBrokerInput.value = mqtt.server ?? "";
+    if (mqttPortInput) mqttPortInput.value = mqtt.port ?? 1883;
+    if (mqttUserInput) mqttUserInput.value = mqtt.user ?? "";
+    if (mqttPasswordInput) mqttPasswordInput.value = mqtt.password ?? "";
+    if (mqttClientIdInput) mqttClientIdInput.value = mqtt.clientId ?? "";
+    if (mqttBaseTopicInput) mqttBaseTopicInput.value = mqtt.baseTopic ?? "";
+    if (mqttHADiscoveryCheck) mqttHADiscoveryCheck.checked = !!mqtt.haDiscovery;
+    if (mqttHADiscoveryPrefixInput) mqttHADiscoveryPrefixInput.value = mqtt.haDiscoveryPrefix ?? "";
+
     // Nach dem Setzen: Sperrlogik ausführen
     updatePinOptions();
 }
@@ -496,8 +520,7 @@ async function updateAddFormLEDs(){
 }
 
 
-// -------------------- LED Config (Speichern) --------------------
-document.getElementById("saveConfig").addEventListener("click", async () => {
+async function saveConfigHandler() {
     if(!confirm("Konfiguration sichern?")) return;
 
     // --- Filament LED ---
@@ -508,12 +531,11 @@ document.getElementById("saveConfig").addEventListener("click", async () => {
     const ledColorError  = hexToRgb(document.getElementById("ledColorError").value);
     const ledColorPulse  = hexToRgb(document.getElementById("ledColorPulse").value);
     const ledTimeout     = Number(document.getElementById("ledTimeout").value);
-    const webLEDTimeout  = webLedTimeoutInput ? Number(webLedTimeoutInput.value) : ledTimeout; // NEU
+    const webLEDTimeout  = webLedTimeoutInput ? Number(webLedTimeoutInput.value) : ledTimeout;
 
+    const debugMode = debugToggle.checked;
 
-    const debugMode      = debugToggle.checked;
-
-    // --- NFC LED ---
+    // --- NFC ---
     const nfcLedCount       = Number(document.getElementById("nfcMaxLED").value);
     const nfcLedPin         = Number(document.getElementById("nfcLedPin").value);
     const nfcLedBrightness  = percentToLedValue(Number(document.getElementById("nfcLedBrightness").value));
@@ -527,7 +549,7 @@ document.getElementById("saveConfig").addEventListener("click", async () => {
 
     // --- Button ---
     const buttonPin       = buttonPinSelect ? Number(buttonPinSelect.value) : -1;
-    const buttonPullup    = buttonPullupInput ? !!buttonPullupInput.checked : true;
+    const buttonPullup    = buttonPullupInput ? buttonPullupInput.checked : true;
     const buttonDebounceMs= buttonDebounceInput ? Number(buttonDebounceInput.value) : 30;
     const buttonLongMs    = buttonLongInput ? Number(buttonLongInput.value) : 800;
     const buttonDoubleMs  = buttonDoubleInput ? Number(buttonDoubleInput.value) : 400;
@@ -535,8 +557,7 @@ document.getElementById("saveConfig").addEventListener("click", async () => {
 
     // --- Buzzer ---
     const buzzerPin         = buzzerPinSelect ? Number(buzzerPinSelect.value) : -1;
-    const buzzerPassive     = buzzerPassiveInput ? !!buzzerPassiveInput.checked : false;
-    const buzzerActiveHigh  = buzzerActiveHighInput ? !!buzzerActiveHighInput.checked : true;
+    const buzzerActiveHigh  = buzzerActiveHighInput ? buzzerActiveHighInput.checked : true;
     const buzzerFreq        = buzzerFreqInput ? Number(buzzerFreqInput.value) : 4000;
     const buzzerSingleMs    = buzzerSingleMsInput ? Number(buzzerSingleMsInput.value) : 80;
     const buzzerDoubleOnMs  = buzzerDoubleOnMsInput ? Number(buzzerDoubleOnMsInput.value) : 60;
@@ -545,17 +566,16 @@ document.getElementById("saveConfig").addEventListener("click", async () => {
     const buzzerErrorGapMs  = buzzerErrorGapMsInput ? Number(buzzerErrorGapMsInput.value) : 60;
     const buzzerErrorCount  = buzzerErrorCountInput ? Number(buzzerErrorCountInput.value) : 3;
 
-    if(CONFIG?.options?.debugMode) {
-        console.log("Neue Config:", {
-            ledCount, ledPin, ledBrightness, ledColor, ledTimeout, ledColorError, ledColorPulse,
-            nfcLedCount, nfcLedPin, nfcLedBrightness, nfcLedColorSuccess, nfcLedColorError, nfcLedTimeout, nfcLedColorPulse,
-            nfcLedSuccessBlinkEnabled, nfcLedSuccessBlinkCount, nfcLedSuccessBlinkMs,
-            buttonPin, buttonPullup, buttonDebounceMs, buttonLongMs, buttonDoubleMs, buttonHoldMs,
-            buzzerPin, buzzerPassive, buzzerActiveHigh, buzzerFreq,
-            buzzerSingleMs, buzzerDoubleOnMs, buzzerDoubleGapMs, buzzerErrorOnMs, buzzerErrorGapMs, buzzerErrorCount,
-            debugMode,webLEDTimeout
-        });
-    }
+    // --- MQTT ---
+    const mqttEnabledCheck = mqttEnabledDiv ? mqttEnabledDiv.checked : false;
+    const mqttBrokerInputValue = mqttBrokerInput ? mqttBrokerInput.value.trim() : "";
+    const mqttPortInputValue = mqttPortInput ? Number(mqttPortInput.value) : 1883;
+    const mqttUserInputValue = mqttUserInput ? mqttUserInput.value.trim() : "";
+    const mqttPasswordInputValue = mqttPasswordInput ? mqttPasswordInput.value : "";
+    const mqttClientIdInputValue = mqttClientIdInput ? mqttClientIdInput.value.trim() : "";
+    const mqttBaseTopicInputValue = mqttBaseTopicInput ? mqttBaseTopicInput.value.trim() : "";
+    const mqttHADiscoveryCheckValue = mqttHADiscoveryCheck ? mqttHADiscoveryCheck.checked : false;
+    const mqttHADiscoveryPrefixInputValue = mqttHADiscoveryPrefixInput ? mqttHADiscoveryPrefixInput.value.trim() : "homeassistant";
 
     try {
         await fetch("/api/updateConfig", {
@@ -607,14 +627,25 @@ document.getElementById("saveConfig").addEventListener("click", async () => {
                     errorOnMs: buzzerErrorOnMs,
                     errorGapMs: buzzerErrorGapMs,
                     errorCount: buzzerErrorCount
+                },
+                mqttConfig: {
+                    enabled: mqttEnabledCheck,
+                    server: mqttBrokerInputValue,
+                    port: mqttPortInputValue,
+                    user: mqttUserInputValue,
+                    password: mqttPasswordInputValue,
+                    clientId: mqttClientIdInputValue,
+                    baseTopic: mqttBaseTopicInputValue,
+                    haDiscovery: mqttHADiscoveryCheckValue,
+                    haDiscoveryPrefix: mqttHADiscoveryPrefixInputValue
                 }
             })
-
         });
-    } catch(e){
-        // ESP schon offline – kein Problem
+    } catch(e) {
+        // ESP offline → ignorieren
     }
-});
+}
+
 
 
 // -------------------- Config laden --------------------
@@ -840,6 +871,14 @@ dbDiv.addEventListener('keydown', e => {
 });
 
 
+document.getElementById("saveConfig")
+    ?.addEventListener("click", saveConfigHandler);
+
+document.getElementById("saveMqtt")
+    ?.addEventListener("click", saveConfigHandler);
+
+
+
 // Nur Klassenzuweisung, Text bleibt unverändert
 function validateUIDSpan(span) {
   
@@ -898,6 +937,12 @@ openSettings.onclick = () =>
 
 closeSettings.onclick = () =>
     settingsOverlay.classList.remove("active");
+
+openMqtt.onclick = () =>
+    mqttOverlay.classList.add("active");
+
+closeMqtt.onclick = () =>
+    mqttOverlay.classList.remove("active");
 
 sysInfoBtn.onclick = () => 
     sysInfoDiv.classList.add("active");

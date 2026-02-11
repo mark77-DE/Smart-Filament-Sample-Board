@@ -1,7 +1,7 @@
 #pragma once
 #include <Arduino.h>
 #include <ArduinoJson.h>
-#include "filament_db.h"
+
 
 // ============================================================================
 // Konfigurationsstrukturen
@@ -79,6 +79,8 @@ struct MqttConfigV2 {
   String password;
   String baseTopic;
   String clientId;
+  bool haDiscovery;          ///< Home Assistant Discovery aktiv
+  String haDiscoveryPrefix;  ///< Präfix für HA Discovery (z. B. "homeassistant")
 };
 
 // OPTIONAL: Kennzeichen, damit gpio_hardware.cpp weiß,
@@ -132,11 +134,7 @@ void applyConfigV2();
  */
 bool saveConfigV2();
 
-/**
- * @brief Lädt die Filament-Datenbank in den Speicher (FilamentDB)
- * @return true bei Erfolg, sonst false
- */
-bool loadFilamentsV2();
+
 
 // ============================================================================
 // JSON Hilfs-API
@@ -156,19 +154,8 @@ bool updateConfigFromJsonV2(JsonDocument& doc);
  */
 bool loadConfigAsJsonV2(JsonObject target);
 
-/**
- * @brief Lädt die Filament-Datenbank als JsonArray in ein bestehendes Dokument
- * @param target Ziel-JsonArray (wird befüllt)
- * @return true bei Erfolg, sonst false
- */
-bool loadFilamentsAsJsonV2(JsonArray target);
 
-/**
- * @brief Lädt die Konfiguration als String (z. B. für Download)
- * @param out Rückgabe-String
- * @return true bei Erfolg, sonst false
- */
-bool loadConfigAsStringV2(String& out);
+
 
 /**
  * @brief Importiert eine Konfiguration aus einem JSON-Objekt (schreibt Datei)
@@ -177,32 +164,12 @@ bool loadConfigAsStringV2(String& out);
  */
 bool importConfigJsonV2(JsonObject src);
 
-/**
- * @brief Importiert Filamente aus einem JSON-Array (DB + Datei)
- * @param src Quell-JsonArray
- * @return true bei Erfolg, sonst false
- */
-bool importFilamentsJsonV2(JsonArray src);
 
 // ============================================================================
 // Sonstiges
 // ============================================================================
 
-/**
- * @brief Lädt die Filament-DB in ein externes Array
- * @param dst Ziel-Array
- * @param maxEntries maximale Anzahl Einträge
- * @param outCount Anzahl tatsächlich geladener Einträge (by ref)
- * @return true bei Erfolg, sonst false
- * @note Nur deklariert – Implementierung ggf. an anderer Stelle (abhängig von FilamentDB-API).
- */
-bool loadFilamentDBV2(FilamentEntry* dst, size_t maxEntries, size_t& outCount);
 
-/**
- * @brief Speichert die aktuelle Filament-DB in /filaments.json
- * @return true bei Erfolg, sonst false
- */
-bool saveFilamentsToFileV2();
 
 /**
  * @brief Schreibt eine 0xRRGGBB-Farbe als [r,g,b]-Array in ein JsonObject
