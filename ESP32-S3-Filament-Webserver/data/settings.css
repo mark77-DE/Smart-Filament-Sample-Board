@@ -11,9 +11,12 @@ body {
 /* -------------------- WebSocket Status -------------------- */
 .ws-status {
     display: flex;
-    align-items: center;      /* vertikal zentrieren */
-    justify-content: center;  /* optional, Text mittig horizontal */
-    height: 36px;             /* gleiche Höhe wie Buttons */
+    align-items: center;
+    /* vertikal zentrieren */
+    justify-content: center;
+    /* optional, Text mittig horizontal */
+    height: 36px;
+    /* gleiche Höhe wie Buttons */
     padding: 0 12px;
     border-radius: 6px;
     font-weight: bold;
@@ -21,14 +24,14 @@ body {
     margin-left: auto;
 }
 
-.ws-connected { 
+.ws-connected {
     background: #4caf50;
     color: white;
 }
 
-.ws-disconnected { 
+.ws-disconnected {
     background: #d32f2f;
-    color: white; 
+    color: white;
 }
 
 /* -------------------- Toggle -------------------- */
@@ -40,7 +43,10 @@ body {
     cursor: pointer;
     user-select: none;
 }
-.edit-toggle input { display: none; }
+
+.edit-toggle input {
+    display: none;
+}
 
 .debug-toggle {
     display: inline-flex;
@@ -50,30 +56,50 @@ body {
     cursor: pointer;
     user-select: none;
 }
-.debug-toggle input { display: none; }
+
+.debug-toggle input {
+    display: none;
+}
 
 .slider {
-    width: 40px; height: 20px; background: #ccc;
-    border-radius: 20px; position: relative; transition: 0.25s;
+    width: 40px;
+    height: 20px;
+    background: #ccc;
+    border-radius: 20px;
+    position: relative;
+    transition: 0.25s;
 }
+
 .slider::after {
-    content: ""; position: absolute;
-    width: 18px; height: 18px;
-    background: white; border-radius: 50%;
-    top: 1px; left: 1px; transition: 0.25s;
+    content: "";
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    background: white;
+    border-radius: 50%;
+    top: 1px;
+    left: 1px;
+    transition: 0.25s;
 }
-input:checked + .slider { background: #4caf50; }
-input:checked + .slider::after { left: 21px; }
+
+input:checked+.slider {
+    background: #4caf50;
+}
+
+input:checked+.slider::after {
+    left: 21px;
+}
 
 /* -------------------- Tabelle -------------------- */
-#table, #tableAdd { 
-    display: flex; 
-    flex-direction: column; 
-    max-width: 1024px; 
-    margin: 0 auto; 
-    border: 1px solid #ccc; 
-    border-radius: 6px; 
-    overflow: hidden; 
+#table,
+#tableAdd {
+    display: flex;
+    flex-direction: column;
+    max-width: 1024px;
+    margin: 0 auto;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    overflow: hidden;
 }
 
 #tableAdd {
@@ -81,17 +107,19 @@ input:checked + .slider::after { left: 21px; }
     margin-bottom: 20px;
 }
 
-#tableHeader,  .tableRow {
-    display: grid; 
-    gap: 4px; 
+#tableHeader,
+.tableRow {
+    display: grid;
+    gap: 4px;
     align-items: center;
 }
-#tableHeader { 
-    grid-template-columns: 220px 180px 130px 130px 130px 100px; 
-    background-color: #2F3546; 
-    font-weight: bold; 
-    padding: 8px 4px; 
-    border-bottom: 1px solid #ccc; 
+
+#tableHeader {
+    grid-template-columns: 220px 180px 130px 130px 130px 100px;
+    background-color: #2F3546;
+    font-weight: bold;
+    padding: 8px 4px;
+    border-bottom: 1px solid #ccc;
 }
 
 #tableHeaderAdd {
@@ -99,10 +127,10 @@ input:checked + .slider::after { left: 21px; }
     grid-template-columns: 200px 180px 130px 180px 130px 80px;
     gap: 4px;
     align-items: center;
-    background-color: #2F3546; 
-    font-weight: bold; 
-    padding: 8px 10px; 
-    border-bottom: 1px solid #ccc; 
+    background-color: #2F3546;
+    font-weight: bold;
+    padding: 8px 10px;
+    border-bottom: 1px solid #ccc;
 }
 
 .tableAddRow {
@@ -124,6 +152,7 @@ input:checked + .slider::after { left: 21px; }
     width: 100%;
     box-sizing: border-box;
 }
+
 .tableAddRow select {
     max-width: 120px;
 }
@@ -131,135 +160,173 @@ input:checked + .slider::after { left: 21px; }
 #ledIndexSelect {
     max-width: 80px;
 }
-.tableRow { 
-    grid-template-columns: 220px 180px 130px 130px 130px 80px; 
-    padding: 4px 4px; 
-    border-bottom: 1px solid #eee; 
+
+.tableRow {
+    grid-template-columns: 220px 180px 130px 130px 130px 80px;
+    padding: 4px 4px;
+    border-bottom: 1px solid #eee;
 }
-span[contenteditable="true"] { 
-    padding: 2px 4px; 
-    border: 1px solid transparent; 
-    border-radius: 4px; 
+
+span[contenteditable="true"] {
+    padding: 2px 4px;
+    border: 1px solid transparent;
+    border-radius: 4px;
 }
-span[contenteditable="true"]:focus { 
-    border-color: #007BFF; 
-    outline: none; 
-    background-color: #f9f9f9; 
+
+span[contenteditable="true"]:focus {
+    border-color: #007BFF;
+    outline: none;
+    background-color: #f9f9f9;
 }
 
 /* -------------------- Buttons -------------------- */
-button.saveBtn { 
-    background-color: #28a745; 
-    color: white; 
-    height: 24px; 
+button.saveBtn {
+    background-color: #28a745;
+    color: white;
+    height: 24px;
     line-height: 10px;
 }
 
-button.deleteBtn { 
-    background-color: #dc3545; 
-    color: white; 
-    height: 24px; 
+button.saveBtn {
+    background-color: #28a745;
+    color: white;
+    height: 24px;
     line-height: 10px;
 }
-button, .upload-btn, .primaryBtn {
-    width: 100px; 
-    padding: 8px 10px; 
-    margin: 0; 
-    border: none; 
-    border-radius: 4px; 
-    cursor: pointer; 
+
+button.deleteBtn {
+    background-color: #dc3545;
+    color: white;
+    height: 24px;
+    line-height: 10px;
+}
+
+button,
+.upload-btn,
+.primaryBtn {
+    width: 100px;
+    padding: 8px 10px;
+    margin: 0;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
     font-size: 0.9em;
 }
-.primaryBtn, #saveConfig { 
-    background-color: #007bff; 
-    color: white; 
+
+.primaryBtn,
+#saveConfig {
+    background-color: #007bff;
+    color: white;
     width: 100px;
 }
-.primaryBtn:hover, .upload-btn:hover { background-color: #0069d9; }
+
+.primaryBtn:hover,
+.upload-btn:hover {
+    background-color: #0069d9;
+}
 
 button.closeBtn {
-    background-color: #dc3545; 
+    background-color: #dc3545;
     color: white;
 }
 
 /* -------------------- Select / Inputs -------------------- */
-select { 
-    width: 120px; 
-    padding: 2px 4px; 
-    border-radius: 4px; 
+select {
+    width: 120px;
+    padding: 2px 4px;
+    border-radius: 4px;
 }
-.uid, #uidHeader { 
-    font-family: monospace; 
-    font-size: 1.2em; 
-    text-align: left; 
-    padding-left: 4px; 
+
+.uid,
+#uidHeader {
+    font-family: monospace;
+    font-size: 1.2em;
+    text-align: left;
+    padding-left: 4px;
 }
-.vendor, .type, .color { 
-    text-align: left; 
-    padding-left: 4px; 
+
+.vendor,
+.type,
+.color {
+    text-align: left;
+    padding-left: 4px;
 }
-input[type="color"] { padding: 0; height: 34px; }
+
+input[type="color"] {
+    padding: 0;
+    height: 34px;
+}
 
 /* -------------------- Upload -------------------- */
-.upload-btn { background-color: #007bff; color: white; }
-#importFile { display: none; }
-
-/* -------------------- System Section -------------------- */
-#systemSection { 
-    display: flex; 
-    flex-direction: row; 
-    gap: 10px; 
-    padding: 10px; 
-    background-color: #071325;
-    color: #7f8c8d; 
-    border: 1px solid #ccc; 
-    border-radius: 6px; 
+.upload-btn {
+    background-color: #007bff;
+    color: white;
 }
 
-.sysGroup { 
-    display: flex; 
-    align-items: center; 
-    gap: 10px; 
-    margin-left: 10px; 
+#importFile {
+    display: none;
+}
+
+/* -------------------- System Section -------------------- */
+#systemSection {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    padding: 10px;
+    background-color: #071325;
+    color: #7f8c8d;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+}
+
+.sysGroup {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: 10px;
 }
 
 /* -------------------- Card Container -------------------- */
-.card { 
+.card {
     background-color: #071325;
     color: #7f8c8d;
-    border: 1px solid #ccc; 
-    border-radius: 8px; 
-    padding: 16px 20px; 
-    margin: 20px auto; 
-    max-width: 420px; 
-    box-shadow: 0 2px 6px rgba(0,0,0,0.08); 
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 20px auto;
+    max-width: 500px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
 }
 
-.cardHeader { 
-    font-size: 1.2em; 
-    font-weight: bold; 
-    margin-bottom: 14px; 
-    padding-bottom: 6px; 
-    border-bottom: 1px solid #ddd; 
+.cardHeader {
+    font-size: 1.2em;
+    font-weight: bold;
+    margin-bottom: 14px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #ddd;
 }
 
-.formGrid { 
-    display: grid; 
-    grid-template-columns: 1fr 1fr; 
-    gap: 10px 14px; 
-    align-items: start; 
+.formGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px 14px;
+    align-items: start;
 }
-.formGrid label { font-weight: 500; }
-.formGrid input[type="text"], 
-.formGrid input[type="number"], 
-.formGrid select, 
-.formGrid input[type="color"] { 
-    width: 100%; 
-    padding: 6px 8px; 
-    border: 1px solid #bbb; 
-    border-radius: 4px; 
-    font-size: 0.95em; 
-    box-sizing: border-box; 
+
+.formGrid label {
+    font-weight: 500;
+}
+
+.formGrid input[type="text"],
+.formGrid input[type="number"],
+.formGrid select,
+.formGrid input[type="color"] {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid #bbb;
+    border-radius: 4px;
+    font-size: 0.95em;
+    box-sizing: border-box;
 }
 
 .actionCell {
@@ -268,108 +335,102 @@ input[type="color"] { padding: 0; height: 34px; }
 }
 
 .tableRow.highlight {
-    background-color: yellow;  /* Markierung sichtbar */
-    transition: background-color 0.3s ease;  /* optional: sanftes Einblenden */
+    background-color: yellow;
+    /* Markierung sichtbar */
+    transition: background-color 0.3s ease;
+    /* optional: sanftes Einblenden */
 }
 
 #sectionSettings {
-    display: flex;           /* Flexbox aktivieren */
-    flex-wrap: wrap;         /* NEU: erlaubt Umbruch bei 4 Karten */
-    gap: 20px;               /* Abstand zwischen den Karten */
-    margin-bottom: 20px;     /* Abstand nach unten zur Tabelle */
+    display: flex;
+    /* Flexbox aktivieren */
+    flex-wrap: wrap;
+    /* NEU: erlaubt Umbruch bei 4 Karten */
+    gap: 20px;
+    /* Abstand zwischen den Karten */
+    margin-bottom: 20px;
+    /* Abstand nach unten zur Tabelle */
 }
 
 #sectionSettings .card {
-    flex: 1;                 /* beide/alle Cards gleich breit */
-    min-width: 300px;        /* minimal sinnvoll */
+    flex: 1;
+    /* beide/alle Cards gleich breit */
+    min-width: 300px;
+    /* minimal sinnvoll */
 }
 
 #header {
     display: flex;
-    align-items: center;  /* vertikal zentrieren */
-    gap: 15px;            /* Abstand zwischen Logo und Headline */
-    padding: 10px 20px;   /* optional, innen Abstand */
+    align-items: center;
+    /* vertikal zentrieren */
+    gap: 15px;
+    /* Abstand zwischen Logo und Headline */
+    padding: 10px 20px;
+    /* optional, innen Abstand */
 }
 
 #headline {
-    font-size: 24px; /* Haupttextgröße */
+    font-size: 24px;
+    /* Haupttextgröße */
     font-weight: bold;
     text-align: center;
 }
 
 #subheadline {
-    font-size: 50%; /* halbe Schriftgröße des Elterntexts */
+    font-size: 50%;
+    /* halbe Schriftgröße des Elterntexts */
     font-weight: normal;
     text-align: center;
-    color: #666; /* optional etwas dezenter */
+    color: #666;
+    /* optional etwas dezenter */
 }
 
 .logo {
-    width: 150px;      /* z.B. feste Breite */
-    height: auto;      /* Höhe proportional */
-    margin: 10px auto; /* zentrieren */
+    width: 150px;
+    /* z.B. feste Breite */
+    height: auto;
+    /* Höhe proportional */
+    margin: 10px auto;
+    /* zentrieren */
 }
 
 /* --- Color Presets unter HEX Feldern --- */
 .hexField {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
 }
 
 .colorPresets {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
 }
 
 .colorSwatch {
-  width: 16px;
-  height: 12px;
-  border-radius: 3px;
-  border: 1px solid rgba(0,0,0,0.35);
-  cursor: pointer;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.10);
+    width: 16px;
+    height: 12px;
+    border-radius: 3px;
+    border: 1px solid rgba(0, 0, 0, 0.35);
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.10);
 }
 
 .colorSwatch:hover {
-  transform: translateY(-1px);
+    transform: translateY(-1px);
 }
 
 .colorSwatch:active {
-  transform: translateY(0px);
+    transform: translateY(0px);
 }
 
 .colorSwatch.active {
-  border: 2px solid #fff;
-  box-shadow:
-    0 0 0 2px rgba(0,0,0,0.35),
-    0 0 10px rgba(255,255,255,0.75);
+    border: 2px solid #fff;
+    box-shadow:
+        0 0 0 2px rgba(0, 0, 0, 0.35),
+        0 0 10px rgba(255, 255, 255, 0.75);
 }
 
-#settingsOverlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.6);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-}
-
-#settingsOverlay.active {
-    display: flex;
-}
-
-#settingsOverlay .settingsBox {
-    background: #071325;
-    border-radius: 10px;
-    max-width: 900px;
-    width: 90%;
-    max-height: 90vh;
-    overflow-y: auto;
-    padding: 20px;
-}
 
 
 
@@ -377,7 +438,7 @@ input[type="color"] { padding: 0; height: 34px; }
 #mqttOverlay {
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.6);
+    background: rgba(0, 0, 0, 0.6);
     display: none;
     align-items: center;
     justify-content: center;
@@ -426,19 +487,25 @@ input[type="color"] { padding: 0; height: 34px; }
 }
 
 
-#buttonEnabled, #buzzerEnabled {
+#buttonEnabled,
+#buzzerEnabled {
     transition: opacity 0.2s ease;
 }
 
-#buttonEnabled.disabled, #buzzerEnabled.disabled {
+#buttonEnabled.disabled,
+#buzzerEnabled.disabled {
     display: none;
 }
 
-#buttonEnabled, #buzzerEnabled {
-    grid-column: 1 / -1;  /* volle Breite im äußeren Grid */
+#buttonEnabled,
+#buzzerEnabled {
+    grid-column: 1 / -1;
+    /* volle Breite im äußeren Grid */
     display: grid;
-    grid-template-columns: 1fr 1fr; /* zwei Spalten für Label + Input */
-    gap: 10px 14px;               /* Abstand wie im Haupt-FormGrid */
+    grid-template-columns: 1fr 1fr;
+    /* zwei Spalten für Label + Input */
+    gap: 10px 14px;
+    /* Abstand wie im Haupt-FormGrid */
 }
 
 input.invalid {
@@ -447,8 +514,10 @@ input.invalid {
 }
 
 span.uid.invalid {
-    background-color: #fee;       /* Optional leicht rot hinterlegt */
-    color: #900;                  /* Textfarbe rot */
+    background-color: #fee;
+    /* Optional leicht rot hinterlegt */
+    color: #900;
+    /* Textfarbe rot */
 }
 
 #about {
@@ -471,7 +540,7 @@ span.uid.invalid {
     display: flex;
     justify-content: center;
     align-items: center;
-    background: rgba(0,0,0,0.5);
+    background: rgba(0, 0, 0, 0.5);
     z-index: 1000;
 
     visibility: hidden;
@@ -486,15 +555,19 @@ span.uid.invalid {
 
 /* Info-Box */
 #sysInfoContentDiv {
-    position: relative;            /* damit der Button sich daran orientiert */
+    position: relative;
+    /* damit der Button sich daran orientiert */
     display: flex;
-    flex-direction: column;        /* Inhalte untereinander */
-    justify-content: flex-start;   /* Box-Inhalt oben anfangen */
+    flex-direction: column;
+    /* Inhalte untereinander */
+    justify-content: flex-start;
+    /* Box-Inhalt oben anfangen */
     background: #1e1e1e;
     color: #f1f1f1;
-    padding: 24px 28px 64px;      /* extra Platz unten für Button */
+    padding: 24px 28px 64px;
+    /* extra Platz unten für Button */
     border-radius: 14px;
-    box-shadow: 0 12px 30px rgba(0,0,0,0.6);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
     width: 420px;
     max-width: 90vw;
     max-height: 90%;
@@ -581,7 +654,7 @@ span.uid.invalid {
 
 .warning {
     color: red;
-    float:right;
+    float: right;
     font-weight: bold;
     font-size: 1.1em;
     vertical-align: middle;
@@ -590,33 +663,44 @@ span.uid.invalid {
 
 
 
-/* Overlay */
-#settingsOverlay.overlay {
+#settingsOverlay {
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.6);
+    background: rgba(0, 0, 0, 0.6);
     display: none;
+    align-items: stretch;
+    /* volle Höhe */
+    justify-content: center;
     z-index: 1000;
 }
 
+#settingsOverlay.active {
+    display: flex;
+}
 
+
+/* Layout */
 .settingsLayout {
     display: flex;
-    height: 100%;
-    width: 100%;
+    width: 150%;
+    max-width: 1000px;
+    height: 90%;
+    background: #071325;
+    border-radius: 12px;
+    overflow: hidden;
 }
 
 /* Sidebar */
 .settingsSidebar {
-    width: 220px;
+    width: 170px;
     background: #1e1e1e;
-    border-right: 1px solid #333;
     display: flex;
     flex-direction: column;
     padding-top: 20px;
+    border-right: 1px solid #333;
 }
 
-/* Sidebar Buttons */
+/* Sidebar Buttons oben */
 .settingsSidebar .navItem {
     padding: 14px 18px;
     background: none;
@@ -625,25 +709,48 @@ span.uid.invalid {
     text-align: left;
     cursor: pointer;
     font-size: 14px;
+    width: 150px;
 }
+
 
 .settingsSidebar .navItem:hover {
     background: #2a2a2a;
 }
+
 
 .settingsSidebar .navItem.active {
     background: #333;
     color: #fff;
 }
 
-/* Content Wrapper */
+
+
+
+/* Save/Close Buttons unten in Sidebar */
+.settingsSidebar #closeSettings,
+.settingsSidebar #saveConfig,
+.settingsSidebar #rebootBtn {
+    margin: 2px 18px;
+    /* etwas Abstand zur Sidebarkante */
+    width: calc(100% - 36px);
+    /* Sidebar-Breite minus Padding */
+}
+
+/* Footer-Bereich sticky unten */
+.settingsSidebar .sidebarFooter {
+    margin-top: auto;
+    /* schiebt nach unten */
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-bottom: 20px;
+}
+
+/* Content-Bereich */
 .settingsContent {
     flex: 1;
-    display: flex;
-    justify-content: center;     /* verhindert Wackeln */
-    align-items: flex-start;
     padding: 40px;
-    background: linear-gradient(135deg, #2b2b2b, #252525);  /* farbiger Bereich */
+    background: linear-gradient(135deg, #2b2b2b, #252525);
     overflow-y: auto;
 }
 
@@ -651,9 +758,10 @@ span.uid.invalid {
 .settingsPanel {
     display: none;
     width: 100%;
-    max-width: 850px;            /* HIER wird alles stabilisiert */
+    max-width: 850px;
+    /* HIER wird alles stabilisiert */
 }
 
 .settingsPanel.active {
-  display: block;
+    display: block;
 }

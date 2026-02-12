@@ -5,7 +5,7 @@
         "debugMode": true,
         "webLEDTimeout": 3000,
         "animationAfterBoot": true,
-        "hostname": "filament-board"
+        "hostname": "filament-board-dev"
         },
     "led": {
         "count": 8,
@@ -53,8 +53,8 @@
         "port": 1883,
         "user": "",
         "password": "",
-        "baseTopic": "spotmyfilament",
-        "clientId": "filament-board-1",
+        "baseTopic": "spotmyfilament-dev",
+        "clientId": "filament-board-dev",
         "haDiscovery": false,
         "haDiscoveryPrefix": "homeassistant"
     }
