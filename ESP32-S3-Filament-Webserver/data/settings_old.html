@@ -16,7 +16,7 @@
         </div>
         <div id="headline">
             Spot My Filament
-            <div id="subheadline">Smart Filament Sample Board V2</div>
+            <div id="subheadline">Smart Filament Sample Board</div>
         </div>
     </div>
 
@@ -101,26 +101,17 @@
 
     </div>
 
-    <div id="settingsOverlay" class="overlay">
-  <div class="settingsLayout">
 
-    <!-- Sidebar -->
-    <div class="settingsSidebar">
-      <button class="navItem active" data-target="panel-led">LED</button>
-      <button class="navItem" data-target="panel-nfc">NFC</button>
-      <button class="navItem" data-target="panel-button">Button</button>
-      <button class="navItem" data-target="panel-buzzer">Buzzer</button>
-      <button class="navItem" data-target="panel-mqtt">MQTT</button>
-      <button class="navItem" data-target="panel-system">System</button>
-    </div>
+    <div id="settingsOverlay">
+        <div class="settingsBox">
+            <button id="closeSettings" class="closeBtn">close</button>
+            <button id="saveConfig" >save</button>
 
-    <!-- Content -->
-    <div class="settingsContent">
-        <button id="closeSettings" class="closeBtn">close</button>
-        <button id="saveConfig" >save</button>
+        <!--  Settings -->
+        <div id="sectionSettings">
 
-      <div class="settingsPanel active" id="panel-led">
-        <div id="ledSettings" class="card">
+            <!-- LED Settings -->
+            <div id="ledSettings" class="card">
                 <div class="cardHeader">LED Settings</div>
 
                 <div class="formGrid">
@@ -176,10 +167,9 @@
 
                 </div>
             </div>
-      </div>
 
-      <div class="settingsPanel" id="panel-nfc">
-        <div id="nfcLedSettings" class="card">
+            <!-- NFC LED Settings -->
+            <div id="nfcLedSettings" class="card">
                 <div class="cardHeader">NFC LED Settings</div>
                 <div class="formGrid">
 
@@ -243,10 +233,9 @@
 
                 </div>
             </div>
-      </div>
 
-      <div class="settingsPanel" id="panel-button">
-        <div id="buttonSettings" class="card">
+            <!-- Pushbutton Settings (NEU) -->
+            <div id="buttonSettings" class="card">
                 <div class="cardHeader">Pushbutton Settings</div>
                 <div class="formGrid">
 
@@ -285,10 +274,9 @@
                     </div>
                 </div>
             </div>
-      </div>
 
-      <div class="settingsPanel" id="panel-buzzer">
-        <div id="buzzerSettings" class="card">
+            <!-- Buzzer Settings (NEU) -->
+            <div id="buzzerSettings" class="card">
                 <div class="cardHeader">Buzzer Settings</div>
                 <div class="formGrid">
 
@@ -335,11 +323,31 @@
                     </div>
                 </div>
             </div>
-      </div>
 
-      <div class="settingsPanel" id="panel-mqtt">
-        <!-- EXISTIERENDE MQTT CARD HIER REIN -->
-         <div id="mqttSettings" class="card">
+            <!-- Dashboard Settings (NEU) -->
+            <div id="dashboardSettings" class="card">
+                <div class="cardHeader">Dashboard Settings</div>
+                <div class="formGrid">
+
+                    <label for="webLedTimeout">Highlight "LED" Timeout (ms):</label>
+                    <input type="number" id="webLedTimeout" name="webLedTimeout" min="500" max="60000" value="4999">
+
+                </div>
+            </div>
+
+
+        </div>
+</div>
+
+        
+    </div>
+
+    <div id="mqttOverlay">
+        <div class="settingsBox">
+            <button id="closeMqtt" class="closeBtn">close</button>
+            <button id="saveMqtt" >save</button>
+            <div class="warning">Reboot required after saving MQTT settings!</div>
+            <div id="mqttSettings" class="card">
                 <div class="cardHeader">MQTT Settings</div>
                 <div class="formGrid">
                     
@@ -374,30 +382,8 @@
 
                 </div>
             </div>
-      </div>
-
-      <div class="settingsPanel" id="panel-system">
-        <!-- Debug, WebLEDTimeout, Hostname etc. -->
-         <div id="dashboardSettings" class="card">
-                <div class="cardHeader">Dashboard Settings</div>
-                <div class="formGrid">
-
-                    <label for="webLedTimeout">Highlight "LED" Timeout (ms):</label>
-                    <input type="number" id="webLedTimeout" name="webLedTimeout" min="500" max="60000" value="4999">
-
-                </div>
-            </div>
-      </div>
-
+        </div>
     </div>
-
-  </div>
-</div>
-
-
-    
-
-    
 
     <div id="tableAdd">
         <div id="tableHeaderAdd">

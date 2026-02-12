@@ -6,7 +6,7 @@ class Adafruit_NeoPixel;
 
 // ============================================================================
 // Öffentliche Konfig-Variablen
-//  -> werden von loadLedConfig() aus /config.json (oder /filament_default.json)
+//  -> werden von loadLedConfigV2() aus /config_v2.json (oder /filament_default.json)
 //     gelesen und anschließend per LEDCTRL_FILAMENT::init(...) angewendet
 // ============================================================================
 extern int      LED_COUNT;        // Anzahl Pixel des Filament-Strips

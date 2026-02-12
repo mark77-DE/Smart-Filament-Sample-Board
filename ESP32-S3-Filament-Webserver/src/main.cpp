@@ -446,6 +446,16 @@ void setup() {
 
   // 8) Idle-Animation vorbereiten
   DisplayAnim::startIdleTextFirst(millis());
+
+  if(!CONFIGV2.system.animationAfterBoot) {
+    DisplayAnim::stop();
+    MYDISPLAY::clear();
+    LEDCTRL_FILAMENT::standBy(true);
+    LEDCTRL_NFC::standBy(true);
+  }
+
+
+
 }
 
 

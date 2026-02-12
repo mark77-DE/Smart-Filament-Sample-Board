@@ -935,7 +935,8 @@ closeSettings.onclick = () =>
 openMqtt.onclick = () =>
     mqttOverlay.classList.add("active");
 
-
+closeMqtt.onclick = () =>
+    mqttOverlay.classList.remove("active");
 
 sysInfoBtn.onclick = () => 
     sysInfoDiv.classList.add("active");
@@ -1021,23 +1022,6 @@ function getVersion() {
     })
     .catch(err => console.error("Version fetch failed:", err));
 }
-
-
-document.querySelectorAll(".navItem").forEach(btn => {
-  btn.addEventListener("click", () => {
-
-    // Sidebar aktiv markieren
-    document.querySelectorAll(".navItem").forEach(b => b.classList.remove("active"));
-    btn.classList.add("active");
-
-    // Panels umschalten
-    document.querySelectorAll(".settingsPanel").forEach(p => p.classList.remove("active"));
-    const target = document.getElementById(btn.dataset.target);
-    if (target) target.classList.add("active");
-
-  });
-});
-
 
 
 // -------------------- Init --------------------

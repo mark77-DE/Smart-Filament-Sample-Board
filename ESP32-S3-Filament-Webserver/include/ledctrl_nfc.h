@@ -8,7 +8,7 @@ class Adafruit_NeoPixel;
 // ============================================================================
 // Öffentliche, von der Config beeinflusste Parameter
 // Diese Variablen werden in ledctrl_nfc.cpp definiert und über loadNfcLedConfig()
-// aus /config.json eingelesen. Fallbacks sind dort ebenfalls hinterlegt.
+// aus /config_v2.json eingelesen. Fallbacks sind dort ebenfalls hinterlegt.
 // ============================================================================
 
 extern int           NFC_LED_COUNT;          // Anzahl LEDs am NFC-Stripe

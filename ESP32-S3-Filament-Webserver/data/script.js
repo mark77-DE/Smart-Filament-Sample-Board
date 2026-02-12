@@ -8,7 +8,7 @@ const lastScanTimes = {};    // UID -> timestamp (Debounce für HighlightUID)
 const DEBOUNCE_MS = 2000;    // 2 Sekunden Entprellzeit für highlightUID (NFC/WS Events)
 
 let CONFIG = null;
-const DEFAULT_LED_TIMEOUT_MS = 5000; // Fallback, falls config.json fehlt
+const DEFAULT_LED_TIMEOUT_MS = 5000; // Fallback, falls config_v2.json fehlt
 
 let socket = null;
 let reconnectTimer = null;
@@ -37,10 +37,10 @@ function updateWSStatus(connected) {
 
 function getWebLedTimeoutMs() {
   const v =
-    (CONFIG && CONFIG.options && typeof CONFIG.options.webLEDTimeout === "number")
-      ? CONFIG.options.webLEDTimeout
-      : (CONFIG && CONFIG.options && typeof CONFIG.options.ledTimeout === "number")
-        ? CONFIG.options.ledTimeout
+    (CONFIGV2 && CONFIGV2.system && typeof CONFIGV2.system.webLEDTimeout === "number")
+      ? CONFIGV2.system.webLEDTimeout
+      : (CONFIGV2 && CONFIGV2.led && typeof CONFIGV2.led.timeout === "number")
+        ? CONFIGV2.led.timeout
         : DEFAULT_LED_TIMEOUT_MS;
 
   return Math.max(100, Math.min(600000, v));
@@ -265,11 +265,11 @@ function sendMultiHighlight(uids) {
 // ---------------- Raster-Kacheln laden ----------------
 async function loadFilamentTiles() {
   const [configRes, filamentsRes] = await Promise.all([
-    fetch("/config.json"),
+    fetch("/config_v2.json"),
     fetch("/filaments.json")
   ]);
 
-  CONFIG = await configRes.json();
+  CONFIGV2 = await configRes.json();
   FILAMENTS = await filamentsRes.json();
 
   // Filter füllen

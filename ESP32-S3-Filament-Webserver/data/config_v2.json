@@ -1,9 +1,10 @@
 {
-    "version": 2,
+    "version": "2.1",
     "system": {
         "darkmode": false,
         "debugMode": true,
         "webLEDTimeout": 3000,
+        "animationAfterBoot": true,
         "hostname": "filament-board"
         },
     "led": {
@@ -50,7 +51,7 @@
         "enabled": false,
         "server": "192.168.1.10",
         "port": 1883,
-        "user": "m",
+        "user": "",
         "password": "",
         "baseTopic": "spotmyfilament",
         "clientId": "filament-board-1",

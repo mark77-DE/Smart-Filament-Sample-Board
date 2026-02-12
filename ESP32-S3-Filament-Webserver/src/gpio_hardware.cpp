@@ -9,7 +9,7 @@
 #endif
 
 // ============================================================================
-// Konfig-Defaults (greifen, falls Keys in config.json fehlen)
+// Konfig-Defaults (greifen, falls Keys in config_v2.json fehlen)
 // ============================================================================
 static int   CFG_BTN_PIN            = 32;    // -1 = deaktiviert
 static bool  CFG_BTN_PULLUP         = true;  // interner PullUp -> active-low

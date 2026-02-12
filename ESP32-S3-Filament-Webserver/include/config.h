@@ -88,11 +88,12 @@ struct MqttConfigV2 {
 #define CONFIG_HAS_GPIO
 
 struct systemConfig {
-  int version = 2;
+  String version = "error";
   bool         darkmode;    ///< Darkmode aktiv
   bool         debugMode;   ///< Debug-Modus aktiv
   uint32_t     webLEDTimeout;   // Default fürs Dashboard (ms)
   String       hostname;    ///< Hostname für WLAN
+  bool         animationAfterBoot; ///< Startup-Animation nach Booten aktiv
 };
 
 /**
@@ -118,7 +119,7 @@ extern AppConfigV2 CONFIGV2;
 // ============================================================================
 
 /**
- * @brief Lädt die Konfiguration aus /config.json in CONFIG
+ * @brief Lädt die Konfiguration aus config_v2.json in CONFIGV2
  * @return true bei Erfolg, sonst false
  */
 bool loadConfigV2();
@@ -129,7 +130,7 @@ bool loadConfigV2();
 void applyConfigV2();
 
 /**
- * @brief Speichert CONFIG in /config.json
+ * @brief Speichert CONFIGV2 in /config_v2.json
  * @return true bei Erfolg, sonst false
  */
 bool saveConfigV2();

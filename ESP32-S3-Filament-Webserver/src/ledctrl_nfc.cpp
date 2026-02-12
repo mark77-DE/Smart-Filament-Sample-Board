@@ -26,7 +26,7 @@
 #endif
 
 // ============================================================================
-// Öffentliche Konfiguration (via loadNfcLedConfig / config.json)
+// Öffentliche Konfiguration (via loadNfcLedConfigV2 / config_v2.json)
 // ============================================================================
 int           NFC_LED_COUNT       = 8;
 int           NFC_LED_PIN         = 15;

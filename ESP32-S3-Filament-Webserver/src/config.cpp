@@ -61,13 +61,15 @@ bool loadConfigV2()
 
 
 
-
+    // --- Version ---
+    CONFIGV2.system.version = cfg["version"] | "error";
 
     // --- Basis-Flags ---
     CONFIGV2.system.darkmode = sys["darkmode"] | false;
     
     CONFIGV2.system.debugMode = sys["debugMode"] | false;
     CONFIGV2.system.hostname = sys["hostname"] | "FiSaBo";
+    CONFIGV2.system.animationAfterBoot = sys["animationAfterBoot"] | true;
 
     // --- Filament-LED ---
     CONFIGV2.led.count = led["count"] | 8;
@@ -230,8 +232,15 @@ void applyConfigV2() {
     Serial.println(F("--------------------"));
     Serial.println(F("Config V2 applied:"));
 
+    Serial.println();
+    Serial.println(F("System Settings:"));
+
+    Serial.print(F(" VERSION = "));       Serial.println(CONFIGV2.system.version);
+    Serial.println();
     Serial.print(F(" HOSTNAME = "));       Serial.println(CONFIGV2.system.hostname);
     Serial.print(F(" WEB_LED_TIMEOUT = ")); Serial.println(CONFIGV2.webLEDTimeout);
+    Serial.print(F(" DARKMODE = "));      Serial.println(CONFIGV2.system.darkmode ? F("true") : F("false"));
+    Serial.print(F(" ANIMATION_AFTER_BOOT = "));      Serial.println(CONFIGV2.system.animationAfterBoot ? F("true") : F("false"));
 
     Serial.println();
     Serial.println(F("LED Settings:"));
@@ -311,11 +320,13 @@ bool updateConfigFromJsonV2(JsonDocument& doc) {
         CONFIGV2.system.debugMode  = sys["debugMode"]  | CONFIGV2.system.debugMode;
         CONFIGV2.system.hostname   = sys["hostname"]   | CONFIGV2.system.hostname;
         CONFIGV2.system.webLEDTimeout = sys["webLEDTimeout"] | CONFIGV2.system.webLEDTimeout;
+        CONFIGV2.system.animationAfterBoot = sys["animationAfterBoot"] | CONFIGV2.system.animationAfterBoot;
         Serial.println(F("System configuration updated:"));
         Serial.print(F("Hostname set to: ")); Serial.println(CONFIGV2.system.hostname);
         Serial.print(F("Web LED Timeout set to: ")); Serial.println(CONFIGV2.system.webLEDTimeout);
         Serial.print(F("Darkmode set to: ")); Serial.println(CONFIGV2.system.darkmode ? F("true") : F("false"));
         Serial.print(F("Debug Mode set to: ")); Serial.println(CONFIGV2.system.debugMode ? F("true") : F("false"));
+        Serial.print(F("Animation After Boot set to: ")); Serial.println(CONFIGV2.system.animationAfterBoot ? F("true") : F("false"));
     }
 
     // --- LED ---
@@ -499,6 +510,7 @@ bool saveConfigV2() {
     system["debugMode"]      = CONFIGV2.system.debugMode;
     system["webLEDTimeout"]  = CONFIGV2.system.webLEDTimeout;
     system["hostname"]       = CONFIGV2.system.hostname;
+    system["animationAfterBoot"] = CONFIGV2.system.animationAfterBoot;
 
     // =========================
     // LED
@@ -609,12 +621,14 @@ bool importConfigJsonV2(JsonObject src) {
         CONFIGV2.system.debugMode     = system["debugMode"]     | CONFIGV2.system.debugMode;
         CONFIGV2.system.webLEDTimeout = system["webLEDTimeout"] | CONFIGV2.system.webLEDTimeout;
         CONFIGV2.system.hostname      = system["hostname"]      | CONFIGV2.system.hostname;
+        CONFIGV2.system.animationAfterBoot = system["animationAfterBoot"] | CONFIGV2.system.animationAfterBoot;
         if(CONFIGV2.system.debugMode) {
             Serial.println(F("System configuration imported:"));
             Serial.print(F("  Hostname: ")); Serial.println(CONFIGV2.system.hostname);
             Serial.print(F("  Web LED Timeout: ")); Serial.println(CONFIGV2.system.webLEDTimeout);
             Serial.print(F("  Darkmode: ")); Serial.println(CONFIGV2.system.darkmode ? F("true") : F("false"));
             Serial.print(F("  Debug Mode: ")); Serial.println(CONFIGV2.system.debugMode ? F("true") : F("false"));
+            Serial.print(F("  Animation After Boot: ")); Serial.println(CONFIGV2.system.animationAfterBoot ? F("true") : F("false"));
         }
     }
 
