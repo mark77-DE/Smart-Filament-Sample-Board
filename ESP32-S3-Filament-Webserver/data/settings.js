@@ -1,4 +1,8 @@
 // -------------------- Globale Referenzen --------------------
+const MAX_LENGTH = 30; // maximale Zeichenanzahl für vendor und color
+
+
+
 const dbDiv = document.getElementById("db");
 const addForm = document.getElementById("addForm");
 const wsStatus = document.getElementById("wsStatus");
@@ -108,7 +112,9 @@ const mqttBaseTopicInput = document.getElementById("mqttBaseTopic");
 const mqttHADiscoveryCheck = document.getElementById("mqttHADiscovery");
 const mqttHADiscoveryPrefixInput = document.getElementById("mqttHADiscoveryPrefix");
 
+const hostnameInput = document.getElementById("hostname");
 
+const ledSelect = document.getElementById("ledIndexSelect");
 
 
 
@@ -161,9 +167,20 @@ function rgbToHex(rgb) {
     return `#${r}${g}${b}`;
 }
 
-function updateImportBtnVisibility() {
-    importBtn.style.display = importFileInput.files.length ? "inline-block" : "none";
+function updateImportUI() {
+    const hasFile = importFileInput.files.length > 0;
+
+    const fileNameSpan = document.getElementById("selectedFileName");
+
+    if (hasFile) {
+        fileNameSpan.textContent = importFileInput.files[0].name;
+        importBtn.disabled = false;
+    } else {
+        fileNameSpan.textContent = "No file selected";
+        importBtn.disabled = true;
+    }
 }
+
 
 function updateWSStatus(connected) {
     wsStatus.textContent = connected ? "WebSocket: verbunden" : "WebSocket: getrennt";
@@ -276,9 +293,9 @@ document.getElementById("importAllForm").addEventListener("submit", async e => {
         else { alert("Import fehlgeschlagen: " + await res.text()); }
     } catch (err) { alert("Import fehlgeschlagen: " + err); }
 });
-document.getElementById("importFile").addEventListener("change", e => {
-    document.getElementById("uploadLabel").textContent = e.target.files.length ? e.target.files[0].name : "Datei auswählen";
-});
+
+
+
 
 // -------------------- Reboot --------------------
 document.getElementById("rebootBtn").addEventListener("click", async () => {
@@ -363,6 +380,31 @@ async function loadTable() {
 
     html += "</div>";
     dbDiv.innerHTML = html;
+
+    const tableDiv = document.getElementById("table");  // jetzt existiert es
+    tableDiv.addEventListener("change", (event) => {
+        const target = event.target;
+        if (target.matches("select[data-field='ledIndex']")) {
+            const index = Number(target.value);
+            highlightLedIndex(index);
+        }
+    });
+
+    dbDiv.addEventListener('input', e => {
+        if (e.target.matches('span[data-field="vendor"], span[data-field="color"]')) {
+            if (e.target.innerText.length > MAX_LENGTH) {
+                e.target.innerText = e.target.innerText.slice(0, MAX_LENGTH);
+
+                // Cursor ans Ende setzen, sonst springt er nach vorne
+                const range = document.createRange();
+                const sel = window.getSelection();
+                range.selectNodeContents(e.target);
+                range.collapse(false);
+                sel.removeAllRanges();
+                sel.addRange(range);
+            }
+        }
+    });
 
     activateButtons();
     applyEditMode(); // Buttons / selects im Edit-Modus korrekt setzen
@@ -452,6 +494,9 @@ async function loadTable() {
     if (mqttBaseTopicInput) mqttBaseTopicInput.value = mqtt.baseTopic ?? "";
     if (mqttHADiscoveryCheck) mqttHADiscoveryCheck.checked = !!mqtt.haDiscovery;
     if (mqttHADiscoveryPrefixInput) mqttHADiscoveryPrefixInput.value = mqtt.haDiscoveryPrefix ?? "";
+
+    // --- Hostsettings ---
+    if (hostnameInput) hostnameInput.value = sys.hostname ?? "hostname";
 
     // Nach dem Setzen: Sperrlogik ausführen
     updatePinOptions();
@@ -577,6 +622,9 @@ async function saveConfigHandler() {
     const mqttHADiscoveryCheckValue = mqttHADiscoveryCheck ? mqttHADiscoveryCheck.checked : false;
     const mqttHADiscoveryPrefixInputValue = mqttHADiscoveryPrefixInput ? mqttHADiscoveryPrefixInput.value.trim() : "homeassistant";
 
+    // --- Hostsettings ---
+    const hostname = hostnameInput ? hostnameInput.value.trim() : "hostname";
+
     try {
         await fetch("/api/updateConfig", {
             method: "POST",
@@ -586,7 +634,7 @@ async function saveConfigHandler() {
                     darkmode: false,
                     debugMode,
                     webLEDTimeout,
-                    hostname: CONFIGV2?.settings?.hostname || "filament-board"
+                    hostname: hostname || "filament-board"
                 },
                 led: {
                     count: ledCount,
@@ -894,7 +942,8 @@ ledPinSelect.addEventListener("change", updatePinOptions);
 nfcLedPinSelect.addEventListener("change", updatePinOptions);
 buttonPinSelect.addEventListener("change", updatePinOptions);
 buzzerPinSelect.addEventListener("change", updatePinOptions);
-importFileInput.addEventListener("change", updateImportBtnVisibility);
+importFileInput.addEventListener("change", updateImportUI);
+
 
 buttonPinSelect.addEventListener("change", disableButton);
 buzzerPinSelect.addEventListener("change", disableBuzzer);
@@ -1042,6 +1091,38 @@ document.querySelectorAll(".navItem").forEach(btn => {
 
 
 
+
+function highlightLedIndex(ledIndex) {
+
+    if (!socket || socket.readyState !== WebSocket.OPEN) {
+        console.warn("WebSocket nicht verbunden");
+        return;
+    }
+
+    if (typeof ledIndex !== "number" || ledIndex < 0) {
+        console.warn("Ungültiger LED Index:", ledIndex);
+        return;
+    }
+
+    socket.send(JSON.stringify({
+        action: "highlightSingleLed",
+        led: ledIndex
+    }));
+}
+
+ledSelect.addEventListener("change", () => {
+    const value = ledSelect.value;      // Wert aus Select
+    const ledIndex = parseInt(value);   // in Zahl umwandeln
+
+    if (!isNaN(ledIndex)) {
+        highlightLedIndex(ledIndex);    // Funktion aufrufen
+    } else {
+        console.warn("Ungültiger LED-Index:", value);
+    }
+});
+
+
+
 // -------------------- Init --------------------
 async function init() {
 
@@ -1049,7 +1130,7 @@ async function init() {
     await loadTable();
     await updateAddFormLEDs();
     updatePinOptions();
-    updateImportBtnVisibility();
+    updateImportUI();
     initColorPresets();
     disableButton();
     disableBuzzer();
@@ -1057,3 +1138,5 @@ async function init() {
 }
 
 init();
+
+

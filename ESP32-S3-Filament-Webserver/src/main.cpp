@@ -201,6 +201,14 @@ LEDCTRL_FILAMENT::tagPresenceTick(true);
 
 
 void activateLed(int index) {
+
+  if(CONFIGV2.system.debugMode) {
+                Serial.print("activateLed: index=");
+                Serial.println(index);
+
+  }
+
+  
     if(targetLed != -1 && targetLed != index){
         LEDCTRL_FILAMENT::setPixel(targetLed, 0); // alte LED aus
     }

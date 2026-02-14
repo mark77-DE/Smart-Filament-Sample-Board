@@ -140,7 +140,7 @@ function sendPendingOnce() {
 
   try {
     socket.send(JSON.stringify({
-      action: "highlightLED",
+      action: "highlightUIDLED",
       uid: pending.uid,
       seq: pending.seq
     }));
@@ -432,6 +432,16 @@ document.getElementById("filterType").onchange = e => {
   updateGrid();
   highlightFilteredLEDs();
 };
+
+
+
+
+const toggleBtn = document.getElementById("themeToggle");
+
+toggleBtn.addEventListener("click", () => {
+    document.body.classList.toggle("daymode");
+});
+
 
 
 

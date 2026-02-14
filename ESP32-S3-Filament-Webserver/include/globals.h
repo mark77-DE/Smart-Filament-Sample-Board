@@ -37,3 +37,4 @@ extern volatile bool g_applyConfigPending;
 extern volatile bool g_reloadFilamentsPending;
 
 
+void activateLed(int index);

@@ -87,6 +87,8 @@
                 <button class="navItem" data-target="panel-dashboard">Dashboard</button>
                 <button class="navItem" data-target="panel-importexport">Import/export</button>
                 <button class="navItem" data-target="panel-system">System</button>
+                <button class="navItem" data-target="panel-host">Host</button>
+                
 
                 <!-- Footer Buttons -->
                 <div class="sidebarFooter">
@@ -381,6 +383,8 @@
                             <input type="text" id="mqttHADiscoveryPrefix" name="mqttHADiscoveryPrefix" value=""
                                 placeholder="discovery prefix">
 
+                            <div id="warningMqtt">REBOOT REQUIRED AFTER CHANGES</div>
+
                         </div>
                     </div>
                 </div>
@@ -400,29 +404,48 @@
                 </div>
 
                 <div class="settingsPanel" id="panel-importexport">
-                    <!-- Debug, WebLEDTimeout, Hostname etc. -->
                     <div id="importExportSettings" class="card">
-                        <div class="cardHeader">Import/Export Settings</div>
-                        <div class="formGrid">
+                        <div class="cardHeader">Import / Export Settings</div>
 
+                        <div class="importExportGrid">
 
                             <!-- Export -->
-                            <div><button id="exportAllBtn">Export</button></div>
+                            <div class="ieBlock">
+                                <div class="ieTitle">Export Configuration</div>
+                                <button id="exportAllBtn" class="primaryBtn">
+                                    Export JSON
+                                </button>
+                            </div>
 
-                            <div>
-                                <!-- Import -->
-                                <form id="importAllForm" method="POST" enctype="multipart/form-data">
-                                    <!-- Stylbarer Upload-Button -->
-                                    <label for="importFile" id="uploadLabel" class="upload-btn">Choose file</label>
-                                    <input type="file" id="importFile" name="file" accept=".json" required hidden>
-                                    <!-- Import starten -->
-                                    <button id="importBtn" type="submit" hidden>Import</button>
+                            <div class="divider"></div>
+
+                            <!-- Import -->
+                            <div class="ieBlock">
+                                <div class="ieTitle">Import Configuration</div>
+
+                                <form id="importAllForm" method="POST" enctype="multipart/form-data" class="importForm">
+
+                                    <label for="importFile" id="uploadLabel" class="upload-btn">
+                                        Choose file
+                                    </label>
+
+                                    <input type="file" id="importFile" name="file" accept=".json" hidden>
+
+                                    <span id="selectedFileName" class="fileName">
+                                        No file selected
+                                    </span>
+
+                                    <button id="importBtn" type="submit" class="primaryBtn" disabled>
+                                        Import
+                                    </button>
+
                                 </form>
                             </div>
 
                         </div>
                     </div>
                 </div>
+
 
 
 
@@ -438,13 +461,25 @@
                                     <span class="slider"></span> debug
                                 </label>
                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settingsPanel" id="panel-host">
+                    <!-- Debug, WebLEDTimeout, Hostname etc. -->
+                    <div id="hostSettings" class="card">
+                        <div class="cardHeader">Host Settings</div>
+                        <div class="formGrid">
+
+                            <label for="hostname">Hostname:</label>
+                            <input type="text" id="hostname" name="hostname" value="" placeholder="hostname">
 
 
                         </div>
                     </div>
                 </div>
 
-                
+
 
             </div>
 
@@ -467,7 +502,7 @@
         </div>
         <form id="addForm" class="tableAddRow">
             <span><input type="text" maxlength="20" name="uid" placeholder="UID (z. B. 04:...)" required></span>
-            <span><input type="text" maxlength="20" name="vendor" placeholder="Name" required></span>
+            <span><input type="text" maxlength="30" name="vendor" placeholder="Name" required></span>
             <span><select name="type" id="selectType" required>
                     <option value="">-- Typ wählen --</option>
                     <option value="PLA">PLA</option>
@@ -483,7 +518,7 @@
                     <option value="Nylon">Nylon</option>
                     <option value="Holz">Holz</option>
                 </select></span>
-            <span><input type="text" name="color" maxlength="20" placeholder="Farbe" required></span>
+            <span><input type="text" name="color" maxlength="30" placeholder="Farbe" required></span>
             <span><select name="ledIndex" id="ledIndexSelect" required></select></span>
             <span><button id="addBtn" type="submit" class="primaryBtn">Hinzufügen</button></span>
         </form>
