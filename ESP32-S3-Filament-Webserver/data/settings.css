@@ -95,7 +95,7 @@ input:checked+.slider::after {
 #tableAdd {
     display: flex;
     flex-direction: column;
-    max-width: 1024px;
+    max-width: 1200px;
     margin: 0 auto;
     border: 1px solid #ccc;
     border-radius: 6px;
@@ -115,7 +115,7 @@ input:checked+.slider::after {
 }
 
 #tableHeader {
-    grid-template-columns: 220px 180px 130px 130px 130px 100px;
+    grid-template-columns: 220px 180px 130px 220px 130px 100px;
     background-color: #2F3546;
     font-weight: bold;
     padding: 8px 4px;
@@ -124,7 +124,7 @@ input:checked+.slider::after {
 
 #tableHeaderAdd {
     display: grid;
-    grid-template-columns: 200px 180px 130px 180px 130px 80px;
+    grid-template-columns: 220px 180px 130px 220px 130px 100px;
     gap: 4px;
     align-items: center;
     background-color: #2F3546;
@@ -135,7 +135,7 @@ input:checked+.slider::after {
 
 .tableAddRow {
     display: grid;
-    grid-template-columns: 200px 180px 130px 180px 130px 100px;
+    grid-template-columns: 220px 180px 130px 220px 130px 100px;
     gap: 4px;
     align-items: center;
     height: 60px;
@@ -162,7 +162,7 @@ input:checked+.slider::after {
 }
 
 .tableRow {
-    grid-template-columns: 220px 180px 130px 130px 130px 80px;
+    grid-template-columns: 220px 180px 130px 220px 130px 100px;
     padding: 4px 4px;
     border-bottom: 1px solid #eee;
 }
@@ -652,13 +652,15 @@ span.uid.invalid {
     content: "▾";
 }
 
-.warning {
+#warningMqtt {
     color: red;
     float: right;
     font-weight: bold;
     font-size: 1.1em;
     vertical-align: middle;
     line-height: 35px;
+    grid-column: span 2;
+    text-align: center;
 }
 
 
@@ -764,4 +766,57 @@ span.uid.invalid {
 
 .settingsPanel.active {
     display: block;
+}
+
+
+
+/* ================= IMPORT / EXPORT ================= */
+
+.importExportGrid {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+.ieBlock {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.ieTitle {
+    font-weight: bold;
+    font-size: 1.05em;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #444;
+    color: #ddd;
+}
+
+.importForm {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.fileName {
+    font-size: 0.9em;
+    color: #aaa;
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* optische Linie */
+.divider {
+    height: 1px;
+    background: #444;
+}
+
+
+span[contenteditable="true"] {
+    white-space: pre-wrap;   /* Zeilenumbruch an Wortgrenzen */
+    word-wrap: break-word;   /* lange Wörter umbrechen */
+    overflow-wrap: break-word;
 }

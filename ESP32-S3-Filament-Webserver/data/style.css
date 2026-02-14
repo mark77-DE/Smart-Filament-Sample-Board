@@ -110,6 +110,7 @@ button {
     font-weight: bold; 
     font-size: 1.2em;
     padding: 5px;
+    
 }
 
 .color {
@@ -155,3 +156,132 @@ button {
     }
 }
 
+
+
+
+
+/* -------------------- DAY MODE -------------------- */
+body.daymode {
+    background-color: #f4f6f8;   /* sehr helles Grau statt Weiß */
+    color: #2c3e50;              /* dunkles Blau-Grau */
+}
+
+/* Header */
+body.daymode #header {
+    background-color: #ffffff;
+    border-bottom: 1px solid #dcdfe3;
+}
+
+body.daymode #subheadline {
+    color: #6c7a89;
+}
+
+/* Version Text */
+body.daymode .version {
+    color: #6c7a89;
+}
+
+/* Buttons */
+body.daymode button {
+    background-color: #2980b9;
+    color: #ffffff;
+}
+
+body.daymode button:hover {
+    background-color: #1f6391;
+}
+
+/* Grid Tiles */
+body.daymode .tile {
+    background-color: #ffffff;
+    border: 2px solid #2980b9;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.5);
+}
+
+/* Active Highlight */
+body.daymode .active {
+    background-color: #f1c40f;
+    transition: background-color 0.3s;
+}
+
+/* Unknown Warning */
+body.daymode #unknown {
+    background: #e74c3c;
+}
+
+/* WebSocket Status */
+body.daymode .ws-connected {
+    color: #27ae60;
+}
+
+body.daymode .ws-disconnected {
+    color: #c0392b;
+}
+
+
+
+
+
+select {
+    appearance: none;          /* entfernt Standard-Pfeil/Styling */
+    -webkit-appearance: none;  /* Safari/Chrome */
+    -moz-appearance: none;     /* Firefox */
+    
+    padding: 6px 12px;
+    font-size: 0.9em;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    background-color: #2c3e50; /* Darkmode Default */
+    color: #ecf0f1;
+    cursor: pointer;
+
+    min-width: 150px;
+    transition: all 0.3s ease;
+}
+
+/* Hover / Fokus */
+select:hover {
+    border-color: #2980b9;
+}
+
+select:focus {
+    outline: none;
+    border-color: #2980b9;
+    box-shadow: 0 0 5px rgba(41,128,185,0.5);
+}
+
+
+
+body.daymode select {
+    background-color: #ffffff;
+    color: #2c3e50;
+    border: 1px solid #ccc;
+}
+
+body.daymode .select-wrapper::after {
+    color: #2c3e50;
+}
+
+
+
+select {
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+
+select, .select-wrapper::after {
+    transition: all 0.3s ease;
+}
+
+
+
+
+.tile .vendor,
+.tile .color,
+.tile .type {
+    overflow-wrap: break-word; /* Zeilenumbruch bei langen Wörtern */
+    word-wrap: break-word;     /* alte Browser */
+    word-break: break-word;    /* alternative, je nach Browser */
+    text-align: center;
+}

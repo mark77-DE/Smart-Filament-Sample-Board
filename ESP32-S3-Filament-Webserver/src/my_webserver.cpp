@@ -89,7 +89,7 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
         Serial.println(action);
     }   
 
-    if (strcmp(action, "highlightLED") == 0) {
+    if (strcmp(action, "highlightUIDLED") == 0) {
         // --- ACK sofort zurück an genau diesen Client ---
         // (damit JS nicht retry-spamt)
         uint32_t seq = doc["seq"] | 0;
@@ -175,6 +175,27 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
     if (!anyHit && CONFIGV2.system.debugMode) {
         Serial.println("WS highlightMultiLED: no matching UIDs");
     }
+} else if (strcmp(action, "highlightSingleLed") == 0) {
+
+    if(CONFIGV2.system.debugMode) {
+        Serial.println("WS highlightSingleLed received");
+    }
+
+    int ledIndex = doc["led"] | -1;  // Default -1, falls key fehlt
+    if (ledIndex < 0) {
+        Serial.println("WS highlightSingleLed: LED index fehlt oder ungültig");
+        return;
+    }
+
+    activateLed(ledIndex);
+    uint32_t t = (CONFIGV2.system.webLEDTimeout > 0) ? CONFIGV2.system.webLEDTimeout : (uint32_t)CONFIGV2.led.timeout;
+
+        LEDCTRL_FILAMENT::webifHoldFor((uint16_t)min<uint32_t>(t, 65535));
+        webifArmIdleTimeout(t);
+
+
+     
+
 }
 
 

@@ -603,14 +603,7 @@ bool saveConfigV2() {
 bool importConfigJsonV2(JsonObject src) {
     if (!LittleFS.begin(true)) return false;
 
-    // -------------------------
-    // Versionsprüfung
-    // -------------------------
-    uint8_t version = src["version"] | 1;
-    if (version != 2) {
-        // optional: Migration hier einbauen
-        return false;
-    }
+    
 
     // =========================
     // System
@@ -781,13 +774,15 @@ bool importConfigJsonV2(JsonObject src) {
     // =========================
     if (src["mqttConfig"].is<JsonObject>()) {
         JsonObject mqtt = src["mqttConfig"];
-        CONFIGV2.mqttConfig.enabled   = mqtt["enabled"]   | CONFIGV2.mqttConfig.enabled;
-        CONFIGV2.mqttConfig.server    = mqtt["server"]    | CONFIGV2.mqttConfig.server;
-        CONFIGV2.mqttConfig.port      = mqtt["port"]      | CONFIGV2.mqttConfig.port;
-        CONFIGV2.mqttConfig.user      = mqtt["user"]      | CONFIGV2.mqttConfig.user;
-        CONFIGV2.mqttConfig.password  = mqtt["password"]  | CONFIGV2.mqttConfig.password;
-        CONFIGV2.mqttConfig.baseTopic = mqtt["baseTopic"] | CONFIGV2.mqttConfig.baseTopic;
-        CONFIGV2.mqttConfig.clientId  = mqtt["clientId"]  | CONFIGV2.mqttConfig.clientId;
+        CONFIGV2.mqttConfig.enabled             = mqtt["enabled"]   | CONFIGV2.mqttConfig.enabled;
+        CONFIGV2.mqttConfig.server              = mqtt["server"]    | CONFIGV2.mqttConfig.server;
+        CONFIGV2.mqttConfig.port                = mqtt["port"]      | CONFIGV2.mqttConfig.port;
+        CONFIGV2.mqttConfig.user                = mqtt["user"]      | CONFIGV2.mqttConfig.user;
+        CONFIGV2.mqttConfig.password            = mqtt["password"]  | CONFIGV2.mqttConfig.password;
+        CONFIGV2.mqttConfig.baseTopic           = mqtt["baseTopic"] | CONFIGV2.mqttConfig.baseTopic;
+        CONFIGV2.mqttConfig.clientId            = mqtt["clientId"]  | CONFIGV2.mqttConfig.clientId;
+        CONFIGV2.mqttConfig.haDiscovery         = mqtt["haDiscovery"] | CONFIGV2.mqttConfig.haDiscovery;
+        CONFIGV2.mqttConfig.haDiscoveryPrefix   = mqtt["haDiscoveryPrefix"] | CONFIGV2.mqttConfig.haDiscoveryPrefix;
 
         if(CONFIGV2.system.debugMode) {
             Serial.println(F("MQTT configuration imported:"));
@@ -797,6 +792,9 @@ bool importConfigJsonV2(JsonObject src) {
             Serial.print(F("  MQTT user: "));         Serial.println(CONFIGV2.mqttConfig.user);
             Serial.print(F("  MQTT baseTopic: "));    Serial.println(CONFIGV2.mqttConfig.baseTopic);
             Serial.print(F("  MQTT clientId: "));     Serial.println(CONFIGV2.mqttConfig.clientId);
+            Serial.print(F("  MQTT haDiscovery: "));   Serial.println(CONFIGV2.mqttConfig.haDiscovery ? F("true") : F("false"));
+            Serial.print(F("  MQTT haDiscoveryPrefix: "));   Serial.println(CONFIGV2.mqttConfig.haDiscoveryPrefix);
+
         }
     }
 

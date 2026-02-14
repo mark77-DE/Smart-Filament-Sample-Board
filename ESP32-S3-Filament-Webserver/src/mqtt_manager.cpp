@@ -31,20 +31,20 @@ static void mqttCallback(char* topic, byte* payload, unsigned int length) {
 
     // --- Animation ---
     if (t.endsWith("/animation/set")) {
-        if (msg == "ON") {
-            DisplayAnim::startIdle(millis());
-            LEDCTRL_FILAMENT::standBy(false);
-            LEDCTRL_NFC::standBy(false);
-            if (CONFIGV2.system.debugMode) Serial.println("Animation: active");
-        } else if (msg == "OFF") {
-            DisplayAnim::stop();
-            MYDISPLAY::clear();
-            LEDCTRL_FILAMENT::standBy(true);
-            LEDCTRL_NFC::standBy(true);
-            
-            if (CONFIGV2.system.debugMode) Serial.println("Animation: stop");
-        }
+    if (msg == "ON") {
+        DisplayAnim::startIdle(millis());
+        LEDCTRL_FILAMENT::standBy(false);
+        LEDCTRL_NFC::standBy(false);
+        publishAnimationStatus(true);
     }
+    else if (msg == "OFF") {
+        DisplayAnim::stop();
+        MYDISPLAY::clear();
+        LEDCTRL_FILAMENT::standBy(true);
+        LEDCTRL_NFC::standBy(true);
+        publishAnimationStatus(false);
+    }
+}
 
     
 }
@@ -166,12 +166,16 @@ bool mqttIsConnected() {
 
 
 void publishAnimationStatus(bool on) {
-    
     String base = CONFIGV2.mqttConfig.baseTopic;
-
     const char* msg = on ? "ON" : "OFF";
-    mqttClient.publish((base + "/animation/set").c_str(), msg);
+
+    mqttClient.publish(
+        (base + "/animation/state").c_str(),
+        msg,
+        true   // retain!
+    );
 }
+
 
 
 

@@ -1,52 +1,58 @@
 <!DOCTYPE html>
 <html lang="de">
+
 <head>
-<meta charset="UTF-8">
-<title>Spot My Filament - Dashboard</title>
-<link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <title>Spot My Filament - Dashboard</title>
+  <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
-<div id="header">
-        <div id="logo">
-            <img src="/logo.png" alt="Logo" class="logo">
-        </div>
-        <div id="headline">
-            Spot My Filament
-            <div id="subheadline">Smart Filament Sample Board</div>
-        </div>
-        <div id="adminBtn">
-            <button onclick="window.location.href='/settings'">
-                Settings
-            </button>
-        </div>
-        <div id="wsStatus">unknown</div>
-</div>
+  <div id="header">
+    <div id="logo">
+      <img src="/logo.png" alt="Logo" class="logo">
+    </div>
+    <div id="headline">
+      Spot My Filament
+      <div id="subheadline">Smart Filament Sample Board</div>
+    </div>
+    <div id="adminBtn">
+      <button onclick="window.location.href='/settings'">
+        Settings
+      </button>
+    </div>
+    <div>
+      <button id="themeToggle">Day/Night Mode</button>
+    </div>
+    <div id="wsStatus">unknown</div>
+  </div>
 
-<div id="filters">
-  <select id="filterVendor">
-    <option value="">Alle Hersteller</option>
-  </select>
+  <div id="filters">
+    <select id="filterVendor">
+      <option value="">Alle Hersteller</option>
+    </select>
 
-  <select id="filterColor">
-    <option value="">Alle Farben</option>
-  </select>
+    <select id="filterColor">
+      <option value="">Alle Farben</option>
+    </select>
 
-  <select id="filterType">
-    <option value="">Alle Typen</option>
-  </select>
-</div>
+    <select id="filterType">
+      <option value="">Alle Typen</option>
+    </select>
+  </div>
 
 
-<div id="filamentGrid" class="grid-container">
-  <!-- Kacheln werden hier per JS eingefügt -->
-</div>
+  <div id="filamentGrid" class="grid-container">
+    <!-- Kacheln werden hier per JS eingefügt -->
+  </div>
 
-<div id="about">
-        <span id="fwVersion" class="version"></span>
-        <span id="gitHash" class="version"></span>
-        <span id="build_date" class="version"></span>
-</div>
+  <div id="about">
+    <span id="fwVersion" class="version"></span>
+    <span id="gitHash" class="version"></span>
+    <span id="build_date" class="version"></span>
+  </div>
 
-<script src="script.js"></script>
+  <script src="script.js"></script>
 </body>
+
 </html>
