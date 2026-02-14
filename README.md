@@ -10,4 +10,6 @@ Entsprechende LED wird dargestellt um den Lagerplatz des Samples anzuzeigen.
 
 Ein Klick im WebIf zeigt, wo das Filament-Sample lagert.
 
-Für beide ggf. Anbindung an Spoolman zum Anzeigen möglicher Bestände
+Anbindung an Homeassistant via HA-Discovery und MQTT. Der ESP sendet das ausgewählte Filament (NFC Reader oder Klick im WebIF) an Homeassistant.
+Die LEDs und das Display können per HA ein- und ausgeschaltet werden bzw. übermittelt der ESP den Status an Homeassistant.
+
