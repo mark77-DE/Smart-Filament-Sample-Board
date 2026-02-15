@@ -190,7 +190,7 @@ void publishFilamentState(const FilamentEntry& entry) {
     payload += "\"vendor\":\"" + entry.vendor + "\",";
     payload += "\"type\":\"" + entry.type + "\",";
     payload += "\"color\":\"" + entry.color + "\",";
-    payload += "\"led_index\":" + String(entry.ledIndex);
+    payload += "\"led_index\":" + String(entry.ledIndex + 1) + "";  // +1, damit es in HA bei 1 beginnt
     payload += "}";
 
     mqttClient.publish(

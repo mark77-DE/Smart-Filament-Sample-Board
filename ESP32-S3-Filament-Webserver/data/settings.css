@@ -820,3 +820,174 @@ span[contenteditable="true"] {
     word-wrap: break-word;   /* lange Wörter umbrechen */
     overflow-wrap: break-word;
 }
+
+
+
+/* =========================================================
+   DAY MODE
+========================================================= */
+
+body.daymode {
+    background-color: #f4f6f8;
+    color: #2c3e50;
+}
+
+/* Header */
+body.daymode #header {
+    background-color: #ffffff;
+    border-bottom: 1px solid #dcdfe3;
+}
+
+body.daymode #subheadline {
+    color: #6c7a89;
+}
+
+/* Tabellen */
+body.daymode #table,
+body.daymode #tableAdd {
+    background-color: #ffffff;
+    border: 1px solid #dcdfe3;
+}
+
+body.daymode #tableHeader,
+body.daymode #tableHeaderAdd {
+    background-color: #e9edf2;
+    border-bottom: 1px solid #d0d5da;
+}
+
+body.daymode .tableRow {
+    border-bottom: 1px solid #e4e7eb;
+}
+
+body.daymode .tableRow.highlight {
+    background-color: #fff3cd;
+}
+
+/* Cards */
+body.daymode .card {
+    background-color: #ffffff;
+    color: #2c3e50;
+    border: 1px solid #dcdfe3;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+body.daymode .cardHeader {
+    border-bottom: 1px solid #e0e3e7;
+}
+
+/* System Section */
+body.daymode #systemSection {
+    background-color: #ffffff;
+    border: 1px solid #dcdfe3;
+    color: #2c3e50;
+}
+
+/* Overlay Background */
+body.daymode #mqttOverlay,
+body.daymode #settingsOverlay,
+body.daymode #sysInfoDiv {
+    background: rgba(0, 0, 0, 0.35);
+}
+
+/* Overlay Box */
+body.daymode #mqttOverlay .settingsBox,
+body.daymode #sysInfoContentDiv,
+body.daymode .settingsLayout {
+    background: #ffffff;
+    color: #2c3e50;
+}
+
+/* Settings Sidebar */
+body.daymode .settingsSidebar {
+    background: #f1f3f5;
+    border-right: 1px solid #dcdfe3;
+}
+
+body.daymode .settingsSidebar .navItem {
+    color: #2c3e50;
+}
+
+body.daymode .settingsSidebar .navItem:hover {
+    background: #e4e7eb;
+}
+
+body.daymode .settingsSidebar .navItem.active {
+    background: #dcdfe3;
+    color: #000;
+}
+
+/* Settings Content */
+body.daymode .settingsContent {
+    background: #ffffff;
+}
+
+/* Import / Export */
+body.daymode .ieTitle {
+    border-bottom: 1px solid #dcdfe3;
+    color: #2c3e50;
+}
+
+body.daymode .divider {
+    background: #dcdfe3;
+}
+
+body.daymode .fileName {
+    color: #6c7a89;
+}
+
+/* Info Box */
+body.daymode #sysInfoContentDiv {
+    box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+}
+
+body.daymode .infoTitle {
+    border-bottom: 1px solid #dcdfe3;
+}
+
+/* Buttons */
+body.daymode .primaryBtn,
+body.daymode #saveConfig,
+body.daymode .upload-btn {
+    background-color: #2980b9;
+    color: #ffffff;
+}
+
+body.daymode .primaryBtn:hover,
+body.daymode .upload-btn:hover {
+    background-color: #1f6391;
+}
+
+body.daymode button.deleteBtn {
+    background-color: #c0392b;
+}
+
+body.daymode button.saveBtn {
+    background-color: #27ae60;
+}
+
+/* Inputs */
+body.daymode input,
+body.daymode select {
+    background-color: #ffffff;
+    color: #2c3e50;
+    border: 1px solid #ccd1d6;
+}
+
+body.daymode input:focus,
+body.daymode select:focus {
+    border-color: #2980b9;
+    box-shadow: 0 0 4px rgba(41,128,185,0.4);
+}
+
+/* Warning */
+body.daymode #warningMqtt {
+    color: #c0392b;
+}
+
+/* Color Swatches */
+body.daymode .colorSwatch.active {
+    border: 2px solid #2c3e50;
+    box-shadow:
+        0 0 0 2px rgba(0, 0, 0, 0.15),
+        0 0 8px rgba(0, 0, 0, 0.25);
+}
