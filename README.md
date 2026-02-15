@@ -17,7 +17,9 @@ Die LEDs und das Display können per HA ein- und ausgeschaltet werden bzw. über
 ## benötigte Hardware
 ESP-32 Devkit V1 oder ESP32-S3 Super Mini<br>
 PN532 NFC-Reader<br>
-WS2812b LEDs (4x3 für die Hintergrundbeleuchtung, 1 bis 150 LEDs je nach eigenem Setup)<br>
+WS2812b LEDs (4x3 für die Hintergrundbeleuchtung, 1 bis 150 LEDs je nach eigenem Setup für die Samples)<br>
 1.3" I2C Display 128x64 SH1106<br>
+NFC-Tags Ntag215 (Anzahl passend zur Anzahl der LEDs für die Samples)
 optional Taster<br>
 optional Buzzer<br>
+
