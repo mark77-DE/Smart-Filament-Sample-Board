@@ -500,7 +500,7 @@ bool saveConfigV2() {
     // =========================
     // Version
     // =========================
-    doc["version"] = 2;
+    doc["version"] = CONFIGV2.system.version;
 
     // =========================
     // System
@@ -509,8 +509,8 @@ bool saveConfigV2() {
     system["darkmode"]       = CONFIGV2.system.darkmode;
     system["debugMode"]      = CONFIGV2.system.debugMode;
     system["webLEDTimeout"]  = CONFIGV2.system.webLEDTimeout;
-    system["hostname"]       = CONFIGV2.system.hostname;
     system["animationAfterBoot"] = CONFIGV2.system.animationAfterBoot;
+    system["hostname"]       = CONFIGV2.system.hostname;
 
     // =========================
     // LED

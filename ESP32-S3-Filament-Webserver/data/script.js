@@ -466,14 +466,15 @@ async function checkFirmwareUpdate() {
         // 4️⃣ Anzeige
         const updateDiv = document.getElementById('updateStatus');
         if (isUpdate) {
-            updateDiv.textContent = `⚠️ Update verfügbar: ${latestVersion}`;
+            updateDiv.textContent = `⚠️ Update available (test only!): ${latestVersion}`;
             updateDiv.style.color = 'orange';
         } else {
-            updateDiv.textContent = `Firmware aktuell (${currentVersion})`;
+            updateDiv.textContent = `Firmware up to date (${currentVersion})`;
             updateDiv.style.color = 'green';
         }
     } catch (err) {
-        console.error('Update check failed', err);
+        updateDiv.textContent = `Update check failed`;
+        updateDiv.style.color = 'red';
     }
 }
 
