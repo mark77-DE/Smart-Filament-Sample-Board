@@ -272,6 +272,8 @@ async function loadFilamentTiles() {
   CONFIGV2 = await configRes.json();
   FILAMENTS = await filamentsRes.json();
 
+  document.body.classList.toggle("daymode", !CONFIGV2.system.darkmode);
+
   // Filter füllen
   populateFilter("filterVendor", "vendor");
   populateFilter("filterColor", "color");
@@ -442,10 +444,59 @@ toggleBtn.addEventListener("click", () => {
     document.body.classList.toggle("daymode");
 });
 
+async function checkFirmwareUpdate() {
+    try {
+        // 1️⃣ ESP-Version
+        const espResp = await fetch('/api/version');
+        const espData = await espResp.json();
+
+        // Alles nach + ignorieren
+        let currentVersion = espData.firmware.split('+')[0];
+        currentVersion = currentVersion.replace(/^v/, ''); // optional v entfernen
+
+        // 2️⃣ GitHub-Version
+        const ghResp = await fetch('https://raw.githubusercontent.com/mark77-DE/Smart-Filament-Sample-Board-Public/refs/heads/main/version_public.txt');
+        let latestVersion = (await ghResp.text()).trim();
+        latestVersion = latestVersion.split('+')[0];
+        latestVersion = latestVersion.replace(/^v/, '');
+
+        // 3️⃣ Versionsvergleich
+        const isUpdate = compareVersions(currentVersion, latestVersion);
+
+        // 4️⃣ Anzeige
+        const updateDiv = document.getElementById('updateStatus');
+        if (isUpdate) {
+            updateDiv.textContent = `⚠️ Update verfügbar: ${latestVersion}`;
+            updateDiv.style.color = 'orange';
+        } else {
+            updateDiv.textContent = `Firmware aktuell (${currentVersion})`;
+            updateDiv.style.color = 'green';
+        }
+    } catch (err) {
+        console.error('Update check failed', err);
+    }
+}
+
+// Semantischer Versionsvergleich "0.4.0"
+function compareVersions(current, latest) {
+    const c = current.split('.').map(Number);
+    const l = latest.split('.').map(Number);
+
+    for (let i = 0; i < 3; i++) {
+        if (l[i] > c[i]) return true;
+        if (l[i] < c[i]) return false;
+    }
+    return false;
+}
+
+// Aufruf nach Laden des Webinterfaces
+checkFirmwareUpdate();
 
 
 
 connectWS();
 loadFilamentTiles();
 getVersion();
+
+
 

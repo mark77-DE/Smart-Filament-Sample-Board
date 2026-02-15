@@ -10,7 +10,7 @@ const editToggle = document.getElementById("editToggle");
 const debugToggle = document.getElementById("debugToggle");
 
 
-
+const daynightToggle = document.getElementById("daynightToggle");
 
 
 const infoChipName = document.getElementById("infoChipName");
@@ -418,6 +418,8 @@ async function loadTable() {
     const mqtt = CONFIGV2.mqttConfig || {};
 
     debugToggle.checked = !!(sys.debugMode);
+    
+
 
     // --- Mögliche fehlende Pins in den Dropdowns ergänzen ---
     ensureOption(ledPinSelect, led.pin);
@@ -497,6 +499,9 @@ async function loadTable() {
 
     // --- Hostsettings ---
     if (hostnameInput) hostnameInput.value = sys.hostname ?? "hostname";
+    if (daynightToggle) daynightToggle.checked = !sys.darkmode ?? true;
+    
+    document.body.classList.toggle("daymode", daynightToggle.checked);
 
     // Nach dem Setzen: Sperrlogik ausführen
     updatePinOptions();
@@ -579,6 +584,8 @@ async function saveConfigHandler() {
     const webLEDTimeout = webLedTimeoutInput ? Number(webLedTimeoutInput.value) : ledTimeout;
 
     const debugMode = debugToggle.checked;
+    const darkmode = !daynightToggle.checked;
+    
 
     // --- NFC ---
     const nfcLedCount = Number(document.getElementById("nfcMaxLED").value);
@@ -631,7 +638,7 @@ async function saveConfigHandler() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 system: {
-                    darkmode: false,
+                    darkmode,
                     debugMode,
                     webLEDTimeout,
                     hostname: hostname || "filament-board"
@@ -1122,6 +1129,10 @@ ledSelect.addEventListener("change", () => {
 });
 
 
+
+daynightToggle.addEventListener("change", function () {
+    document.body.classList.toggle("daymode", this.checked);
+});
 
 // -------------------- Init --------------------
 async function init() {
