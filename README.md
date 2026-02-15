@@ -22,6 +22,10 @@ WS2812b LEDs (4x3 für die Hintergrundbeleuchtung, 1 bis 150 LEDs je nach eigene
 optional Taster<br>
 optional Buzzer<br>
 
+## picture board
+<img width="1024" alt="board" src="https://github.com/mark77-DE/Smart-Filament-Sample-Board/blob/main/pictures/board_complete.jpg" />
+
 ## Screenshot Dashboard (daymode)
 <img width="1024" alt="Dashboard daymode" src="https://github.com/mark77-DE/Smart-Filament-Sample-Board/blob/main/screenshots/dashboard_daymode.png" />
+
 
