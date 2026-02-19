@@ -1,11 +1,13 @@
 {
     "version": "2.1",
+    "boardVariant": "unknown",
     "system": {
         "darkmode": false,
         "debugMode": true,
         "webLEDTimeout": 3000,
         "animationAfterBoot": true,
-        "hostname": "filament-board-dev"
+        "hostname": "filament-board-dev",
+        "defaultLanguage": "en"
         },
     "led": {
         "count": 8,
@@ -17,7 +19,7 @@
         "colorPulse": [0, 64, 160]
     },
     "nfc": {
-        "count": 8,
+        "count": 12,
         "pin": 1,
         "brightness": 50,
         "timeout": 4000,

@@ -17,28 +17,36 @@
       <div id="subheadline">Smart Filament Sample Board</div>
     </div>
     <div id="adminBtn">
-      <button onclick="window.location.href='/settings'">
+      <button onclick="window.location.href='/settings'" data-i18n="settings">
         Settings
       </button>
     </div>
     <div>
-      <button id="themeToggle">Day/Night Mode</button>
+      <button id="themeToggle" data-i18n="btn_daynight_mode">Day/Night Mode</button>
     </div>
-    <div id="wsStatus">unknown</div>
+    <div id="wsStatus">disconnected</div>
     <div id="updateStatus"></div>
+    <div id="languageSwitcher">
+      
+                        
+                            <select id="langSelect">
+                                <option value="en" data-i18n="txt_english">English</option>
+                                <option value="de" data-i18n="txt_german">Deutsch</option>
+                            </select>
+                        </div>
   </div>
 
   <div id="filters">
     <select id="filterVendor">
-      <option value="">Alle Hersteller</option>
+      <option value="">all manufactor</option>
     </select>
 
     <select id="filterColor">
-      <option value="">Alle Farben</option>
+      <option value="">all colors</option>
     </select>
 
     <select id="filterType">
-      <option value="">Alle Typen</option>
+      <option value="">all types</option>
     </select>
   </div>
 
@@ -49,11 +57,19 @@
 
   <div id="about">
     <span id="fwVersion" class="version"></span>
-    <span id="gitHash" class="version"></span>
+    <!-- <span id="gitHash" class="version"></span> -->
     <span id="build_date" class="version"></span>
   </div>
 
-  <script src="script.js"></script>
+  <div id="helpOverlay" class="hidden">
+    <div id="helpContent">
+      <button id="helpCloseBtn"></button>
+      <div id="helpText"></div>
+  </div>
+
+  <script src="/script.js"></script>
+  <script src="/i18n_help.js"></script>
+
 </body>
 
 </html>

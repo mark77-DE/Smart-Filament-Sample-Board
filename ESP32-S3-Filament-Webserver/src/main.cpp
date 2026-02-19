@@ -305,6 +305,7 @@ void printChipInfo() {
     Serial.printf("Cores: %d\n", g_sysInfo.cores);
     Serial.printf("Rev: %d\n", g_sysInfo.revision);
     Serial.printf("Flash Size: %lu bytes\n", g_sysInfo.flashSize);
+    Serial.printf("Board Variant: %s\n", BOARD_VARIANT);
     Serial.println();
     Serial.println();
 }
@@ -341,7 +342,7 @@ void setup() {
   printChipInfo();
   Serial.println();
   Serial.println("Setup starting...");
-
+  Serial.println();
   
   loadConfigV2();
   applyConfigV2();
@@ -452,15 +453,13 @@ void setup() {
     Serial.print(" chip=0x"); Serial.println(version & 0xFFFF, HEX);
   }
 
-  // 8) Idle-Animation vorbereiten
-  DisplayAnim::startIdleTextFirst(millis());
+  
 
-  if(!CONFIGV2.system.animationAfterBoot) {
-    DisplayAnim::stop();
-    MYDISPLAY::clear();
-    LEDCTRL_FILAMENT::standBy(true);
-    LEDCTRL_NFC::standBy(true);
-  }
+ 
+    // 8) Idle-Animation vorbereiten
+    DisplayAnim::startIdleTextFirst(millis());
+  
+
 
 
 
