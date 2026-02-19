@@ -34,14 +34,10 @@
             </button>
         </div>
 
-        <div class="sysGroup">
-            <button id="sysInfoBtn" class="primaryBtn">
-                Info
-            </button>
-        </div>
+
 
         <div class="sysGroup">
-            <button id="openSettings" class="primaryBtn">
+            <button id="openSettings" class="primaryBtn" data-i18n="settings">
                 Settings
             </button>
         </div>
@@ -51,20 +47,11 @@
             <div id="toggle">
                 <label class="edit-toggle">
                     <input type="checkbox" id="editToggle">
-                    <span class="slider"></span> edit
+                    <span class="slider"></span><span data-i18n="txt_edit">Edit</span>
                 </label>
             </div>
 
-            <div>
-
-            </div>
         </div>
-
-        <div class="sysGroup">
-
-
-        </div>
-
 
 
 
@@ -85,20 +72,21 @@
             <div class="settingsSidebar">
                 <button class="navItem active" data-target="panel-led">LED</button>
                 <button class="navItem" data-target="panel-nfc">NFC</button>
-                <button class="navItem" data-target="panel-button">Button</button>
-                <button class="navItem" data-target="panel-buzzer">Buzzer</button>
+                <button class="navItem" data-target="panel-button" data-i18n="txt_button">Button</button>
+                <button class="navItem" data-target="panel-buzzer" data-i18n="txt_buzzer">Buzzer</button>
                 <button class="navItem" data-target="panel-mqtt">MQTT</button>
                 <button class="navItem" data-target="panel-dashboard">Dashboard</button>
                 <button class="navItem" data-target="panel-importexport">Import/export</button>
-                <button class="navItem" data-target="panel-system">System</button>
+                <button class="navItem" data-target="panel-debug">Debug</button>
                 <button class="navItem" data-target="panel-host">Host</button>
+                <button class="navItem" data-target="panel-info">Info</button>
 
 
                 <!-- Footer Buttons -->
                 <div class="sidebarFooter">
-                    <button id="rebootBtn">reboot</button>
-                    <button id="saveConfig">save</button>
-                    <button id="closeSettings" class="closeBtn">close</button>
+                    <button id="rebootBtn" data-i18n="btn_reboot">reboot</button>
+                    <button id="saveConfig" data-i18n="btn_save">save</button>
+                    <button id="closeSettings" class="closeBtn" data-i18n="btn_close">close</button>
                 </div>
             </div>
 
@@ -107,15 +95,15 @@
 
 
                 <div class="settingsPanel active" id="panel-led">
-                    <div id="ledSettings" class="card">
-                        <div class="cardHeader">LED Settings</div>
+                    <div id="ledSettings" class="card" data-help="led">
+                        <div class="cardHeader"><span data-i18n="txt_led_settings">LED Settings</span></div>
 
                         <div class="formGrid">
 
-                            <label for="maxLED">Number of LEDs (1–100):</label>
+                            <label for="maxLED" data-i18n="txt_max_leds">Number of LEDs (1–100):</label>
                             <input type="number" id="maxLED" name="maxLED" min="1" max="100" value="0">
 
-                            <label for="ledBrightness">Brightness (%):</label>
+                            <label for="ledBrightness" data-i18n="txt_led_brightness">Brightness (%):</label>
                             <input type="number" id="ledBrightness" name="ledBrightness" min="0" max="255" value="111">
 
                             <label for="ledPin">LED Pin:</label>
@@ -140,21 +128,23 @@
                                 <option value="33">33</option>
                             </select>
 
-                            <label for="ledColor" title="Format: #RRGGBB">LED Color:</label>
+                            <label for="ledColor" title="Format: #RRGGBB" data-i18n="txt_led_color">LED Color:</label>
                             <div class="hexField">
                                 <input type="text" id="ledColor" name="ledColor" value="#abcdef" maxlength="7"
                                     pattern="^#([0-9a-fA-F]{6})$" title="Format: #RRGGBB" placeholder="#RRGGBB">
                                 <div class="colorPresets" data-target="ledColor"></div>
                             </div>
 
-                            <label for="ledColorError" title="Format: #RRGGBB">LED Color Error:</label>
+                            <label for="ledColorError" title="Format: #RRGGBB" data-i18n="txt_led_color_error">LED Color
+                                Error:</label>
                             <div class="hexField">
                                 <input type="text" id="ledColorError" name="ledColorError" value="#abcdef" maxlength="7"
                                     pattern="^#([0-9a-fA-F]{6})$" title="Format: #RRGGBB" placeholder="#RRGGBB">
                                 <div class="colorPresets" data-target="ledColorError"></div>
                             </div>
 
-                            <label for="ledColorPulse" title="Format: #RRGGBB">LED Color Pulse:</label>
+                            <label for="ledColorPulse" title="Format: #RRGGBB" data-i18n="txt_led_color_pulse">LED Color
+                                Pulse:</label>
                             <div class="hexField">
                                 <input type="text" id="ledColorPulse" name="ledColorPulse" value="#abcdef" maxlength="7"
                                     pattern="^#([0-9a-fA-F]{6})$" title="Format: #RRGGBB" placeholder="#RRGGBB">
@@ -164,19 +154,22 @@
                             <label for="ledTimeout">LED Timeout (ms):</label>
                             <input type="number" id="ledTimeout" name="ledTimeout" min="500" max="30000" value="498">
 
+                            <label for="animationAfterBoot" data-i18n="txt_animation_after_boot">Animation after boot:</label>
+                            <input type="checkbox" id="animationAfterBoot" name="animationAfterBoot" checked>
+
                         </div>
                     </div>
                 </div>
 
                 <div class="settingsPanel" id="panel-nfc">
-                    <div id="nfcLedSettings" class="card">
-                        <div class="cardHeader">NFC LED Settings</div>
+                    <div id="nfcLedSettings" class="card" data-help="nfcled">
+                        <div class="cardHeader"><span data-i18n="txt_nfcled_settings">NFC LED Settings</span></div>
                         <div class="formGrid">
 
-                            <label for="nfcMaxLED">Number of LEDs (1–100):</label>
+                            <label for="nfcMaxLED" data-i18n="txt_max_leds">Number of LEDs (1–100):</label>
                             <input type="number" id="nfcMaxLED" name="nfcMaxLED" min="1" max="16" value="0">
 
-                            <label for="nfcLedBrightness">Brightness (%):</label>
+                            <label for="nfcLedBrightness" data-i18n="txt_led_brightness">Brightness (%):</label>
                             <input type="number" id="nfcLedBrightness" name="nfcLedBrightness" min="0" max="255"
                                 value="99">
 
@@ -202,7 +195,8 @@
                                 <option value="33">33</option>
                             </select>
 
-                            <label for="nfcLedColorSuccess" title="Format: #RRGGBB">LED Color (NFC-Erkannt):</label>
+                            <label for="nfcLedColorSuccess" title="Format: #RRGGBB"
+                                data-i18n="txt_nfcled_color_success">LED Color (NFC-Erkannt):</label>
                             <div class="hexField">
                                 <input type="text" id="nfcLedColorSuccess" name="nfcLedColorSuccess" value="#abcdef"
                                     maxlength="7" pattern="^#([0-9a-fA-F]{6})$" title="Format: #RRGGBB"
@@ -210,7 +204,8 @@
                                 <div class="colorPresets" data-target="nfcLedColorSuccess"></div>
                             </div>
 
-                            <label for="nfcLedColorError" title="Format: #RRGGBB">LED Color (NFC-Error):</label>
+                            <label for="nfcLedColorError" title="Format: #RRGGBB" data-i18n="txt_nfcled_color_error">LED
+                                Color (NFC-Error):</label>
                             <div class="hexField">
                                 <input type="text" id="nfcLedColorError" name="nfcLedColorError" value="#abcdef"
                                     maxlength="7" pattern="^#([0-9a-fA-F]{6})$" title="Format: #RRGGBB"
@@ -222,22 +217,26 @@
                             <input type="number" id="nfcLedTimeout" name="nfcLedTimeout" min="500" max="30000"
                                 value="399">
 
-                            <label for="nfcLedColorPulse" title="Format: #RRGGBB">LED Color (Standby-Effekt):</label>
+                            <label for="nfcLedColorPulse" title="Format: #RRGGBB" data-i18n="txt_nfcled_color_pulse">LED
+                                Color (Standby-Effekt):</label>
                             <div class="hexField">
                                 <input type="text" id="nfcLedColorPulse" name="nfcLedColorPulse" value="#abcdef"
                                     maxlength="7" pattern="^#([0-9a-fA-F]{6})$" title="Format: #RRGGBB">
                                 <div class="colorPresets" data-target="nfcLedColorPulse"></div>
                             </div>
 
-                            <label for="nfcLedSuccessBlinkEnabled">NFC-Erkannt blinken aktiv:</label>
+                            <label for="nfcLedSuccessBlinkEnabled" data-i18n="txt_nfcled_blink">NFC-Erkannt blinken
+                                aktiv:</label>
                             <input type="checkbox" id="nfcLedSuccessBlinkEnabled" name="nfcLedSuccessBlinkEnabled"
                                 checked>
 
-                            <label for="nfcLedSuccessBlinkCount">Blinken Anzahl:</label>
+                            <label for="nfcLedSuccessBlinkCount" data-i18n="txt_nfcled_blink_count">Blinken
+                                Anzahl:</label>
                             <input type="number" id="nfcLedSuccessBlinkCount" name="nfcLedSuccessBlinkCount" min="0"
                                 max="10" value="1">
 
-                            <label for="nfcLedSuccessBlinkMs">Blinken Intervall (ms):</label>
+                            <label for="nfcLedSuccessBlinkMs" data-i18n="txt_nfcled_blink_ms">Blinken Intervall
+                                (ms):</label>
                             <input type="number" id="nfcLedSuccessBlinkMs" name="nfcLedSuccessBlinkMs" min="20"
                                 max="2000" step="10" value="147">
 
@@ -246,11 +245,12 @@
                 </div>
 
                 <div class="settingsPanel" id="panel-button">
-                    <div id="buttonSettings" class="card">
-                        <div class="cardHeader">Pushbutton Settings</div>
+                    <div id="buttonSettings" class="card" data-help="button">
+                        <div class="cardHeader"><span data-i18n="txt_pushbutton_settings">Pushbutton Settings</span>
+                        </div>
                         <div class="formGrid">
 
-                            <label for="buttonPin">Button Pin:</label>
+                            <label for="buttonPin" data-i18n="txt_button_pin">Button Pin:</label>
                             <select id="buttonPin" name="buttonPin">
                                 <option value="-1">disabled</option>
                                 <option value="2">2</option>
@@ -267,22 +267,24 @@
 
                             <div id="buttonEnabled">
 
-                                <label for="buttonPullup">Use internal Pull-Up (active-low):</label>
+                                <label for="buttonPullup" data-i18n="txt_button_pullup">Use internal Pull-Up
+                                    (active-low):</label>
                                 <input type="checkbox" id="buttonPullup" name="buttonPullup" checked>
 
-                                <label for="buttonDebounceMs">Debounce (ms):</label>
+                                <label for="buttonDebounceMs" data-i18n="txt_button_debounce">Debounce (ms):</label>
                                 <input type="number" id="buttonDebounceMs" name="buttonDebounceMs" min="1" max="200"
                                     value="33">
 
-                                <label for="buttonLongMs">Long-Press (ms):</label>
+                                <label for="buttonLongMs" data-i18n="txt_button_longpress">Long-Press (ms):</label>
                                 <input type="number" id="buttonLongMs" name="buttonLongMs" min="100" max="5000"
                                     value="799">
 
-                                <label for="buttonDoubleMs">Double-Press Gap (ms):</label>
+                                <label for="buttonDoubleMs" data-i18n="txt_button_doublepress">Double-Press Gap
+                                    (ms):</label>
                                 <input type="number" id="buttonDoubleMs" name="buttonDoubleMs" min="50" max="2000"
                                     value="399">
 
-                                <label for="buttonHoldMs">Hold Repeat (ms):</label>
+                                <label for="buttonHoldMs" data-i18n="txt_button_hold">Hold Repeat (ms):</label>
                                 <input type="number" id="buttonHoldMs" name="buttonHoldMs" min="50" max="2000"
                                     value="249">
 
@@ -292,11 +294,11 @@
                 </div>
 
                 <div class="settingsPanel" id="panel-buzzer">
-                    <div id="buzzerSettings" class="card">
-                        <div class="cardHeader">Buzzer Settings</div>
+                    <div id="buzzerSettings" class="card" data-help="buzzer">
+                        <div class="cardHeader" data-i18n="txt_buzzer_settings">Buzzer Settings</div>
                         <div class="formGrid">
 
-                            <label for="buzzerPin">Buzzer Pin:</label>
+                            <label for="buzzerPin" data-i18n="txt_buzzer_pin">Buzzer Pin:</label>
                             <select id="buzzerPin" name="buzzerPin">
                                 <option value="-1">disabled</option>
                                 <option value="2">2</option>
@@ -313,34 +315,41 @@
 
                             <div id="buzzerEnabled">
 
-                                <label for="buzzerActiveHigh">Active-High Output:</label>
+                                <label for="buzzerActiveHigh" data-i18n="txt_buzzer_activehigh">Active-High
+                                    Output:</label>
                                 <input type="checkbox" id="buzzerActiveHigh" name="buzzerActiveHigh" checked>
 
-                                <label for="buzzerFreq">Frequency (Hz):</label>
+                                <label for="buzzerFreq" data-i18n="txt_buzzer_freq">Frequency (Hz):</label>
                                 <input type="number" id="buzzerFreq" name="buzzerFreq" min="50" max="10000"
                                     value="3999">
 
-                                <label for="buzzerSingleMs">Single Beep On (ms):</label>
+                                <label for="buzzerSingleMs" data-i18n="txt_buzzer_single_ms">Single Beep On
+                                    (ms):</label>
                                 <input type="number" id="buzzerSingleMs" name="buzzerSingleMs" min="10" max="2000"
                                     value="81">
 
-                                <label for="buzzerDoubleOnMs">Double Beep On (ms):</label>
+                                <label for="buzzerDoubleOnMs" data-i18n="txt_buzzer_double_on_ms">Double Beep On
+                                    (ms):</label>
                                 <input type="number" id="buzzerDoubleOnMs" name="buzzerDoubleOnMs" min="10" max="2000"
                                     value="61">
 
-                                <label for="buzzerDoubleGapMs">Double Beep Gap (ms):</label>
+                                <label for="buzzerDoubleGapMs" data-i18n="txt_buzzer_double_gap_ms">Double Beep Gap
+                                    (ms):</label>
                                 <input type="number" id="buzzerDoubleGapMs" name="buzzerDoubleGapMs" min="10" max="2000"
                                     value="81">
 
-                                <label for="buzzerErrorOnMs">Error Beep On (ms):</label>
+                                <label for="buzzerErrorOnMs" data-i18n="txt_buzzer_error_on_ms">Error Beep On
+                                    (ms):</label>
                                 <input type="number" id="buzzerErrorOnMs" name="buzzerErrorOnMs" min="10" max="2000"
                                     value="51">
 
-                                <label for="buzzerErrorGapMs">Error Beep Gap (ms):</label>
+                                <label for="buzzerErrorGapMs" data-i18n="txt_buzzer_error_gap_ms">Error Beep Gap
+                                    (ms):</label>
                                 <input type="number" id="buzzerErrorGapMs" name="buzzerErrorGapMs" min="10" max="2000"
                                     value="61">
 
-                                <label for="buzzerErrorCount">Error Beep Count:</label>
+                                <label for="buzzerErrorCount" data-i18n="txt_buzzer_error_count">Error Beep
+                                    Count:</label>
                                 <input type="number" id="buzzerErrorCount" name="buzzerErrorCount" min="1" max="10"
                                     value="1">
                             </div>
@@ -350,11 +359,11 @@
 
                 <div class="settingsPanel" id="panel-mqtt">
                     <!-- EXISTIERENDE MQTT CARD HIER REIN -->
-                    <div id="mqttSettings" class="card">
-                        <div class="cardHeader">MQTT Settings</div>
+                    <div id="mqttSettings" class="card" data-help="mqtt">
+                        <div class="cardHeader"><span data-i18n="txt_mqtt_settings">MQTT Settings</span></div>
                         <div class="formGrid">
 
-                            <label for="mqttEnabled">MQTT enabled:</label>
+                            <label for="mqttEnabled" data-i18n="txt_mqtt_enabled">MQTT enabled:</label>
                             <input type="checkbox" id="mqttEnabled" name="mqttEnabled" checked>
 
                             <label for="mqttServerIP" title="">MQTT Server:</label>
@@ -366,10 +375,10 @@
                             <label for="mqttServerPort" title="">MQTT Port:</label>
                             <input type="number" id="mqttPort" name="mqttPort" min="1" max="65535" value="1883">
 
-                            <label for="mqttUser" title="">MQTT User:</label>
+                            <label for="mqttUser" title="" data-i18n="txt_mqtt_user">MQTT User:</label>
                             <input type="text" id="mqttUser" name="mqttUser" value="mqttuser" placeholder="username">
 
-                            <label for="mqttPassword" title="">MQTT Password:</label>
+                            <label for="mqttPassword" title="" data-i18n="txt_mqtt_password">MQTT Password:</label>
                             <input type="password" id="mqttPassword" name="mqttPassword" value=""
                                 placeholder="password">
 
@@ -387,7 +396,7 @@
                             <input type="text" id="mqttHADiscoveryPrefix" name="mqttHADiscoveryPrefix" value=""
                                 placeholder="discovery prefix">
 
-                            <div id="warningMqtt">REBOOT REQUIRED AFTER CHANGES</div>
+                            <div id="warningMqtt" data-i18n="txt_mqtt_rebootMsg">REBOOT REQUIRED AFTER CHANGES</div>
 
                         </div>
                     </div>
@@ -395,8 +404,8 @@
 
                 <div class="settingsPanel" id="panel-dashboard">
                     <!-- Debug, WebLEDTimeout, Hostname etc. -->
-                    <div id="dashboardSettings" class="card">
-                        <div class="cardHeader">Dashboard Settings</div>
+                    <div id="dashboardSettings" class="card" data-help="dashboard">
+                        <div class="cardHeader"><span data-i18n="txt_dashboard_settings">Dashboard Settings</span></div>
                         <div class="formGrid">
 
                             <label for="webLedTimeout">Highlight "LED" Timeout (ms):</label>
@@ -404,9 +413,17 @@
                                 value="4999">
 
 
-                            <label for="daynightToggle" class="debug-toggle">Start in day mode:</label>
+                            <label for="daynightToggle" class="debug-toggle" data-i18n="txt_start_daymode">Start in day
+                                mode:</label>
                             <input class="slider" type="checkbox" id="daynightToggle">
-                                
+
+                            <label for="langSelect" data-i18n="txt_language">Language:</label>
+
+                            <select id="langSelect">
+                                <option value="en" data-i18n="txt_english">English</option>
+                                <option value="de" data-i18n="txt_german">Deutsch</option>
+                            </select>
+
 
 
                         </div>
@@ -414,42 +431,52 @@
                 </div>
 
                 <div class="settingsPanel" id="panel-importexport">
-                    <div id="importExportSettings" class="card">
-                        <div class="cardHeader">Import / Export Settings</div>
+                    <div id="importExportSettings" class="card" data-help="importexport">
+                        <div class="cardHeader"><span data-i18n="txt_importexport_settings">Import / Export
+                                Settings</span></div>
 
                         <div class="importExportGrid">
 
                             <!-- Export -->
                             <div class="ieBlock">
-                                <div class="ieTitle">Export Configuration</div>
+                                <div class="ieTitle" data-i18n="txt_export_config">Export Configuration</div>
                                 <button id="exportAllBtn" class="primaryBtn">
                                     Export JSON
                                 </button>
                             </div>
 
-                            <div class="divider"></div>
+
 
                             <!-- Import -->
                             <div class="ieBlock">
-                                <div class="ieTitle">Import Configuration</div>
+                                <div class="ieTitle"><span data-i18n="txt_import_config">Import Configuration</span>
+                                </div>
 
                                 <form id="importAllForm" method="POST" enctype="multipart/form-data" class="importForm">
 
-                                    <label for="importFile" id="uploadLabel" class="upload-btn">
+                                    <label for="importFile" id="uploadLabel" class="upload-btn"
+                                        data-i18n="txt_choose_file">
                                         Choose file
                                     </label>
 
                                     <input type="file" id="importFile" name="file" accept=".json" hidden>
 
-                                    <span id="selectedFileName" class="fileName">
+                                    <span id="selectedFileName" class="fileName" data-i18n="txt_nofile">
                                         No file selected
                                     </span>
 
-                                    <button id="importBtn" type="submit" class="primaryBtn" disabled>
+                                    <button id="importBtn" type="submit" class="primaryBtn" disabled
+                                        data-i18n="btn_import">
                                         Import
                                     </button>
 
+
+
                                 </form>
+                                <div id="importWarning" data-i18n="txt_import_warning">WARNING: This will overwrite all
+                                    current settings and filaments!</div>
+                                <div id="importReboot" data-i18n="txt_import_reboot">Please reboot the device after
+                                    importing settings.</div>
                             </div>
 
                         </div>
@@ -459,10 +486,10 @@
 
 
 
-                <div class="settingsPanel" id="panel-system">
+                <div class="settingsPanel" id="panel-debug">
                     <!-- Debug, WebLEDTimeout, Hostname etc. -->
-                    <div id="systemSettings" class="card">
-                        <div class="cardHeader">System Settings</div>
+                    <div id="debugSettings" class="card" data-help="debug">
+                        <div class="cardHeader"><span data-i18n="txt_debug_settings">Debug Settings</span></div>
                         <div class="formGrid">
 
                             <div id="debug">
@@ -479,21 +506,204 @@
 
                 <div class="settingsPanel" id="panel-host">
                     <!-- Debug, WebLEDTimeout, Hostname etc. -->
-                    <div id="hostSettings" class="card">
-                        <div class="cardHeader">Host Settings</div>
+                    <div id="hostSettings" class="card" data-help="host">
+                        <div class="cardHeader"><span data-i18n="txt_host_settings">Host Settings</span></div>
                         <div class="formGrid">
 
                             <label for="hostname">Hostname:</label>
                             <input type="text" id="hostname" name="hostname" value="" placeholder="hostname">
 
-
-
-
                         </div>
                     </div>
                 </div>
 
+                <div class="settingsPanel" id="panel-info">
+                    <!-- Debug, WebLEDTimeout, Hostname etc. -->
+                    <div id="infoSettings" class="card" data-help="info">
+                        <div class="cardHeader">Information</div>
+                        <div class="formGrid">
 
+
+
+
+
+
+
+
+
+                            <!-- Host Section -->
+                            <div class="infoBlock">
+                                <div class="infoTitle" data-toggle data-i18n="txt_memory_info">Memory Information</div>
+
+                                <div class="infoBlockContent">
+                                    <div class="infoSection">
+                                        <span class="infoLabel" data-i18n="txt_uptime">Uptime:</span>
+                                        <span class="infoValue" id="infoUptime">infoUptime</span>
+                                    </div>
+
+                                    <div class="infoSection">
+                                        <span class="infoLabel" data-i18n="txt_heap_size">Heap size:</span>
+                                        <span class="infoValue" id="infoHeapSize"></span>
+                                    </div>
+
+                                    <div class="infoSection">
+                                        <span class="infoLabel" data-i18n="txt_heap_free">Heap free:</span>
+                                        <span class="infoValue" id="infoHeapFree"></span>
+                                    </div>
+
+                                    <div class="infoSection">
+                                        <span class="infoLabel" data-i18n="txt_sketch_size">Sketch size:</span>
+                                        <span class="infoValue" id="infoSketchSize"></span>
+                                    </div>
+
+                                    <div class="infoSection">
+                                        <span class="infoLabel" data-i18n="txt_free_sketch">Sketch free:</span>
+                                        <span class="infoValue" id="infoFreeSketch"></span>
+                                    </div>
+
+                                    <div class="infoSection">
+                                        <span class="infoLabel" data-i18n="txt_spiffs_size">SPIFFS size:</span>
+                                        <span class="infoValue" id="infoSpiffsSize"></span>
+                                    </div>
+
+                                    <div class="infoSection">
+                                        <span class="infoLabel" data-i18n="txt_free_spiffs">SPIFFS free:</span>
+                                        <span class="infoValue" id="infoFreeSpiffs"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+
+                            <div class="infoBlock">
+                                <div class="infoTitle" data-toggle data-i18n="txt_network_info">Network Information
+                                </div>
+
+                                <div class="infoBlockContent">
+                                    <div class="infoSection">
+                                        <span class="infoLabel">Hostname:</span>
+                                        <span class="infoValue" id="infoHostname"></span>
+                                    </div>
+                                    <div class="infoSection">
+                                        <span class="infoLabel">IP:</span>
+                                        <span class="infoValue" id="infoWifiIp"></span>
+                                    </div>
+
+                                    <div class="infoSection">
+                                        <span class="infoLabel">Subnet:</span>
+                                        <span class="infoValue" id="infoWifiSubnet"></span>
+                                    </div>
+
+                                    <div class="infoSection">
+                                        <span class="infoLabel">MAC:</span>
+                                        <span class="infoValue" id="infoWifiMac"></span>
+                                    </div>
+
+                                    <div class="infoSection">
+                                        <span class="infoLabel">Gateway:</span>
+                                        <span class="infoValue" id="infoWifiGateway"></span>
+                                    </div>
+
+                                    <div class="infoSection">
+                                        <span class="infoLabel">SSID:</span>
+                                        <span class="infoValue" id="infoWifiSsid"></span>
+                                    </div>
+
+                                    <div class="infoSection">
+                                        <span class="infoLabel">DNS 1:</span>
+                                        <span class="infoValue" id="infoWifiDns1"></span>
+                                    </div>
+
+                                    <div class="infoSection">
+                                        <span class="infoLabel">DNS 2:</span>
+                                        <span class="infoValue" id="infoWifiDns2"></span>
+                                    </div>
+
+                                    <div class="infoSection">
+                                        <span class="infoLabel">RSSI:</span>
+                                        <span class="infoValue" id="infoWifiRssi"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+
+                            <!-- FW Section -->
+                            <div class="infoBlock">
+                                <div class="infoTitle" data-toggle>FW Information</div>
+
+                                <div class="infoBlockContent">
+                                    <div class="infoSection">
+                                        <span class="infoLabel">FW Version:</span>
+                                        <span class="infoValue" id="infoFwVersion"></span>
+                                    </div>
+
+                                    <div class="infoSection">
+                                        <span class="infoLabel" data-i18n="txt_build_date">Build Date:</span>
+                                        <span class="infoValue" id="infoBuildDate"></span>
+                                    </div>
+
+                                    <div class="infoSection">
+                                        <span class="infoLabel">Git Hash:</span>
+                                        <span class="infoValue" id="infoGitHash"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+
+                            <!-- Chip Section -->
+                            <div class="infoBlock">
+                                <div class="infoTitle" data-toggle>Chip Information</div>
+
+                                <div class="infoBlockContent">
+                                    <div class="infoSection">
+                                        <span class="infoLabel">Chip Name:</span>
+                                        <span class="infoValue" id="infoChipName"></span>
+                                    </div>
+
+                                    <div class="infoSection">
+                                        <span class="infoLabel" data-i18n="txt_variant">Chip Variant:</span>
+                                        <span class="infoValue" id="infoBoardVariant"></span>
+                                    </div>
+
+                                    <div class="infoSection">
+                                        <span class="infoLabel" data-i18n="txt_cores">Cores:</span>
+                                        <span class="infoValue" id="infoCores"></span>
+                                    </div>
+
+                                    <div class="infoSection">
+                                        <span class="infoLabel">Revision:</span>
+                                        <span class="infoValue" id="infoRevision"></span>
+                                    </div>
+
+                                    <div class="infoSection">
+                                        <span class="infoLabel" data-i18n="txt_flash_size">Flash Size:</span>
+                                        <span class="infoValue" id="infoFlashSize"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+
+                            <!-- NFC Section -->
+                            <div class="infoBlock">
+                                <div class="infoTitle" data-toggle>NFC Information</div>
+                                <div class="infoBlockContent">
+                                    <div class="infoSection">
+                                        <span class="infoLabel" data-i18n="txt_nfc_available">NFC Available:</span>
+                                        <span class="infoValue" id="infoNfcAvailable"></span>
+                                    </div>
+                                    <div class="infoSection">
+                                        <span class="infoLabel">NFC FW:</span>
+                                        <span class="infoValue" id="infoNfcFwVer"></span>
+                                    </div>
+                                    <div class="infoSection">
+                                        <span class="infoLabel">NFC Chip ID:</span>
+                                        <span class="infoValue" id="infoNfcChipId"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
 
             </div>
 
@@ -502,23 +712,20 @@
 
 
 
-
-
-
     <div id="tableAdd">
         <div id="tableHeaderAdd">
-            <span id="uidHeaderAdd">Tag UID</span>
-            <span id="vendorHeaderAdd">Name</span>
-            <span id="typeHeaderAdd">Typ</span>
-            <span id="colorHeaderAdd">Farbe</span>
-            <span id="ledHeaderAdd">LED</span>
-            <span id="actionHeaderAdd">Aktion</span>
+            <span id="uidHeaderAdd" data-i18n="txt_uid">Tag UID</span>
+            <span id="vendorHeaderAdd" data-i18n="txt_vendor">Name</span>
+            <span id="typeHeaderAdd" data-i18n="txt_type">Typ</span>
+            <span id="colorHeaderAdd" data-i18n="txt_color">Farbe</span>
+            <span id="ledHeaderAdd" data-i18n="txt_led">LED</span>
+            <span id="actionHeaderAdd" data-i18n="txt_action">Aktion</span>
         </div>
         <form id="addForm" class="tableAddRow">
             <span><input type="text" maxlength="20" name="uid" placeholder="UID (z. B. 04:...)" required></span>
             <span><input type="text" maxlength="30" name="vendor" placeholder="Name" required></span>
             <span><select name="type" id="selectType" required>
-                    <option value="">-- Typ wählen --</option>
+                    <option value="" data-i18n="sel_txt_type">-- choose type --</option>
                     <option value="PLA">PLA</option>
                     <option value="PLA+">PLA+</option>
                     <option value="PLA-CF">PLA-CF</option>
@@ -534,7 +741,7 @@
                 </select></span>
             <span><input type="text" name="color" maxlength="30" placeholder="Farbe" required></span>
             <span><select name="ledIndex" id="ledIndexSelect" required></select></span>
-            <span><button id="addBtn" type="submit" class="primaryBtn">Hinzufügen</button></span>
+            <span><button id="addBtn" type="submit" class="primaryBtn" data-i18n="btn_add">Hinzufügen</button></span>
         </form>
 
     </div>
@@ -545,185 +752,27 @@
 
     <div id="about">
         <span id="fwVersion" class="version"></span>
-        <span id="gitHash" class="version"></span>
+        <!-- <span id="gitHash" class="version"></span> -->
         <span id="build_date" class="version"></span>
     </div>
 
-    <div id="sysInfoDiv">
-        <div id="sysInfoContentDiv">
-
-            <!-- Host Section -->
-            <div class="infoBlock">
-                <div class="infoTitle" data-toggle>Host Information</div>
-
-                <div class="infoBlockContent">
-                    <div class="infoSection">
-                        <span class="infoLabel">Uptime:</span>
-                        <span class="infoValue" id="infoUptime">infoUptime</span>
-                    </div>
-
-                    <div class="infoSection">
-                        <span class="infoLabel">Heap size:</span>
-                        <span class="infoValue" id="infoHeapSize">infoHeapSize</span>
-                    </div>
-
-                    <div class="infoSection">
-                        <span class="infoLabel">Heap free:</span>
-                        <span class="infoValue" id="infoHeapFree">infoHeapFree</span>
-                    </div>
-
-                    <div class="infoSection">
-                        <span class="infoLabel">Sketch size:</span>
-                        <span class="infoValue" id="infoSketchSize">infoSketchSize</span>
-                    </div>
-
-                    <div class="infoSection">
-                        <span class="infoLabel">Sketch free:</span>
-                        <span class="infoValue" id="infoFreeSketch">infoFreeSketch</span>
-                    </div>
-
-                    <div class="infoSection">
-                        <span class="infoLabel">SPIFFS size:</span>
-                        <span class="infoValue" id="infoSpiffsSize">infoSpiffsSize</span>
-                    </div>
-
-                    <div class="infoSection">
-                        <span class="infoLabel">SPIFFS free:</span>
-                        <span class="infoValue" id="infoFreeSpiffs">infoFreeSpiffs</span>
-                    </div>
-                </div>
+    <div id="helpOverlay" class="helpOverlay">
+        <div class="helpModal">
+            <div class="helpModalHeader">
+                <span id="helpTitle"></span>
+                <button id="helpCloseBtn">&times;</button>
             </div>
-
-
-            <div class="infoBlock">
-                <div class="infoTitle" data-toggle>Network Information</div>
-
-                <div class="infoBlockContent">
-                    <div class="infoSection">
-                        <span class="infoLabel">Hostname:</span>
-                        <span class="infoValue" id="infoHostname">infoHostname</span>
-                    </div>
-                    <div class="infoSection">
-                        <span class="infoLabel">IP:</span>
-                        <span class="infoValue" id="infoWifiIp">infoWifiIp</span>
-                    </div>
-
-                    <div class="infoSection">
-                        <span class="infoLabel">Subnet:</span>
-                        <span class="infoValue" id="infoWifiSubnet">infoWifiSubnet</span>
-                    </div>
-
-                    <div class="infoSection">
-                        <span class="infoLabel">MAC:</span>
-                        <span class="infoValue" id="infoWifiMac">infoWifiMac</span>
-                    </div>
-
-                    <div class="infoSection">
-                        <span class="infoLabel">Gateway:</span>
-                        <span class="infoValue" id="infoWifiGateway">infoWifiGateway</span>
-                    </div>
-
-                    <div class="infoSection">
-                        <span class="infoLabel">SSID:</span>
-                        <span class="infoValue" id="infoWifiSsid">infoWifiSsid</span>
-                    </div>
-
-                    <div class="infoSection">
-                        <span class="infoLabel">DNS 1:</span>
-                        <span class="infoValue" id="infoWifiDns1">infoWifiDns1</span>
-                    </div>
-
-                    <div class="infoSection">
-                        <span class="infoLabel">DNS 2:</span>
-                        <span class="infoValue" id="infoWifiDns2">infoWifiDns2</span>
-                    </div>
-
-                    <div class="infoSection">
-                        <span class="infoLabel">RSSI:</span>
-                        <span class="infoValue" id="infoWifiRssi">infoWifiRssi</span>
-                    </div>
-                </div>
-            </div>
-
-
-            <!-- FW Section -->
-            <div class="infoBlock">
-                <div class="infoTitle" data-toggle>FW Information</div>
-
-                <div class="infoBlockContent">
-                    <div class="infoSection">
-                        <span class="infoLabel">FW Version:</span>
-                        <span class="infoValue" id="infoFwVersion">infoFwVersion</span>
-                    </div>
-
-                    <div class="infoSection">
-                        <span class="infoLabel">Build Date:</span>
-                        <span class="infoValue" id="infoBuildDate">infoBuildDate</span>
-                    </div>
-
-                    <div class="infoSection">
-                        <span class="infoLabel">Git Hash:</span>
-                        <span class="infoValue" id="infoGitHash">infoGitHash</span>
-                    </div>
-                </div>
-            </div>
-
-
-            <!-- Chip Section -->
-            <div class="infoBlock">
-                <div class="infoTitle" data-toggle>Chip Information</div>
-
-                <div class="infoBlockContent">
-                    <div class="infoSection">
-                        <span class="infoLabel">Chip Name:</span>
-                        <span class="infoValue" id="infoChipName">infoChipName</span>
-                    </div>
-
-                    <div class="infoSection">
-                        <span class="infoLabel">Cores:</span>
-                        <span class="infoValue" id="infoCores">infoCores</span>
-                    </div>
-
-                    <div class="infoSection">
-                        <span class="infoLabel">Revision:</span>
-                        <span class="infoValue" id="infoRevision">infoRevision</span>
-                    </div>
-
-                    <div class="infoSection">
-                        <span class="infoLabel">Flash Size:</span>
-                        <span class="infoValue" id="infoFlashSize">infoFlashSize</span>
-                    </div>
-                </div>
-            </div>
-
-
-            <!-- NFC Section -->
-            <div class="infoBlock">
-                <div class="infoTitle" data-toggle>NFC Information</div>
-                <div class="infoBlockContent">
-                    <div class="infoSection">
-                        <span class="infoLabel">NFC Available:</span>
-                        <span class="infoValue" id="infoNfcAvailable">infoNfcAvailable</span>
-                    </div>
-                    <div class="infoSection">
-                        <span class="infoLabel">NFC FW:</span>
-                        <span class="infoValue" id="infoNfcFwVer">infoNfcFwVer</span>
-                    </div>
-                    <div class="infoSection">
-                        <span class="infoLabel">NFC Chip ID:</span>
-                        <span class="infoValue" id="infoNfcChipId">infoNfcChipId</span>
-                    </div>
-                </div>
-            </div>
-
-
-            <!-- Close Button -->
-            <button id="sysInfoCloseBtn">close</button>
+            <div id="helpContent" class="helpModalContent"></div>
         </div>
     </div>
 
+    
+   
 
+
+    <script src="/i18n_help.js"></script>
     <script src="/settings.js"></script>
+
 </body>
 
 </html>

@@ -28,6 +28,8 @@ extern void renderRebootCountdown(unsigned long nowMs);
 
 extern void handleUID(const String &uid, UidSource source);
 
+const char* boardVariant = BOARD_VARIANT;
+
 
 SysInfo getSysInfo() {
     SysInfo info;
@@ -276,6 +278,7 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
         doc["git_hash"]                 = GIT_HASH;
         doc["build_date"]               = BUILD_DATE;
         doc["build_date_short"]         = BUILD_DATE_SHORT;
+        doc["boardVariant"]             = boardVariant;
         doc["chipName"]                 = info.chipName;
         doc["cores"]                    = info.cores;
         doc["revision"]                 = info.revision;
@@ -570,6 +573,51 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
         }
         request->send(LittleFS, "/config_v2.json", "application/json");
     });
+
+    // Help/Texte als JSON ausliefern
+    server.on("/help_de.json", HTTP_GET, [](AsyncWebServerRequest *request){
+
+        // Optional: Netzlast-Hinweis wie bei Config
+        LEDCTRL_FILAMENT::netBusyHint(150);
+        LEDCTRL_NFC::netBusyHint(150);
+
+        if (!LittleFS.exists("/help_de.json")) {
+            request->send(404, "application/json", "{\"error\":\"help_de.json missing\"}");
+            return;
+        }
+
+        request->send(LittleFS, "/help_de.json", "application/json");
+    });
+
+    server.on("/help_en.json", HTTP_GET, [](AsyncWebServerRequest *request){
+
+        // Optional: Netzlast-Hinweis wie bei Config
+        LEDCTRL_FILAMENT::netBusyHint(150);
+        LEDCTRL_NFC::netBusyHint(150);
+
+        if (!LittleFS.exists("/help_en.json")) {
+            request->send(404, "application/json", "{\"error\":\"help_en.json missing\"}");
+            return;
+        }
+
+        request->send(LittleFS, "/help_en.json", "application/json");
+    });
+
+    server.on("/i18n_help.js", HTTP_GET, [](AsyncWebServerRequest *request){
+
+        // Optional: Netzlast-Hinweis wie bei Config
+        LEDCTRL_FILAMENT::netBusyHint(150);
+        LEDCTRL_NFC::netBusyHint(150);
+
+        if (!LittleFS.exists("/i18n_help.js")) {
+            request->send(404, "application/json", "{\"error\":\"i18n_help.js missing\"}");
+            return;
+        }
+
+        request->send(LittleFS, "/i18n_help.js", "application/javascript");
+    });
+    
+
 
     // FIX: /logo.png und /favicon.ico laufen nun über serveStatic (oben) mit Cache
     // server.on("/logo.png", HTTP_GET, ...);    // entfernt

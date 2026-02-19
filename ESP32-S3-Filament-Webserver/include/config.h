@@ -88,12 +88,14 @@ struct MqttConfigV2 {
 #define CONFIG_HAS_GPIO
 
 struct systemConfig {
-  String version = "error";
-  bool         darkmode;    ///< Darkmode aktiv
-  bool         debugMode;   ///< Debug-Modus aktiv
-  uint32_t     webLEDTimeout;   // Default fürs Dashboard (ms)
-  String       hostname;    ///< Hostname für WLAN
-  bool         animationAfterBoot; ///< Startup-Animation nach Booten aktiv
+  String        version = "error";
+  String        boardVariant = "unknown";
+  bool          darkmode;    ///< Darkmode aktiv
+  bool          debugMode;   ///< Debug-Modus aktiv
+  uint32_t      webLEDTimeout;   // Default fürs Dashboard (ms)
+  String        hostname;    ///< Hostname für WLAN
+  bool          animationAfterBoot; ///< Startup-Animation nach Booten aktiv
+  String        defaultLanguage; ///< Standard-Sprache (z. B. "en" oder "de")
 };
 
 /**

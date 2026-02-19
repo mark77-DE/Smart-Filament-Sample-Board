@@ -17,6 +17,10 @@ const RECONNECT_DELAY = 2000; // 2 Sekunden
 let wsStatus = false;
 const wsStatusElement = document.getElementById("wsStatus");
 
+const selectLanguageSelect = document.getElementById('langSelect');
+
+let countFilaments = 1;
+
 //Filter vorbereiten
 let FILAMENTS = [];
 let activeFilters = {
@@ -183,7 +187,10 @@ function flushCoalescedSend() {
 function sendHighlight(uid) {
   queuedUid = uid;
 
-  console.log("Highlight UID:", uid);
+  
+  if(CONFIGV2.system.debugMode) {
+    console.log("Highlight UID:", uid);
+  }
 
   // wenn gerade kein Coalesce läuft: sofort senden
   if (!sendCoalesceTimer) {
@@ -274,6 +281,10 @@ async function loadFilamentTiles() {
 
   document.body.classList.toggle("daymode", !CONFIGV2.system.darkmode);
 
+  if(CONFIGV2.boardVariant == "unknown") {
+    alert("Warning: looks like first boot, please go to setting, configure pins an reboot esp");
+  }
+
   // Filter füllen
   populateFilter("filterVendor", "vendor");
   populateFilter("filterColor", "color");
@@ -289,8 +300,8 @@ function getVersion() {
     .then(r => r.json())
     .then(data => {
       document.getElementById("fwVersion").textContent = "FW-Version: " + data.firmware;
-      document.getElementById("gitHash").textContent = "Git hash: " + data.git_hash;
-      document.getElementById("build_date").textContent = "Build date: " + data.build_date;
+      //document.getElementById("gitHash").textContent = "Git hash: " + data.git_hash;
+      document.getElementById("build_date").textContent = "Build date: " + data.build_date_short;
     })
     .catch(err => console.error("Version fetch failed:", err));
 }
@@ -301,6 +312,8 @@ function renderFilamentGrid(filaments) {
   if (!grid) return;
 
   grid.innerHTML = "";
+
+  
 
   filaments.forEach(f => {
     const tile = document.createElement("div");
@@ -327,6 +340,8 @@ function renderFilamentGrid(filaments) {
     tile.onclick = () => sendHighlight(f.uid);
 
     grid.appendChild(tile);
+
+    countFilaments++;
   });
 }
 
@@ -351,16 +366,26 @@ function populateFilter(selectId, key) {
   select.innerHTML = "";
 
   // Mapping für schöne Labels
-  const FILTER_LABELS = {
+  const FILTER_LABELS_DE = {
     vendor: "Hersteller",
     color:  "Farben",
     type:   "Typen"
   };
 
+  const FILTER_LABELS_EN = {
+    vendor: "manufactors",
+    color:  "colors",
+    type:   "types"
+  };
+
   // Leere Option für „Alle“
   const emptyOpt = document.createElement("option");
   emptyOpt.value = "";
-  emptyOpt.textContent = "Alle " + (FILTER_LABELS[key] || key);
+  if(CONFIGV2.system.defaultLanguage === "de") {
+    emptyOpt.textContent = "Alle " + (FILTER_LABELS_DE[key] || key);
+  } else {  
+    emptyOpt.textContent = "all " + (FILTER_LABELS_EN[key] || key);
+  }
   select.appendChild(emptyOpt);
 
   // Alle eindeutigen Werte für dieses Feld
@@ -387,12 +412,17 @@ function highlightFilteredLEDs() {
   
     if (activeFilters.vendor == "" && activeFilters.color == "" && activeFilters.type == "") {
 
-        console.log("No filters applied");
+      if(CONFIGV2.system.debugMode) {
+        console.log("No filters active - skipping LED highlight");
+      }
+      
 
     } else {
 
-      console.log("Highlighting filtered LEDs for filters:", activeFilters);
-      console.log("Filtered UIDs:", filtered.map(f => f.uid))
+      if(CONFIGV2.system.debugMode) {
+        console.log("Highlighting filtered LEDs for filters:", activeFilters);
+        console.log("Filtered UIDs:", filtered.map(f => f.uid))
+      }
 
       const uids = filtered.map(f => f.uid);
         // LEDs per WebSocket aktivieren
@@ -411,7 +441,9 @@ function highlightFilteredLEDs() {
 document.getElementById("filterVendor").onchange = e => {
   activeFilters.vendor = e.target.value;
   
+  if(CONFIGV2.system.debugMode) {
     console.log("Filter Vendor changed to:", activeFilters.vendor);
+  } 
   
   updateGrid();           // Tiles anzeigen/ausblenden
   highlightFilteredLEDs(); // LEDs leuchten
@@ -420,7 +452,9 @@ document.getElementById("filterVendor").onchange = e => {
 document.getElementById("filterColor").onchange = e => {
   activeFilters.color = e.target.value;
   
+  if(CONFIGV2.system.debugMode) {
     console.log("Filter Color changed to:", activeFilters.color);
+  }
   
   updateGrid();
   highlightFilteredLEDs();
@@ -429,7 +463,9 @@ document.getElementById("filterColor").onchange = e => {
 document.getElementById("filterType").onchange = e => {
   activeFilters.type = e.target.value;
   
+  if(CONFIGV2.system.debugMode) {
     console.log("Filter Type changed to:", activeFilters.type);
+  }
   
   updateGrid();
   highlightFilteredLEDs();
@@ -490,14 +526,28 @@ function compareVersions(current, latest) {
     return false;
 }
 
-// Aufruf nach Laden des Webinterfaces
-checkFirmwareUpdate();
+
+
+async function init() {
+    await loadFilamentTiles();
+    // Aufruf nach Laden des Webinterfaces
+    checkFirmwareUpdate();
 
 
 
-connectWS();
-loadFilamentTiles();
-getVersion();
+    connectWS();
+
+    getVersion();
+
+    
+    loadHelpAndLang(CONFIGV2.system.defaultLanguage); // Standard-Sprache
+    selectLanguageSelect.value = CONFIGV2.system.defaultLanguage;
+    setupLangSwitcher('langSelect');
+    
+
+}
+
+init();
 
 
 

@@ -285,3 +285,78 @@ select, .select-wrapper::after {
     word-break: break-word;    /* alternative, je nach Browser */
     text-align: center;
 }
+
+
+
+
+
+
+
+
+/*   HELP Section */
+/* Fragezeichen */
+.helpIcon {
+    margin-left: 10px;
+    font-size: 14px;
+    background: #3498db;
+    color: white;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.2s;
+}
+
+.helpIcon:hover {
+    background: #2980b9;
+}
+
+/* Overlay */
+.helpOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.helpOverlay.active {
+    display: flex;
+}
+
+.helpModal {
+    background: #1e293b;
+    color: #ecf0f1;
+    width: 90%;
+    max-width: 600px;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+}
+
+.helpModalHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: bold;
+    margin-bottom: 15px;
+}
+
+#helpCloseBtn {
+    background: none;
+    border: none;
+    font-size: 22px;
+    cursor: pointer;
+    color: #ecf0f1;
+}
+
+.helpModalContent {
+    font-size: 14px;
+    line-height: 1.6;
+}

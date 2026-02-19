@@ -1,6 +1,7 @@
 #include "config.h"
 #include <LittleFS.h>
 #include <ArduinoJson.h>
+#include "display_anim.h"
 #include "ledctrl_filament.h"
 #include "ledctrl_nfc.h"
 #include "gpio_hardware.h"   // für gpiohw_init()
@@ -17,6 +18,7 @@ bool loadConfigV2()
 {
     // LittleFS mounten (mit Format-on-fail = true, wie bisher genutzt)
     Serial.println("Mounting LittleFS for V2...");
+    Serial.println();
     if (!LittleFS.begin(true))
     {
 
@@ -63,6 +65,18 @@ bool loadConfigV2()
 
     // --- Version ---
     CONFIGV2.system.version = cfg["version"] | "error";
+    CONFIGV2.system.boardVariant = cfg["boardVariant"] | "unknown";
+
+    if(CONFIGV2.system.boardVariant != BOARD_VARIANT) {
+        Serial.println(F("***********************************************************"));
+        Serial.println(F("*                                                         *"));
+        Serial.println(F("*  WARNING: boardVariant missmatch, please check config!  *"));
+        Serial.println(F("*                                                         *"));
+        Serial.println(F("***********************************************************"));
+        Serial.println();
+    }
+
+
 
     // --- Basis-Flags ---
     CONFIGV2.system.darkmode = sys["darkmode"] | false;
@@ -70,6 +84,7 @@ bool loadConfigV2()
     CONFIGV2.system.debugMode = sys["debugMode"] | false;
     CONFIGV2.system.hostname = sys["hostname"] | "FiSaBo";
     CONFIGV2.system.animationAfterBoot = sys["animationAfterBoot"] | true;
+    CONFIGV2.system.defaultLanguage = sys["defaultLanguage"] | "en";
 
     // --- Filament-LED ---
     CONFIGV2.led.count = led["count"] | 8;
@@ -186,6 +201,8 @@ bool loadConfigV2()
         Serial.println("Next loading filaments...");
     }
 
+    
+
     loadFilaments();
     return true;
 }
@@ -228,6 +245,8 @@ void applyConfigV2() {
   // GPIO-Hardware (Button/Buzzer)
   gpiohw_init();  // liest CONFIGV2.button / CONFIGV2.buzzer, richtet Pins & ISR/Timer ein
 
+ 
+
   if (CONFIGV2.system.debugMode) {
     Serial.println(F("--------------------"));
     Serial.println(F("Config V2 applied:"));
@@ -241,6 +260,7 @@ void applyConfigV2() {
     Serial.print(F(" WEB_LED_TIMEOUT = ")); Serial.println(CONFIGV2.webLEDTimeout);
     Serial.print(F(" DARKMODE = "));      Serial.println(CONFIGV2.system.darkmode ? F("true") : F("false"));
     Serial.print(F(" ANIMATION_AFTER_BOOT = "));      Serial.println(CONFIGV2.system.animationAfterBoot ? F("true") : F("false"));
+    Serial.print(F(" DEFAULT_LANGUAGE = "));      Serial.println(CONFIGV2.system.defaultLanguage);
 
     Serial.println();
     Serial.println(F("LED Settings:"));
@@ -313,6 +333,8 @@ bool updateConfigFromJsonV2(JsonDocument& doc) {
 
     JsonObject cfg = doc.as<JsonObject>();
 
+    
+
     // --- System ---
     if (cfg["system"].is<JsonObject>()) {
         JsonObject sys = cfg["system"];
@@ -321,12 +343,15 @@ bool updateConfigFromJsonV2(JsonDocument& doc) {
         CONFIGV2.system.hostname   = sys["hostname"]   | CONFIGV2.system.hostname;
         CONFIGV2.system.webLEDTimeout = sys["webLEDTimeout"] | CONFIGV2.system.webLEDTimeout;
         CONFIGV2.system.animationAfterBoot = sys["animationAfterBoot"] | CONFIGV2.system.animationAfterBoot;
+        CONFIGV2.system.defaultLanguage = sys["defaultLanguage"] | CONFIGV2.system.defaultLanguage;
+
         Serial.println(F("System configuration updated:"));
         Serial.print(F("Hostname set to: ")); Serial.println(CONFIGV2.system.hostname);
         Serial.print(F("Web LED Timeout set to: ")); Serial.println(CONFIGV2.system.webLEDTimeout);
         Serial.print(F("Darkmode set to: ")); Serial.println(CONFIGV2.system.darkmode ? F("true") : F("false"));
         Serial.print(F("Debug Mode set to: ")); Serial.println(CONFIGV2.system.debugMode ? F("true") : F("false"));
         Serial.print(F("Animation After Boot set to: ")); Serial.println(CONFIGV2.system.animationAfterBoot ? F("true") : F("false"));
+        Serial.print(F("Default Language set to: ")); Serial.println(CONFIGV2.system.defaultLanguage);
     }
 
     // --- LED ---
@@ -501,16 +526,18 @@ bool saveConfigV2() {
     // Version
     // =========================
     doc["version"] = CONFIGV2.system.version;
+    doc["boardVariant"] = BOARD_VARIANT;
 
     // =========================
     // System
     // =========================
     JsonObject system = doc["system"].to<JsonObject>();
-    system["darkmode"]       = CONFIGV2.system.darkmode;
-    system["debugMode"]      = CONFIGV2.system.debugMode;
-    system["webLEDTimeout"]  = CONFIGV2.system.webLEDTimeout;
-    system["animationAfterBoot"] = CONFIGV2.system.animationAfterBoot;
-    system["hostname"]       = CONFIGV2.system.hostname;
+    system["darkmode"]              = CONFIGV2.system.darkmode;
+    system["debugMode"]             = CONFIGV2.system.debugMode;
+    system["webLEDTimeout"]         = CONFIGV2.system.webLEDTimeout;
+    system["animationAfterBoot"]    = CONFIGV2.system.animationAfterBoot;
+    system["hostname"]              = CONFIGV2.system.hostname;
+    system["defaultLanguage"]       = CONFIGV2.system.defaultLanguage;
 
     // =========================
     // LED
@@ -615,6 +642,8 @@ bool importConfigJsonV2(JsonObject src) {
         CONFIGV2.system.webLEDTimeout = system["webLEDTimeout"] | CONFIGV2.system.webLEDTimeout;
         CONFIGV2.system.hostname      = system["hostname"]      | CONFIGV2.system.hostname;
         CONFIGV2.system.animationAfterBoot = system["animationAfterBoot"] | CONFIGV2.system.animationAfterBoot;
+        CONFIGV2.system.defaultLanguage = system["defaultLanguage"] | CONFIGV2.system.defaultLanguage;
+
         if(CONFIGV2.system.debugMode) {
             Serial.println(F("System configuration imported:"));
             Serial.print(F("  Hostname: ")); Serial.println(CONFIGV2.system.hostname);
@@ -622,6 +651,7 @@ bool importConfigJsonV2(JsonObject src) {
             Serial.print(F("  Darkmode: ")); Serial.println(CONFIGV2.system.darkmode ? F("true") : F("false"));
             Serial.print(F("  Debug Mode: ")); Serial.println(CONFIGV2.system.debugMode ? F("true") : F("false"));
             Serial.print(F("  Animation After Boot: ")); Serial.println(CONFIGV2.system.animationAfterBoot ? F("true") : F("false"));
+            Serial.print(F("  Default Language: ")); Serial.println(CONFIGV2.system.defaultLanguage);
         }
     }
 

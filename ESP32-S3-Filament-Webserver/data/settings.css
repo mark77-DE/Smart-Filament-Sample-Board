@@ -204,7 +204,7 @@ button.deleteBtn {
 button,
 .upload-btn,
 .primaryBtn {
-    width: 100px;
+    width: 110px;
     padding: 8px 10px;
     margin: 0;
     border: none;
@@ -217,7 +217,7 @@ button,
 #saveConfig {
     background-color: #007bff;
     color: white;
-    width: 100px;
+    width: 110px;
 }
 
 .primaryBtn:hover,
@@ -553,6 +553,8 @@ span.uid.invalid {
     opacity: 1;
 }
 
+
+
 /* Info-Box */
 #sysInfoContentDiv {
     position: relative;
@@ -631,6 +633,9 @@ span.uid.invalid {
     display: none;
     margin-bottom: 12px;
 }
+.infoBlock {
+   grid-column: span 2; 
+}
 
 .infoBlock.open .infoBlockContent {
     display: block;
@@ -652,17 +657,16 @@ span.uid.invalid {
     content: "▾";
 }
 
-#warningMqtt {
+#warningMqtt, #importReboot, #importWarning {
     color: red;
     float: right;
     font-weight: bold;
-    font-size: 1.1em;
+    font-size: 1.0em;
     vertical-align: middle;
     line-height: 35px;
     grid-column: span 2;
     text-align: center;
 }
-
 
 
 #settingsOverlay {
@@ -991,3 +995,82 @@ body.daymode .colorSwatch.active {
         0 0 0 2px rgba(0, 0, 0, 0.15),
         0 0 8px rgba(0, 0, 0, 0.25);
 }
+
+
+
+
+/*   HELP Section */
+/* Fragezeichen */
+.helpIcon {
+    margin-left: 10px;
+    font-size: 14px;
+    background: #3498db;
+    color: white;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.2s;
+}
+
+.helpIcon:hover {
+    background: #2980b9;
+}
+
+/* Overlay */
+.helpOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.helpOverlay.active {
+    display: flex;
+}
+
+.helpModal {
+    background: #1e293b;
+    color: #ecf0f1;
+    width: 90%;
+    width: 600px;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+    position: relative;
+    top: 120px;
+    left: calc(50% - 300px);
+    
+}
+
+.helpModalHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: bold;
+    margin-bottom: 15px;
+}
+
+#helpCloseBtn {
+    background: none;
+    border: none;
+    font-size: 22px;
+    cursor: pointer;
+    color: #ecf0f1;
+}
+
+.helpModalContent {
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+
+
+

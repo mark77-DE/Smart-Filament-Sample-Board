@@ -9,6 +9,8 @@ const wsStatus = document.getElementById("wsStatus");
 const editToggle = document.getElementById("editToggle");
 const debugToggle = document.getElementById("debugToggle");
 
+const selectLanguageSelect = document.getElementById("langSelect");
+
 
 const daynightToggle = document.getElementById("daynightToggle");
 
@@ -39,16 +41,32 @@ const infoSketchSize = document.getElementById("infoSketchSize");
 const infoFreeSketch = document.getElementById("infoFreeSketch");
 const infoSpiffsSize = document.getElementById("infoSpiffsSize");
 const infoFreeSpiffs = document.getElementById("infoFreeSpiffs");
-
-
+const infoBoardVariant = document.getElementById("infoBoardVariant");
 
 const ledPinSelect = document.getElementById("ledPin");
-const nfcLedPinSelect = document.getElementById("nfcLedPin");
+const ledBrightnessInput = document.getElementById("ledBrightness");
+const maxLEDInput = document.getElementById("maxLED");
+const ledColorInput = document.getElementById("ledColor");
+const ledColorErrorInput = document.getElementById("ledColorError");
+const ledColorPulseInput = document.getElementById("ledColorPulse");
+const ledTimeoutInput = document.getElementById("ledTimeout");
+const animationAfterBootInput = document.getElementById("animationAfterBoot");
 
-// Button & Buzzer (neu)
+
+const nfcLedPinSelect = document.getElementById("nfcLedPin");
+const nfcLedBrightnessInput = document.getElementById("nfcLedBrightness");
+const nfcMaxLEDInput = document.getElementById("nfcMaxLED");
+const nfcLedColorSuccessInput = document.getElementById("nfcLedColorSuccess");
+const nfcLedColorErrorInput = document.getElementById("nfcLedColorError");
+const nfcLedColorPulseInput = document.getElementById("nfcLedColorPulse");
+const nfcLedSuccessBlinkEnabledInput = document.getElementById("nfcLedSuccessBlinkEnabled");
+const nfcLedSuccessBlinkCountInput = document.getElementById("nfcLedSuccessBlinkCount");
+const nfcLedSuccessBlinkMsInput = document.getElementById("nfcLedSuccessBlinkMs");
+const nfcLedTimeoutInput = document.getElementById("nfcLedTimeout");
+
+
 
 const buttonEnabledDiv = document.getElementById("buttonEnabled");
-
 const buttonPinSelect = document.getElementById("buttonPin");
 const buttonPullupInput = document.getElementById("buttonPullup");
 const buttonDebounceInput = document.getElementById("buttonDebounceMs");
@@ -56,8 +74,8 @@ const buttonLongInput = document.getElementById("buttonLongMs");
 const buttonDoubleInput = document.getElementById("buttonDoubleMs");
 const buttonHoldInput = document.getElementById("buttonHoldMs");
 
-const buzzerEnabledDiv = document.getElementById("buzzerEnabled");
 
+const buzzerEnabledDiv = document.getElementById("buzzerEnabled");
 const buzzerPinSelect = document.getElementById("buzzerPin");
 const buzzerPassiveInput = document.getElementById("buzzerPassive");
 const buzzerActiveHighInput = document.getElementById("buzzerActiveHigh");
@@ -69,39 +87,6 @@ const buzzerErrorOnMsInput = document.getElementById("buzzerErrorOnMs");
 const buzzerErrorGapMsInput = document.getElementById("buzzerErrorGapMs");
 const buzzerErrorCountInput = document.getElementById("buzzerErrorCount");
 
-const ledBrightnessInput = document.getElementById("ledBrightness");
-const nfcLedBrightnessInput = document.getElementById("nfcLedBrightness");
-
-const maxLEDInput = document.getElementById("maxLED");
-const nfcMaxLEDInput = document.getElementById("nfcMaxLED");
-
-const ledColorInput = document.getElementById("ledColor");
-const ledColorErrorInput = document.getElementById("ledColorError");
-const ledColorPulseInput = document.getElementById("ledColorPulse");
-
-const nfcLedColorSuccessInput = document.getElementById("nfcLedColorSuccess");
-const nfcLedColorErrorInput = document.getElementById("nfcLedColorError");
-const nfcLedColorPulseInput = document.getElementById("nfcLedColorPulse");
-
-const ledTimeoutInput = document.getElementById("ledTimeout");
-const nfcLedTimeoutInput = document.getElementById("nfcLedTimeout");
-
-
-const webLedTimeoutInput = document.getElementById("webLedTimeout");
-
-
-const nfcLedSuccessBlinkEnabledInput = document.getElementById("nfcLedSuccessBlinkEnabled");
-const nfcLedSuccessBlinkCountInput = document.getElementById("nfcLedSuccessBlinkCount");
-const nfcLedSuccessBlinkMsInput = document.getElementById("nfcLedSuccessBlinkMs");
-
-const importFileInput = document.getElementById("importFile");
-const importBtn = document.getElementById("importBtn");
-
-const toggleBtn = document.getElementById("toggleSettings");
-const section = document.getElementById("sectionSettings");
-
-const uidInput = document.querySelector('input[name="uid"]');
-
 const mqttEnabledDiv = document.getElementById("mqttEnabled");
 const mqttBrokerInput = document.getElementById("mqttBroker");
 const mqttPortInput = document.getElementById("mqttPort");
@@ -112,18 +97,28 @@ const mqttBaseTopicInput = document.getElementById("mqttBaseTopic");
 const mqttHADiscoveryCheck = document.getElementById("mqttHADiscovery");
 const mqttHADiscoveryPrefixInput = document.getElementById("mqttHADiscoveryPrefix");
 
+
+const webLedTimeoutInput = document.getElementById("webLedTimeout");
+
+const importFileInput = document.getElementById("importFile");
+const importBtn = document.getElementById("importBtn");
+
+const toggleBtn = document.getElementById("toggleSettings");
+const section = document.getElementById("sectionSettings");
+
+const uidInput = document.querySelector('input[name="uid"]');
+
 const hostnameInput = document.getElementById("hostname");
 
 const ledSelect = document.getElementById("ledIndexSelect");
 
 
 
-
-
+let FILAMENT_DATA = [];
 let EDIT_MODE = false;
-let CONFIG = null;
 let CONFIGV2 = null;
 let lastHighlightedRow = null;
+let BOARD_VARIANT = "unknown"; // wird in config.js überschrieben, dient aber hier schon als Fallback / Referenz
 
 
 
@@ -141,8 +136,8 @@ socket.onopen = () => updateWSStatus(true);
 socket.onclose = () => {
     updateWSStatus(false);
     document.body.innerHTML = `
-        <h2>ESP Verbindung verloren...</h2>
-        <p>Seite wird in 2 Sekunden neu laden.</p>
+        <h2><span data-i18n="txt_esp_disconnected">ESP disconnected...</span></h2>
+        <p><span data-i18n="txt_page_reload">Page will reload in 2 seconds.</span></p>
     `;
     setTimeout(() => location.reload(), 2000);
 };
@@ -167,6 +162,8 @@ function rgbToHex(rgb) {
     return `#${r}${g}${b}`;
 }
 
+
+
 function updateImportUI() {
     const hasFile = importFileInput.files.length > 0;
 
@@ -183,7 +180,11 @@ function updateImportUI() {
 
 
 function updateWSStatus(connected) {
-    wsStatus.textContent = connected ? "WebSocket: verbunden" : "WebSocket: getrennt";
+
+    // Key je nach Status
+    const key = connected ? 'websocket_connected' : 'websocket_disconnected';
+
+    wsStatus.textContent = i18nData[key] || (connected ? "WebSocket: connected" : "WebSocket: disconnected");
     wsStatus.classList.toggle("ws-connected", connected);
     wsStatus.classList.toggle("ws-disconnected", !connected);
 }
@@ -260,7 +261,7 @@ async function handleWSMessage(ev) {
 document.getElementById("exportAllBtn").addEventListener("click", async () => {
     try {
         const res = await fetch("/api/exportAll");
-        if (!res.ok) throw new Error("Export fehlgeschlagen");
+        if (!res.ok) throw new Error(t("txt_export_failed") + ": " + await res.text());
 
         const blob = await res.blob();
         const url = URL.createObjectURL(blob);
@@ -272,7 +273,7 @@ document.getElementById("exportAllBtn").addEventListener("click", async () => {
 
         const a = document.createElement("a");
         a.href = url;
-        a.download = `SpotMyFilament_Backup_${timestamp}.json`;
+        a.download = `SpotMyFilament_${timestamp}_${infoBoardVariant.textContent}.json`;
         document.body.appendChild(a);
         a.click();
         a.remove();
@@ -289,9 +290,20 @@ document.getElementById("importAllForm").addEventListener("submit", async e => {
     const text = await fileInput.files[0].text();
     try {
         const res = await fetch("/api/importAll", { method: "POST", headers: { "Content-Type": "application/json" }, body: text });
-        if (res.ok) { alert("Import erfolgreich!"); CONFIG = null; await loadTable(); await updateAddFormLEDs(); }
-        else { alert("Import fehlgeschlagen: " + await res.text()); }
-    } catch (err) { alert("Import fehlgeschlagen: " + err); }
+        if (res.ok) { 
+            alert(t("txt_import_success"));
+
+            await loadFilaments();
+            renderTable();
+            updateAddFormSamples();
+            await loadConfig_V2(); 
+        }
+        else { 
+            alert(t("txt_import_failed") + ": " + await res.text()); 
+        }
+    } catch (err) { 
+        alert(t("txt_import_failed") + ": " + err); 
+    }
 });
 
 
@@ -299,11 +311,11 @@ document.getElementById("importAllForm").addEventListener("submit", async e => {
 
 // -------------------- Reboot --------------------
 document.getElementById("rebootBtn").addEventListener("click", async () => {
-    if (!confirm("ESP wirklich neustarten?")) return;
+    if (!confirm(t("txt_shure_reboot"))) return;
     try { await fetch("/api/reboot", { method: "POST" }); } catch { }
     document.body.innerHTML = `
-        <h2>ESP Verbindung verloren...</h2>
-        <p>Seite wird in 2 Sekunden neu laden.</p>
+        <h2 data-i18n="txt_esp_disconnected">ESP disconnected...</h2>
+        <p data-i18n="txt_page_reload">Page will reload in 2 seconds.</p>
     `;
     setTimeout(() => location.reload(), 2000);
 });
@@ -324,35 +336,31 @@ addForm.addEventListener("submit", async e => {
     const used = db.find(e => Number(e.ledIndex) === entry.ledIndex);
     if (used) { alert(`LED ${entry.ledIndex + 1} bereits verwendet von UID ${used.uid}`); return; }
     const res = await fetch("/api/add", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(entry) });
-    if (res.ok) { alert("Eintrag hinzugefügt!"); addForm.reset(); await loadTable(); await updateAddFormLEDs(); }
-    else alert("Fehler beim Hinzufügen!");
+    if (res.ok) { alert(t("txt_add_sample_success")); addForm.reset(); await loadFilaments(); renderTable(); updateAddFormSamples(); }
+    else alert(t("txt_add_sample_failed"));
 });
 
 
 // -------------------- Table / LED --------------------
-async function loadTable() {
-    //----------------------------usecase to be checked---------------------------------------------------------------------------------
+function renderTable() {
 
-    //await loadConfig_V2();
-    //--------------------------------------------------------------------------------------------------------------------------
-    const res = await fetch("/filaments.json");
-    if (!res.ok) {
-        dbDiv.innerHTML = "<p>Fehler beim Laden der Daten.</p>";
+    if (!Array.isArray(FILAMENT_DATA)) {
+        dbDiv.innerHTML = "<p>Invalid filament data</p>";
         return;
     }
 
-    const data = await res.json();
+    const data = FILAMENT_DATA;
     const usedLEDs = new Set(data.map(e => Number(e.ledIndex)));
 
     let html = `
         <div id="table">
             <div id="tableHeader">
-                <span id="uidHeader">Tag UID</span>
-                <span id="vendorHeader">Name</span>
-                <span id="typeHeader">Typ</span>
-                <span id="colorHeader">Farbe</span>
-                <span id="ledHeader">LED</span>
-                <span id="actionHeader">Aktion</span>
+                <span id="uidHeader" data-i18n="txt_uid">Tag UID</span>
+                <span id="vendorHeader" data-i18n="txt_vendor">Name</span>
+                <span id="typeHeader" data-i18n="txt_type">Type</span>
+                <span id="colorHeader" data-i18n="txt_color">Color</span>
+                <span id="ledHeader" data-i18n="txt_led">LED</span>
+                <span id="actionHeader" data-i18n="txt_action">Action</span>
             </div>
     `;
 
@@ -419,7 +427,11 @@ async function loadTable() {
 
     debugToggle.checked = !!(sys.debugMode);
     
-
+    loadHelpAndLang(CONFIGV2.system.defaultLanguage); // Standard-Sprache
+    selectLanguageSelect.value = CONFIGV2.system.defaultLanguage;
+    setupLangSwitcher('langSelect');
+    // Help-Icons einfügen
+    injectHelpIcons();
 
     // --- Mögliche fehlende Pins in den Dropdowns ergänzen ---
     ensureOption(ledPinSelect, led.pin);
@@ -527,7 +539,7 @@ function buildLedDropdown(currentLED, usedLEDs, disabled = false) {
 // -------------------- Buttons für Save/Delete --------------------
 function activateButtons() {
     document.querySelectorAll(".saveBtn").forEach(btn => btn.addEventListener("click", async () => {
-        if (!confirm("Eintrag sichern?")) return;
+        //if (!confirm("Eintrag sichern?")) return;
         const idx = Number(btn.dataset.idx); const row = btn.closest(".tableRow");
         const entry = { idx };
         row.querySelectorAll("[data-field]").forEach(el => {
@@ -535,11 +547,11 @@ function activateButtons() {
             entry[field] = el.tagName === "SELECT" ? el.value : el.innerText.trim();
         });
         const res = await fetch("/api/update", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(entry) });
-        if (res.ok) { alert("Eintrag gespeichert!"); await loadTable(); await updateAddFormLEDs(); } else alert("Fehler beim Speichern!");
+        if (res.ok) { alert(t("txt_save_sample_success")); await loadFilaments(); renderTable(); updateAddFormSamples(); } else alert(t("txt_save_sample_failed"));
     }));
 
     document.querySelectorAll(".deleteBtn").forEach(btn => btn.addEventListener("click", async () => {
-        if (!confirm("Eintrag wirklich löschen?")) return;
+        if (!confirm(t("txt_delete_sample_shure"))) return;
 
         const uid = btn.dataset.uid;
         const res = await fetch("/api/delete", {
@@ -548,13 +560,13 @@ function activateButtons() {
             body: `uid=${encodeURIComponent(uid)}`
         });
 
-        if (res.ok) { alert("Eintrag gelöscht!"); await loadTable(); await updateAddFormLEDs(); }
-        else alert("Fehler beim Löschen!");
+        if (res.ok) { alert(t("txt_delete_sample_success")); await loadFilaments(); renderTable(); updateAddFormSamples(); }
+        else alert(t("txt_delete_sample_failed"));
     }));
 }
 
-async function updateAddFormLEDs() {
-    const data = await (await fetch("/filaments.json")).json();
+async function updateAddFormSamples() {
+    const data = FILAMENT_DATA;
     const free = [];
     for (let i = 0; i < CONFIGV2.led.count; i++) {
         if (!data.find(e => Number(e.ledIndex) === i)) free.push(i);
@@ -571,7 +583,7 @@ async function updateAddFormLEDs() {
 
 
 async function saveConfigHandler() {
-    if (!confirm("Konfiguration sichern?")) return;
+    if (!confirm(t("txt_save_config_sure"))) return;
 
     // --- Filament LED ---
     const ledCount = Number(document.getElementById("maxLED").value);
@@ -585,6 +597,8 @@ async function saveConfigHandler() {
 
     const debugMode = debugToggle.checked;
     const darkmode = !daynightToggle.checked;
+    const defaultLanguage = selectLanguageSelect.value;
+    const animationAfterBoot = animationAfterBootInput.checked;
     
 
     // --- NFC ---
@@ -641,7 +655,9 @@ async function saveConfigHandler() {
                     darkmode,
                     debugMode,
                     webLEDTimeout,
-                    hostname: hostname || "filament-board"
+                    animationAfterBoot,
+                    hostname: hostname || "filament-board",
+                    defaultLanguage
                 },
                 led: {
                     count: ledCount,
@@ -705,10 +721,10 @@ async function saveConfigHandler() {
 
 
 
-// -------------------- Config laden --------------------
+// -------------------- load config --------------------
 async function loadConfig_V2() {
     const res = await fetch("/config_v2.json");
-    if (!res.ok) throw new Error("Config V2 konnte nicht geladen werden");
+    if (!res.ok) throw new Error(t("txt_load_config_failed"));
     const json = await res.json();
     CONFIGV2 = json;
 }
@@ -920,11 +936,6 @@ dbDiv.addEventListener('keydown', e => {
 });
 
 
-document.getElementById("saveConfig")
-    ?.addEventListener("click", saveConfigHandler);
-
-document.getElementById("saveMqtt")
-    ?.addEventListener("click", saveConfigHandler);
 
 
 
@@ -955,6 +966,8 @@ importFileInput.addEventListener("change", updateImportUI);
 buttonPinSelect.addEventListener("change", disableButton);
 buzzerPinSelect.addEventListener("change", disableBuzzer);
 
+document.getElementById("saveConfig")
+    ?.addEventListener("click", saveConfigHandler);
 
 
 
@@ -992,11 +1005,7 @@ closeSettings.onclick = () =>
 
 
 
-sysInfoBtn.onclick = () =>
-    sysInfoDiv.classList.add("active");
 
-sysInfoCloseBtn.onclick = () =>
-    sysInfoDiv.classList.remove("active");
 
 function formatUptime(ms) {
     let seconds = Math.floor(ms / 1000);
@@ -1009,13 +1018,26 @@ function formatUptime(ms) {
     hours = hours % 24;
 
     const parts = [];
-    if (days > 0) parts.push(`${days} Tag${days > 1 ? 'e' : ''}`);
-    if (hours > 0) parts.push(`${hours} Stunde${hours > 1 ? 'n' : ''}`);
-    if (minutes > 0) parts.push(`${minutes} Minute${minutes > 1 ? 'n' : ''}`);
-    if (seconds > 0) parts.push(`${seconds} Sekunde${seconds > 1 ? 'n' : ''}`);
 
-    return parts.join(' ');
+    if (days > 0) {
+        parts.push(`${days} ${days === 1 ? t("txt_day") : t("txt_day_plural")}`);
+    }
+
+    if (hours > 0) {
+        parts.push(`${hours} ${hours === 1 ? t("txt_hour") : t("txt_hour_plural")}`);
+    }
+
+    if (minutes > 0) {
+        parts.push(`${minutes} ${minutes === 1 ? t("txt_minute") : t("txt_minute_plural")}`);
+    }
+
+    if (seconds > 0) {
+        parts.push(`${seconds} ${seconds === 1 ? t("txt_second") : t("txt_second_plural")}`);
+    }
+
+    return parts.join(" ");
 }
+
 
 function rssiToColor(rssi) {
     if (rssi >= -60) return "green";      // stark
@@ -1032,18 +1054,22 @@ function updateRssiDisplay(rssi) {
 
 
 
-function getVersion() {
+async function getVersion() {
     fetch("/api/version")
         .then(r => r.json())
         .then(data => {
 
-            console.log("Version Info:", data);
+            
+            //console.log("Version Info:", data);
+        
+            document.getElementById("fwVersion").textContent = "FW-Version: " + data.firmware;
+            //document.getElementById("gitHash").textContent = "Git hash: " + data.git_hash;
+            document.getElementById("build_date").textContent = "Build date: " + data.build_date_short;
 
-            document.getElementById("fwVersion").textContent = data.firmware;
-            document.getElementById("gitHash").textContent = data.git_hash;
-            document.getElementById("build_date").textContent = data.build_date;
-
+            BOARD_VARIANT = data.boardVariant; // global verfügbar machen
+    
             infoChipName.textContent = data.chipName;
+            infoBoardVariant.textContent = BOARD_VARIANT;
             infoCores.textContent = data.cores;
             infoRevision.textContent = data.revision;
             infoFlashSize.textContent = data.flashSize + " bytes";
@@ -1075,7 +1101,6 @@ function getVersion() {
 
             updateRssiDisplay(data.wifi_rssi);
 
-
         })
         .catch(err => console.error("Version fetch failed:", err));
 }
@@ -1095,7 +1120,6 @@ document.querySelectorAll(".navItem").forEach(btn => {
 
     });
 });
-
 
 
 
@@ -1134,18 +1158,56 @@ daynightToggle.addEventListener("change", function () {
     document.body.classList.toggle("daymode", this.checked);
 });
 
+
+
+
+
+async function loadFilaments() {
+    const res = await fetch("/filaments.json");
+
+    if (!res.ok) {
+        FILAMENT_DATA = [];
+        throw new Error("Failed to load filaments");
+    }
+
+    FILAMENT_DATA = await res.json();
+}
+
+
+async function checkBoardVariant() {
+    await loadHelpAndLang(CONFIGV2.system.defaultLanguage); // sicherstellen, dass i18nData geladen ist
+
+    if (CONFIGV2.boardVariant != BOARD_VARIANT) {
+        console.warn(`Board-Variante in config (${CONFIGV2.boardVariant}) stimmt nicht überein mit Firmware (${BOARD_VARIANT})!`);
+        alert(
+            t("txt_board_variant_mismatch") +
+            "\n\nconfig: " + CONFIGV2.boardVariant +
+            "\nfirmware: " + BOARD_VARIANT
+        );
+    }
+}
+
+
+
+
+
+
 // -------------------- Init --------------------
 async function init() {
 
+    await getVersion();
     await loadConfig_V2();
-    await loadTable();
-    await updateAddFormLEDs();
+    await loadFilaments();
+    checkBoardVariant()
+    renderTable();
+    updateAddFormSamples();
     updatePinOptions();
     updateImportUI();
     initColorPresets();
     disableButton();
     disableBuzzer();
-    getVersion();
+    
+    
 }
 
 init();
