@@ -28,4 +28,6 @@ optional Buzzer<br>
 ## Screenshot Dashboard (daymode)
 <img width="1024" alt="Dashboard daymode" src="https://github.com/mark77-DE/Smart-Filament-Sample-Board/blob/main/screenshots/dashboard_daymode.png" />
 
+## Screenshot edit mode (nightmode)
+<img width="1024" alt="Dashboard daymode" src="https://github.com/mark77-DE/Smart-Filament-Sample-Board/blob/main/screenshots/edit_page.png" />
 
