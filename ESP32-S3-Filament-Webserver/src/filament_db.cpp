@@ -6,9 +6,9 @@
 #include "config.h"
 #include "mqtt_manager.h"
 
-static FilamentEntry db[100];   // max 100 Einträge
+static FilamentEntry db[150];   // max 100 Einträge
 static int dbCount = 0;
-static const int MAX_DB_ENTRIES = 100;
+static const int MAX_DB_ENTRIES = 150;
 
 namespace FilamentDB {
 
@@ -78,11 +78,14 @@ bool loadFromJsonArray(JsonArray arr) {
     for (JsonObject o : arr) {
         if (dbCount >= MAX_DB_ENTRIES) break;
 
-        db[dbCount].uid      = o["uid"]      | "";
-        db[dbCount].vendor   = o["vendor"]   | "";
-        db[dbCount].type     = o["type"]     | "";
-        db[dbCount].color    = o["color"]    | "";
-        db[dbCount].ledIndex = o["ledIndex"] | -1;
+        db[dbCount].uid         = o["uid"]      | "";
+        db[dbCount].vendor      = o["vendor"]   | "";
+        db[dbCount].type        = o["type"]     | "";
+        db[dbCount].color       = o["color"]    | "";
+        db[dbCount].ledIndex    = o["ledIndex"] | -1;
+        db[dbCount].info1       = o["info1"]    | "";
+        db[dbCount].info2       = o["info2"]    | "";
+        db[dbCount].storage     = o["storage"]  | "";
 
         dbCount++;
     }
@@ -101,11 +104,14 @@ JsonArray toJsonArray(JsonDocument &doc) {
 
     for (int i = 0; i < dbCount; i++) {
         JsonObject o = arr.add<JsonObject>();
-        o["uid"]      = db[i].uid;
-        o["vendor"]   = db[i].vendor;
-        o["type"]     = db[i].type;
-        o["color"]    = db[i].color;
-        o["ledIndex"] = db[i].ledIndex;
+        o["uid"]        = db[i].uid;
+        o["vendor"]     = db[i].vendor;
+        o["type"]       = db[i].type;
+        o["color"]      = db[i].color;
+        o["ledIndex"]   = db[i].ledIndex;
+        o["info1"]      = db[i].info1;
+        o["info2"]      = db[i].info2;
+        o["storage"]    = db[i].storage;
     }
 
     return arr;

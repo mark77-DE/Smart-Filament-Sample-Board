@@ -57,6 +57,7 @@ void publishHADiscovery(
         {"Filament Vendor", "vendor", "filament_vendor"},
         {"Filament Type", "type", "filament_type"},
         {"Filament Color", "color", "filament_color"},
+        {"Filament Storage", "storage", "filament_storage"},
         {"Filament LED Index", "led_index", "filament_led_index"}};
 
     for (auto s : sensors)

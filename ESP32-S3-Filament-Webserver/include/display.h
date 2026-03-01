@@ -46,7 +46,18 @@ public:
    * @param line2 Zweite Zeile (Mitte)
    * @param line3 Dritte Zeile (unten)
    */
-  static void showThreeCentered(const String& line1, const String& line2, const String& line3);
+  static void showThreeLinesCentered(const String& line1, const String& line2, const String& line3);
+
+
+  /**
+   * @brief Zeigt drei zentrierte Zeilen (neu, für Reboot-Countdown).
+   *        Kürzt bei Bedarf mit "..." und passt den Font je nach Display-Höhe an.
+   * @param line1 Erste Zeile (oben)
+   * @param line2 Zweite Zeile (Mitte)
+   * @param line3 Dritte Zeile (unten)
+   * @param line4 Vierte Zeile (unten)
+   */
+  static void showFourLinesCentered(const String& line1, const String& line2, const String& line3, const String& line4);
 
   // --- Neu: Bootscreen mit Firmware-Version/Hash ---
   static void showBootVersion(const char* version, const char* dateShort);

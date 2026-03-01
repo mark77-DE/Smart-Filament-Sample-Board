@@ -4,20 +4,29 @@
     "vendor": "change me",
     "type": "PLA",
     "color": "red",
-    "ledIndex": 0
+    "ledIndex": 0,
+    "info1": "test 1",
+    "info2": "http://sunlu.de",
+    "storage": "Box 1"
   },
   {
     "uid": "04:8A:BD:2E:4F:61:82",
     "vendor": "change me 2",
     "type": "PLA+",
-    "color": "blau",
-    "ledIndex": 1
+    "color": "blue",
+    "ledIndex": 1,
+    "info1": "test 2",
+    "info2": "http://tinmorry.de",
+    "storage": "Box 2"
   },
   {
     "uid": "04:8A:BD:2E:4F:61:83",
     "vendor": "change me 3",
     "type": "PLA+",
     "color": "yellow",
-    "ledIndex": 2
+    "ledIndex": 2,
+    "info1": "test 3",
+    "info2": "http://bambu.de",
+    "storage": "Box 3"
   }
 ]

@@ -106,14 +106,14 @@
     "btn_import": "Import",
     "txt_debug_settings": "Debug Settings",
     "txt_host_settings": "Host Settings",
-    "txt_all_manufactor": "all manufactors",
-    "txt_all_colors": "all colors",
-    "txt_all_types": "all types",
+    "txt_manufactors": "manufactors",
+    "txt_colors": "colors",
+    "txt_materials": "materials",
     "btn_daynight_mode": "Day/Night Mode",
     "txt_import_warning": "WARNING: This will overwrite all current settings and filaments!",
     "txt_import_reboot": "Please refresh browser after importing settings.",
     "sel_txt_type": "-- choose type --",
-    "btn_add": "add",
+    "btn_add": "create",
     "txt_uid": "tag UID",
     "txt_vendor": "name",
     "txt_type": "type",
@@ -127,8 +127,8 @@
     "txt_shure_reboot": "Are you sure you want to reboot the device?",
     "txt_esp_disconnected": "ESP disconnected...",
     "txt_page_reload": "Page will reload in 2 seconds.",
-    "txt_add_sample_success": "Sample added successfully!",
-    "txt_add_sample_failed": "Failed to add sample!",
+    "txt_add_sample_success": "Sample created successfully!",
+    "txt_add_sample_failed": "Failed to create sample!",
     "txt_save_sample_success": "Sample saved successfully!",
     "txt_save_sample_failed": "Failed to save sample!",
     "txt_delete_sample_shure": "Are you sure you want to delete this sample?",
@@ -161,7 +161,9 @@
     "txt_nfc_available": "NFC Available:",
     "txt_variant": "Chip Variant:",
     "txt_board_variant_mismatch": "Warning: Configuration does not match board variant!\n\nCheck pins!\n\n",
-    "txt_animation_after_boot": "Animation after boot:"
+    "txt_animation_after_boot": "Animation after boot:",
+    "txt_storage": "storage",
+    "txt_filter_free": "keyword"
 
 
 

@@ -6,8 +6,10 @@ body {
 #header {
     display: flex;
     align-items: center;  /* vertikal zentrieren */
-    gap: 15px;            /* Abstand zwischen Logo und Headline */
-    padding: 10px 20px;   /* optional, innen Abstand */
+    gap: 20px;            /* Abstand zwischen Logo und Headline */
+    padding: 10px 30px;   /* optional, innen Abstand */
+    border-bottom: 1px solid #4f4f4f;
+    
 }
 
 #headline {
@@ -91,11 +93,11 @@ button {
 }
 
 .tile {
-    border: 1px solid #ccc;
     padding: 5px;
     text-align: center;
     cursor: pointer;
-    min-height: 60px;
+    min-height: 90px;
+    padding: 8px;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -103,6 +105,9 @@ button {
     border: 2px solid #2980b9;
     border-radius: 10px;
     width: 150px;
+    user-select: none;
+    -webkit-user-select: none; /* Safari */
+    -ms-user-select: none;     /* alte Edge */
 }
 
 
@@ -137,24 +142,13 @@ button {
     font-weight: bold;
 }
 
-/* Mittelgroße Geräte / Tablets */
-@media screen and (min-width: 480px) {
-    #filamentGrid {
-        grid-template-columns: repeat(1, 1fr); /* 3 Spalten */
-    }
+
+
+
+#filamentGrid {
+    grid-template-columns: repeat(10, 1fr); /* Desktop */
 }
 
-@media screen and (min-width: 768px) {
-    #filamentGrid {
-        grid-template-columns: repeat(2, 1fr); /* 5 Spalten */
-    }
-}
-
-@media screen and (min-width: 1024px) {
-    #filamentGrid {
-        grid-template-columns: repeat(10, 1fr); /* Desktop */
-    }
-}
 
 
 
@@ -168,7 +162,7 @@ body.daymode {
 
 /* Header */
 body.daymode #header {
-    background-color: #ffffff;
+    background-color: #f4f6f8;
     border-bottom: 1px solid #dcdfe3;
 }
 
@@ -293,62 +287,49 @@ select, .select-wrapper::after {
 
 
 
-/*   HELP Section */
-/* Fragezeichen */
-.helpIcon {
-    margin-left: 10px;
-    font-size: 14px;
-    background: #3498db;
-    color: white;
-    border-radius: 50%;
-    width: 18px;
-    height: 18px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    font-weight: bold;
-    transition: 0.2s;
-}
 
-.helpIcon:hover {
-    background: #2980b9;
-}
+/* ---------------- DETAIL OVERLAY ---------------- */
 
-/* Overlay */
-.helpOverlay {
+#detailOverlay {
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.6);
-    display: none;
+    background: rgba(0,0,0,0.3);
+    display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 1000;
+    z-index: 2000;
 }
 
-.helpOverlay.active {
-    display: flex;
+#detailOverlay.hidden {
+    display: none;
 }
 
-.helpModal {
+.detailModal {
     background: #1e293b;
     color: #ecf0f1;
     width: 90%;
-    max-width: 600px;
-    border-radius: 8px;
-    padding: 20px;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+    max-width: 500px;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.5);
+    position: relative;
 }
 
-.helpModalHeader {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-weight: bold;
-    margin-bottom: 15px;
+body.daymode .detailModal {
+    background:  #f4f6f8;
+    color: #2c3e50;
+    width: 90%;
+    max-width: 500px;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 15px 40px rgba(0,0,0,1.5);
+    position: relative;
 }
 
-#helpCloseBtn {
+#detailCloseBtn {
+    position: absolute;
+    top: 10px;
+    right: 15px;
     background: none;
     border: none;
     font-size: 22px;
@@ -356,7 +337,70 @@ select, .select-wrapper::after {
     color: #ecf0f1;
 }
 
-.helpModalContent {
-    font-size: 14px;
-    line-height: 1.6;
+body.daymode #detailCloseBtn {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    background: none;
+    border: none;
+    font-size: 22px;
+    cursor: pointer;
+    color: #2c3e50;
+}
+
+
+
+
+.storage-badge {
+    font-size: 0.7em;
+    margin-top: 5px;
+    padding: 2px 6px;
+    background: #34495e;
+    border-radius: 10px;
+}
+
+body.daymode .storage-badge {
+    background: lightgray;
+}
+
+
+
+#filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    padding-bottom: 15px;
+    padding-top: 5px;
+    border-bottom: 1px solid #4f4f4f;
+}
+
+body.daymode #filters {
+     border-bottom: 1px solid #dcdfe3;
+}
+
+.filterElement {
+    display: flex;
+    flex-direction: column;   /* Label über Select */
+}
+
+.filterLabel {
+    margin-bottom: 4px;
+    padding-top: 5px;
+    padding-left: 10px;
+    font-size: 0.85rem;
+}
+
+#filterFree {
+    height: 27px;
+    background: #34495e;
+    color: #ecf0f1;
+    font-size: 1.05em;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+body.daymode #filterFree {
+    background: #ffffff;
+    color: #000000;
 }

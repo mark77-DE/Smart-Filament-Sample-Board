@@ -52,7 +52,7 @@ bool importFilamentsJson(JsonArray src);
  * @return true bei Erfolg, sonst false
  * @note Nur deklariert – Implementierung ggf. an anderer Stelle (abhängig von FilamentDB-API).
  */
-bool loadFilamentDB(FilamentEntry* dst, size_t maxEntries, size_t& outCount);
+// bool loadFilamentDB(FilamentEntry* dst, size_t maxEntries, size_t& outCount);
 
 /**
  * @brief Speichert die aktuelle Filament-DB in /filaments.json

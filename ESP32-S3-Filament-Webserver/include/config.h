@@ -183,4 +183,4 @@ bool importConfigJsonV2(JsonObject src);
 
 uint32_t colorFromArrayV2(JsonArrayConst arr);
 
-void setColorArrayV2(JsonObject& opt, const char* key, uint32_t color);
+// void setColorArrayV2(JsonObject& opt, const char* key, uint32_t color);

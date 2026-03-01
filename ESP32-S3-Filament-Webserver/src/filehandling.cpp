@@ -103,29 +103,31 @@ bool importFilamentsJson(JsonArray src) {
   return true;
 }
 
-// Optional-Hilfsfunktion (falls in filehandling.h deklariert)
-bool loadFilamentDB(FilamentEntry* dst, size_t maxEntries, size_t& outCount) {
-  outCount = 0;
+// // Optional-Hilfsfunktion (falls in filehandling.h deklariert)
+// bool loadFilamentDB(FilamentEntry* dst, size_t maxEntries, size_t& outCount) {
+//   outCount = 0;
 
-  // Hole DB als JSON-Array (verlustfrei aus dem Namespace)
-  JsonDocument doc;
-  JsonArray arr = FilamentDB::toJsonArray(doc);
+//   // Hole DB als JSON-Array (verlustfrei aus dem Namespace)
+//   JsonDocument doc;
+//   JsonArray arr = FilamentDB::toJsonArray(doc);
 
-  for (JsonObject obj : arr) {
-    if (outCount >= maxEntries) break;
+//   for (JsonObject obj : arr) {
+//     if (outCount >= maxEntries) break;
 
-    FilamentEntry e{};
-    // Felder gemäß bisheriger Verwendung in handleUID()
-    e.ledIndex = obj["ledIndex"] | -1;
-    e.vendor   = obj["vendor"]   | String();
-    e.type     = obj["type"]     | String();
-    e.color    = obj["color"]    | String();
-    // ggf. weitere Felder analog ergänzen
+//     FilamentEntry e{};
+//     // Felder gemäß bisheriger Verwendung in handleUID()
+//     e.ledIndex  = obj["ledIndex"] | -1;
+//     e.vendor    = obj["vendor"]   | String();
+//     e.type      = obj["type"]     | String();
+//     e.color     = obj["color"]    | String();
+//     e.info1     = obj["info1"]    | String();
+//     e.info2     = obj["info2"]    | String();
+//     // ggf. weitere Felder analog ergänzen
 
-    dst[outCount++] = e;
-  }
-  return (outCount > 0);
-}
+//     dst[outCount++] = e;
+//   }
+//   return (outCount > 0);
+// }
 
 // ============================================================================
 // Utilities

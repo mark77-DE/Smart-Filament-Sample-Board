@@ -289,6 +289,7 @@ async function loadFilamentTiles() {
   populateFilter("filterVendor", "vendor");
   populateFilter("filterColor", "color");
   populateFilter("filterType", "type");
+  populateFilter("filterStorage", "storage");
 
   // Initial alle Tiles rendern
   updateGrid();
@@ -309,47 +310,59 @@ function getVersion() {
 
 function renderFilamentGrid(filaments) {
   const grid = document.getElementById("filamentGrid");
-  if (!grid) return;
-
   grid.innerHTML = "";
-
-  
 
   filaments.forEach(f => {
     const tile = document.createElement("div");
     tile.className = "tile";
     tile.dataset.uid = f.uid;
-    tile.dataset.led = f.ledIndex;
 
-    const vendorSpan = document.createElement("div");
-    vendorSpan.className = "vendor";
-    vendorSpan.textContent = f.vendor;
+    tile.innerHTML = `
+      <div class="vendor">${f.vendor}</div>
+      <div class="color">${f.color}</div>
+      <div class="type">${f.type}</div>
+      <div class="storage-badge">${f.storage}</div>
+    `;
 
-    const colorSpan = document.createElement("div");
-    colorSpan.className = "color";
-    colorSpan.textContent = f.color;
+    tile.onclick  = () => {
+      sendHighlight(f.uid);
+    }
 
-    const typeSpan = document.createElement("div");
-    typeSpan.className = "type";
-    typeSpan.textContent = f.type;
-
-    tile.appendChild(vendorSpan);
-    tile.appendChild(colorSpan);
-    tile.appendChild(typeSpan);
-
-    tile.onclick = () => sendHighlight(f.uid);
+    tile.ondblclick = () => {
+      showDetails(f);
+    };
 
     grid.appendChild(tile);
-
-    countFilaments++;
   });
 }
 
 function applyFilters() {
+
+  const free = (activeFilters.free || "").toLowerCase();
+
   return FILAMENTS.filter(f => {
-    if (activeFilters.vendor && f.vendor !== activeFilters.vendor) return false;
-    if (activeFilters.color  && f.color  !== activeFilters.color)  return false;
-    if (activeFilters.type   && f.type   !== activeFilters.type)   return false;
+
+    if (activeFilters.vendor  && f.vendor  !== activeFilters.vendor)  return false;
+    if (activeFilters.color   && f.color   !== activeFilters.color)   return false;
+    if (activeFilters.type    && f.type    !== activeFilters.type)    return false;
+    if (activeFilters.storage && f.storage !== activeFilters.storage) return false;
+
+    // ----- NEW: Free text filter -----
+    if (free) {
+      const haystack = [
+        f.vendor,
+        f.color,
+        f.type,
+        f.storage,
+        f.info1,
+        f.info2
+      ]
+      .join(" ")
+      .toLowerCase();
+
+      if (!haystack.includes(free)) return false;
+    }
+
     return true;
   });
 }
@@ -367,15 +380,17 @@ function populateFilter(selectId, key) {
 
   // Mapping für schöne Labels
   const FILTER_LABELS_DE = {
-    vendor: "Hersteller",
-    color:  "Farben",
-    type:   "Typen"
+    vendor:   "Hersteller",
+    color:    "Farben",
+    type:     "Typen",
+    storage:  "Lagerplatz"
   };
 
   const FILTER_LABELS_EN = {
-    vendor: "manufactors",
-    color:  "colors",
-    type:   "types"
+    vendor:   "manufactors",
+    color:    "colors",
+    type:     "types",
+    storage:  "storage"
   };
 
   // Leere Option für „Alle“
@@ -400,37 +415,62 @@ function populateFilter(selectId, key) {
 }
 
 function highlightFilteredLEDs() {
+
+  const free = (activeFilters.free || "").toLowerCase();
+
   const filtered = FILAMENTS.filter(f => {
-    if (activeFilters.vendor && f.vendor !== activeFilters.vendor) return false;
-    if (activeFilters.color  && f.color  !== activeFilters.color)  return false;
-    if (activeFilters.type   && f.type   !== activeFilters.type)   return false;
+
+    if (activeFilters.vendor  && f.vendor  !== activeFilters.vendor)  return false;
+    if (activeFilters.color   && f.color   !== activeFilters.color)   return false;
+    if (activeFilters.type    && f.type    !== activeFilters.type)    return false;
+    if (activeFilters.storage && f.storage !== activeFilters.storage) return false;
+
+    // ----- NEW: Free text filter -----
+    if (free) {
+      const haystack = [
+        f.vendor  || "",
+        f.color   || "",
+        f.type    || "",
+        f.storage || "",
+        f.info1   || "",
+        f.info2   || ""
+      ]
+      .join(" ")
+      .toLowerCase();
+
+      if (!haystack.includes(free)) return false;
+    }
+
     return true;
   });
 
-  
-    ;
-  
-    if (activeFilters.vendor == "" && activeFilters.color == "" && activeFilters.type == "") {
 
-      if(CONFIGV2.system.debugMode) {
-        console.log("No filters active - skipping LED highlight");
-      }
-      
+  // ----- Check if ANY filter is active -----
+  const noFiltersActive =
+    !activeFilters.vendor &&
+    !activeFilters.color &&
+    !activeFilters.type &&
+    !activeFilters.storage &&
+    !free;
 
-    } else {
 
-      if(CONFIGV2.system.debugMode) {
-        console.log("Highlighting filtered LEDs for filters:", activeFilters);
-        console.log("Filtered UIDs:", filtered.map(f => f.uid))
-      }
+  if (noFiltersActive) {
 
-      const uids = filtered.map(f => f.uid);
-        // LEDs per WebSocket aktivieren
-        sendMultiHighlight(uids);      
-
+    if (CONFIGV2.system.debugMode) {
+      console.log("No filters active - skipping LED highlight");
     }
 
-  
+    return; // sauber beenden
+  }
+
+
+  if (CONFIGV2.system.debugMode) {
+    console.log("Highlighting filtered LEDs for filters:", activeFilters);
+    console.log("Filtered UIDs:", filtered.map(f => f.uid));
+  }
+
+  const uids = filtered.map(f => f.uid);
+  sendMultiHighlight(uids);
 }
 
 
@@ -470,6 +510,28 @@ document.getElementById("filterType").onchange = e => {
   updateGrid();
   highlightFilteredLEDs();
 };
+
+document.getElementById("filterStorage").onchange = e => {
+  activeFilters.storage = e.target.value;
+  
+  if(CONFIGV2.system.debugMode) {
+    console.log("Filter Type changed to:", activeFilters.type);
+  }
+  
+  updateGrid();
+  highlightFilteredLEDs();
+};
+
+document.getElementById("filterFree").addEventListener("input", e => {
+  activeFilters.free = e.target.value.trim();
+  
+  if(CONFIGV2.system.debugMode) {
+    console.log("Filter Type changed to:", activeFilters.type);
+  }
+  
+  updateGrid();
+  highlightFilteredLEDs();
+});
 
 
 
@@ -527,6 +589,32 @@ function compareVersions(current, latest) {
 }
 
 
+function showDetails(f) {
+  const overlay = document.getElementById("detailOverlay");
+  const content = document.getElementById("detailContent");
+
+  content.innerHTML = `
+    <h3>${f.vendor} – ${f.type}</h3>
+    <p><strong><span data-i18n="txt_color">Color:</span></strong> ${f.color}</p>
+    <p><strong><span data-i18n="txt_storage">Storage:</span></strong> ${f.storage}</p>
+    <p><strong>Info 1:</strong> ${f.info1}</p>
+    <p><strong>Info 2:</strong> ${f.info2}</p>
+  `;
+
+  applyTranslations(content);
+  overlay.classList.remove("hidden");
+}
+
+function closeDetails() {
+  const overlay = document.getElementById("detailOverlay");
+  overlay.classList.add("hidden");
+}
+
+document.getElementById("detailOverlay").addEventListener("click", (e) => {
+  if (e.target.id === "detailOverlay") {
+    closeDetails();
+  }
+});
 
 async function init() {
     await loadFilamentTiles();
@@ -543,6 +631,9 @@ async function init() {
     loadHelpAndLang(CONFIGV2.system.defaultLanguage); // Standard-Sprache
     selectLanguageSelect.value = CONFIGV2.system.defaultLanguage;
     setupLangSwitcher('langSelect');
+
+    document.getElementById("detailCloseBtn").addEventListener("click", closeDetails);
+    
     
 
 }

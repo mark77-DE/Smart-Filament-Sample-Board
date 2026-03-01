@@ -106,14 +106,14 @@
     "btn_import": "Importieren",
     "txt_debug_settings": "Debug Einstellungen",
     "txt_host_settings": "Host Einstellungen",
-    "txt_all_manufactor": "Alle Hersteller",
-    "txt_all_colors": "Alle Farben",
-    "txt_all_types": "Alle Typen",
+    "txt_manufactors": "Hersteller",
+    "txt_colors": "Farben",
+    "txt_materials": "Materialien",
     "btn_daynight_mode": "Tag/Nacht Modus",
     "txt_import_warning": "WARNUNG: Dadurch werden alle aktuellen Einstellungen und Filamente überschrieben!",
     "txt_import_reboot": "Bitte Browser neu laden nach dem Import.",
     "sel_txt_type": "-- Typ wählen --",
-    "btn_add": "Hinzufügen",
+    "btn_add": "Erstellen",
     "txt_uid": "Tag UID",
     "txt_vendor": "Name",
     "txt_type": "Typ",
@@ -127,8 +127,8 @@
     "txt_rebot_shure": "ESP wirklich neustarten?",
     "txt_esp_disconnected": "ESP Verbindung verloren...",
     "txt_page_reload": "Seite wird in 2 Sekunden neu laden.",
-    "txt_add_sample_success": "Sample erfolgreich hinzugefügt!",
-    "txt_add_sample_failed": "Fehler beim Hinzufügen des Samples!",
+    "txt_add_sample_success": "Sample erfolgreich erstellt!",
+    "txt_add_sample_failed": "Fehler beim Erstellen des Samples!",
     "txt_save_sample_success": "Sample erfolgreich gespeichert!",
     "txt_save_sample_failed": "Fehler beim Speichern des Samples!",
     "txt_delete_sample_shure": "Eintrag wirklich löschen?",
@@ -161,7 +161,9 @@
     "txt_nfc_available": "NFC verfügbar:",
     "txt_variant": "Chip Variante:",
     "txt_board_variant_mismatch": "Warnung: Die Konfiguration passt nicht zur Board Variante!\n\nPins prüfen!\n\n",
-    "txt_animation_after_boot": "Animation nach dem Booten:"
+    "txt_animation_after_boot": "Animation nach dem Booten:",
+    "txt_storage": "Lagerort",
+    "txt_filter_free": "Suchtext"
     
     
 
