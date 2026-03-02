@@ -146,6 +146,8 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
     int16_t index = 0;
     bool anyHit = false;
 
+    LEDCTRL_FILAMENT::allOff();
+
     for (JsonVariant uidVar : uids) {
         String uid = uidVar.as<String>();
 
@@ -165,7 +167,12 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
                     entry.ledIndex,
                     entry.vendor.c_str(),
                     entry.type.c_str(),
-                    entry.color.c_str()
+                    entry.color.c_str(),
+                    entry.info1.c_str(),
+                    entry.info2.c_str(),
+                    entry.storage.c_str()
+                
+
                 );
             }
         } else if (CONFIGV2.system.debugMode) {
@@ -332,12 +339,15 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
         JsonArray arr = doc.to<JsonArray>();
 
         for (auto &e : list) {
-            JsonObject o = arr.add<JsonObject>();
-            o["uid"] = e.uid;
-            o["vendor"] = e.vendor;
-            o["type"] = e.type;
-            o["color"] = e.color;
-            o["ledIndex"] = e.ledIndex;
+            JsonObject      o = arr.add<JsonObject>();
+            o["uid"]        = e.uid;
+            o["vendor"]     = e.vendor;
+            o["type"]       = e.type;
+            o["color"]      = e.color;
+            o["ledIndex"]   = e.ledIndex;
+            o["info1"]      = e.info1;
+            o["info2"]      = e.info2;
+            o["storage"]    = e.storage;
         }
 
         String json;
@@ -451,11 +461,14 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
             }
 
             FilamentEntry entry;
-            entry.uid      = doc["uid"].as<String>();
-            entry.vendor   = doc["vendor"].as<String>();
-            entry.type     = doc["type"].as<String>();
-            entry.color    = doc["color"].as<String>();
-            entry.ledIndex = doc["ledIndex"].as<int>();
+            entry.uid       = doc["uid"].as<String>();
+            entry.vendor    = doc["vendor"].as<String>();
+            entry.type      = doc["type"].as<String>();
+            entry.color     = doc["color"].as<String>();
+            entry.ledIndex  = doc["ledIndex"].as<int>();
+            entry.info1     = doc["info1"].as<String>();
+            entry.info2     = doc["info2"].as<String>();
+            entry.storage   = doc["storage"].as<String>();
 
             // Update über Index
             if(FilamentDB::updateAtIndex(idx, entry)){
@@ -505,11 +518,14 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
             }
 
             FilamentEntry entry;
-            entry.uid      = doc["uid"].as<String>();
-            entry.vendor   = doc["vendor"].as<String>();
-            entry.type     = doc["type"].as<String>();
-            entry.color    = doc["color"].as<String>();
-            entry.ledIndex = doc["ledIndex"].as<int>();
+            entry.uid       = doc["uid"].as<String>();
+            entry.vendor    = doc["vendor"].as<String>();
+            entry.type      = doc["type"].as<String>();
+            entry.color     = doc["color"].as<String>();
+            entry.ledIndex  = doc["ledIndex"].as<int>();
+            entry.info1     = doc["info1"].as<String>();
+            entry.info2     = doc["info2"].as<String>();
+            entry.storage   = doc["storage"].as<String>();
 
             if (FilamentDB::add(entry)) {
                 if(CONFIGV2.system.debugMode) {
@@ -724,7 +740,7 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
             Serial.printf("Starting FW OTA update: %u bytes\n", total);
 
             DisplayAnim::stop();
-            MYDISPLAY::showThreeCentered(
+            MYDISPLAY::showThreeLinesCentered(
                 F("started"),
                 F("FW OTA"),
                 F("update")
@@ -733,7 +749,7 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
             if (!Update.begin(total)) {
                 Serial.println("OTA begin failed");
 
-                MYDISPLAY::showThreeCentered(
+                MYDISPLAY::showThreeLinesCentered(
                     F("FW OTA"),
                     F("update"),
                     F("failed")
@@ -748,7 +764,7 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
         if (Update.write(data, len) != len) {
             Serial.printf("FW update write failed! Error: %d\n", Update.getError());
 
-            MYDISPLAY::showThreeCentered(
+            MYDISPLAY::showThreeLinesCentered(
                 F("FW OTA"),
                 F("update"),
                 F("failed")
@@ -764,7 +780,7 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
             if (Update.end(false)) {   // kein Auto-Reboot
                 Serial.println("FW OTA applied successfully");
 
-                MYDISPLAY::showThreeCentered(
+                MYDISPLAY::showThreeLinesCentered(
                     F("FW OTA"),
                     F("update"),
                     F("success")
@@ -805,14 +821,14 @@ server.on("/api/uploadFS", HTTP_POST,
         if(index == 0){
             Serial.printf("Starting FS OTA update: %u bytes\n", total);
             DisplayAnim::stop();
-            MYDISPLAY::showThreeCentered(
+            MYDISPLAY::showThreeLinesCentered(
                 F("started"),
                 F("FS OTA"),
                 F("update")
             );
             if(!Update.begin(total, U_SPIFFS)) {  // <-- U_SPIFFS für FS-OTA
                 Serial.printf("Update begin failed! Error: %d\n", Update.getError());
-                MYDISPLAY::showThreeCentered(
+                MYDISPLAY::showThreeLinesCentered(
                     F("FS OTA"),
                     F("update"),
                     F("failed")
@@ -824,7 +840,7 @@ server.on("/api/uploadFS", HTTP_POST,
         // Chunk schreiben
         if(Update.write(data, len) != len){
             Serial.printf("FS update write failed! Error: %d\n", Update.getError());
-            MYDISPLAY::showThreeCentered(
+            MYDISPLAY::showThreeLinesCentered(
                     F("FS OTA"),
                     F("update"),
                     F("failed")

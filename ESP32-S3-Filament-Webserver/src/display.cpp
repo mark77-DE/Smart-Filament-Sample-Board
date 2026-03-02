@@ -32,7 +32,7 @@ static String fixUmlauts(String s) {
 // ------------------------------------------------------------
 static void printLineAutoFitCenteredGfx(DisplayType* d, const String& raw,
                                         int16_t yBaselineOrTop,
-                                        bool smallDisplay, int16_t lineHeight)
+                                        bool smallDisplay, int16_t lineHeight, const GFXfont* font = DISPLAY_FONT)
 {
   if (!d) return;
 
@@ -72,8 +72,8 @@ static void printLineAutoFitCenteredGfx(DisplayType* d, const String& raw,
 
   // 64px: erst DISPLAY_FONT probieren
   bool useStd = false;
-  if (DISPLAY_FONT != nullptr) {
-    d->setFont(DISPLAY_FONT);
+  if (font != nullptr) {
+    d->setFont(font);
     d->setTextSize(1);
     d->getTextBounds(t, 0, 0, &x1, &y1, &w, &h);
     if (w > SCREEN_WIDTH) useStd = true;
@@ -304,7 +304,7 @@ void MYDISPLAY::showCenteredTwoLines(const String& line1, const String& line2) {
 // ------------------------------------------------------------
 // Drei zentrierte Zeilen (neu – für Reboot/Countdown/Prompts)
 // ------------------------------------------------------------
-void MYDISPLAY::showThreeCentered(const String& line1, const String& line2, const String& line3) {
+void MYDISPLAY::showThreeLinesCentered(const String& line1, const String& line2, const String& line3) {
   if (!_display) return;
 
   _display->clearDisplay();
@@ -338,6 +338,44 @@ void MYDISPLAY::showThreeCentered(const String& line1, const String& line2, cons
   _display->setTextSize(1);
 }
 
+// ------------------------------------------------------------
+// Drei zentrierte Zeilen (neu – für Reboot/Countdown/Prompts)
+// ------------------------------------------------------------
+void MYDISPLAY::showFourLinesCentered(const String& line1, const String& line2, const String& line3, const String& line4) {
+  if (!_display) return;
+
+  _display->clearDisplay();
+  _display->setTextWrap(false);
+  _display->setTextColor(DISPLAY_COLOR);
+
+  const bool smallDisplay = (SCREEN_HEIGHT <= 32);
+
+  // Zeilenhöhe bestimmen
+  int16_t x1=0, y1=0; uint16_t w=0, h=0;
+  int16_t lineHeight = 0;
+  if (smallDisplay) {
+    lineHeight = STD_FONT_HEIGHT + 2;
+  } else {
+    _display->setFont(&FreeMono7pt7b);
+    _display->setTextSize(1);
+    _display->getTextBounds("Hg", 0, 0, &x1, &y1, &w, &h);
+    lineHeight = (int16_t)h + 3;
+  }
+
+  // Start oben (32px) oder mit Abstand (64px) – konsistent zu show()
+  int16_t y = smallDisplay ? 0 : lineHeight;
+
+  printLineAutoFitCenteredGfx(_display, line1, y, smallDisplay, lineHeight, &FreeMono7pt7b); y += lineHeight;
+  printLineAutoFitCenteredGfx(_display, line2, y, smallDisplay, lineHeight, &FreeMono7pt7b); y += lineHeight;
+  printLineAutoFitCenteredGfx(_display, line3, y, smallDisplay, lineHeight, &FreeMono7pt7b); y += lineHeight;
+  printLineAutoFitCenteredGfx(_display, line4, y, smallDisplay, lineHeight, &FreeMono7pt7b);
+
+  _display->display();
+
+  _display->setFont(DISPLAY_FONT);
+  _display->setTextSize(1);
+}
+
 
 
 // --- Neu: Bootscreen 
@@ -348,7 +386,7 @@ void MYDISPLAY::showBootVersion(const char* version, const char* dateShort) {
     String l2 = String(version);   // z.B. "FW v0.1.0"
     String l3 = String(dateShort);            // z.B. "21.12:25"
 
-    showThreeCentered(l1, l2, l3);            
+    showThreeLinesCentered(l1, l2, l3);            
 }
 
 

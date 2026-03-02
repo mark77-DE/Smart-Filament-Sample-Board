@@ -91,60 +91,40 @@ input:checked+.slider::after {
 }
 
 /* -------------------- Tabelle -------------------- */
-#table,
-#tableAdd {
-    display: flex;
-    flex-direction: column;
-    max-width: 1200px;
-    margin: 0 auto;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    overflow: hidden;
-}
 
-#tableAdd {
-    margin-top: 20px;
-    margin-bottom: 20px;
-}
 
-#tableHeader,
-.tableRow {
+
+
+
+#addForm .rowMain {
     display: grid;
+    grid-template-columns: 260px 300px 300px ;
     gap: 4px;
     align-items: center;
+    height: 60px;   
 }
 
-#tableHeader {
-    grid-template-columns: 220px 180px 130px 220px 130px 100px;
-    background-color: #2F3546;
+#addForm .rowSelectable {
+    display: grid;
+    grid-template-columns: 220px 220px;
+    gap: 4px;
+    align-items: center;
+    height: 60px;   
+}
+
+#addForm label {
     font-weight: bold;
-    padding: 8px 4px;
-    border-bottom: 1px solid #ccc;
 }
 
-#tableHeaderAdd {
-    display: grid;
-    grid-template-columns: 220px 180px 130px 220px 130px 100px;
-    gap: 4px;
-    align-items: center;
-    background-color: #2F3546;
-    font-weight: bold;
-    padding: 8px 10px;
-    border-bottom: 1px solid #ccc;
-}
-
-.tableAddRow {
-    display: grid;
-    grid-template-columns: 220px 180px 130px 220px 130px 100px;
-    gap: 4px;
-    align-items: center;
-    height: 60px;
-}
-
-.tableAddRow input {
-    width: 140px;
+#addForm select {
+    width: 130px;
     box-sizing: border-box;
-    margin-left: 10px;
+}
+
+#addForm input
+{
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .tableAddRow select,
@@ -157,15 +137,6 @@ input:checked+.slider::after {
     max-width: 120px;
 }
 
-#ledIndexSelect {
-    max-width: 80px;
-}
-
-.tableRow {
-    grid-template-columns: 220px 180px 130px 220px 130px 100px;
-    padding: 4px 4px;
-    border-bottom: 1px solid #eee;
-}
 
 span[contenteditable="true"] {
     padding: 2px 4px;
@@ -508,10 +479,9 @@ input[type="color"] {
     /* Abstand wie im Haupt-FormGrid */
 }
 
-input.invalid {
-    border-color: red;
-    background-color: #fee;
-}
+
+
+
 
 span.uid.invalid {
     background-color: #fee;
@@ -825,7 +795,9 @@ span[contenteditable="true"] {
     overflow-wrap: break-word;
 }
 
-
+#db {
+    padding: 10px 20px 40px;
+}
 
 /* =========================================================
    DAY MODE
@@ -847,21 +819,10 @@ body.daymode #subheadline {
 }
 
 /* Tabellen */
-body.daymode #table,
-body.daymode #tableAdd {
-    background-color: #ffffff;
-    border: 1px solid #dcdfe3;
-}
 
-body.daymode #tableHeader,
-body.daymode #tableHeaderAdd {
-    background-color: #e9edf2;
-    border-bottom: 1px solid #d0d5da;
-}
 
-body.daymode .tableRow {
-    border-bottom: 1px solid #e4e7eb;
-}
+
+
 
 body.daymode .tableRow.highlight {
     background-color: #fff3cd;
@@ -997,6 +958,34 @@ body.daymode .colorSwatch.active {
 }
 
 
+body.daymode .itemBlock {
+    max-width: 1200px;
+    border: 1px solid red;
+    border-radius: 10px;
+    
+}
+
+
+body.daymode .itemBlock {
+    background: #ffffff;
+    border: 1px solid #dcdfe3;
+
+    box-shadow:
+        0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+body.daymode .itemBlock:hover {
+    box-shadow:
+        0 12px 30px rgba(0, 0, 0, 0.52);
+}
+
+body.daymode .rowInfo {
+    background: #f4f6f8;
+}
+
+
+
+
 
 
 /*   HELP Section */
@@ -1072,5 +1061,121 @@ body.daymode .colorSwatch.active {
 }
 
 
+/* neues Layout */
+
+.itemBlock {
+    max-width: 1200px;
+    margin: 20px auto;                /* zentriert */
+    padding: 16px 20px;
+
+    background: #0e1c2f;
+    border: 1px solid #1f2a40;
+    border-radius: 12px;
+
+    box-shadow:
+        0 6px 18px rgba(0, 0, 0, 0.45),
+        inset 0 1px 0 rgba(255, 255, 255, 0.04);
+
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.itemBlock:hover {
+    transform: translateY(-2px);
+    box-shadow:
+        0 10px 26px rgba(0, 0, 0, 0.55),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.rowMain {
+    display: grid;
+    grid-template-columns: 40px 200px 160px 120px 120px 120px;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
 
 
+
+.rowInfo {
+    display: grid;
+    grid-template-columns: 110px 1fr;
+    margin-top: 6px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.02);
+}
+
+.rowInfo label {
+    opacity: 0.65;
+    font-size: 0.85em;
+}
+
+/* neues Layout Ende */
+
+
+
+span[contenteditable][data-max]::after {
+    content: attr(data-chars-left) " chars left";
+    display: block;       /* unter dem Text */
+    font-size: 0.7em;
+    color: #aaa;
+    margin-top: 2px;
+}
+
+/* Wrapper Span für Input + CharsLeft */
+#addForm span {
+    display: inline-block;
+    vertical-align: top;
+    margin-right: 10px; /* Abstand zwischen Spalten */
+    position: relative;
+}
+
+/* Input Styling optional */
+#addForm input[type="text"] {
+    padding: 4px 6px;
+    box-sizing: border-box;
+}
+
+/* Chars Left Anzeige */
+#addForm .charsLeft {
+    display: block;
+    font-size: 0.7em;
+    color: #aaa;
+    margin-top: 2px;
+}
+
+#addForm input[data-max="20"] {
+    width: 200px;
+    text-align: center;
+}
+
+#addForm input[data-max="30"] {
+    width: 240px;
+    text-align: center;
+}
+
+#addForm .primaryBtn {
+    margin-top: 6px;
+}
+
+input, select {
+    height: 27px;
+    background: #34495e;
+    color: #ecf0f1;
+   
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+body.daymode input,
+body.daymode select {
+    color: black;
+    background-color: #ffffff;
+    
+}
+
+body.daymode input.invalid,
+input.invalid {
+    border: 2px solid red;
+}

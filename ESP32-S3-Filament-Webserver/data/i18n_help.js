@@ -20,12 +20,12 @@ async function loadHelpAndLang(lang='en') {
     }
 }
 
-// apply translations to elements with data-i18n attribute
-function applyTranslations() {
-    document.querySelectorAll('[data-i18n]').forEach(el => {
-        const key = el.dataset.i18n;
-        if(i18nData[key]) el.textContent = i18nData[key];
-    });
+
+function applyTranslations(root = document) {
+  root.querySelectorAll("[data-i18n]").forEach(el => {
+    const key = el.dataset.i18n;
+    if(i18nData[key]) el.textContent = i18nData[key];
+  });
 }
 
 
@@ -96,4 +96,19 @@ window.t = function(key, params = {}) {
 
 
 // Close-Button Event
-document.getElementById('helpCloseBtn').addEventListener('click', hideHelp);
+function initHelpSystem() {
+  const helpCloseBtn = document.getElementById('helpCloseBtn');
+  const helpOverlay  = document.getElementById('helpOverlay');
+
+  if (!helpCloseBtn || !helpOverlay) {
+    return; // Seite hat kein Help-System
+  }
+
+  helpCloseBtn.addEventListener('click', hideHelp);
+
+  helpOverlay.addEventListener('click', (e) => {
+    if (e.target === helpOverlay) hideHelp();
+  });
+}
+
+document.addEventListener("DOMContentLoaded", initHelpSystem);

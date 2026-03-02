@@ -140,7 +140,7 @@ static void onWiFiManagerConfigPortalStarted(WiFiManager* wm) {
   Serial.printf("WiFiManager AP started. AP IP: %s\n", apIp.toString().c_str());
 
   // Anzeige NICHT blockieren: autoConnect() läuft weiter; Display bleibt bis zur nächsten Anzeigeänderung so stehen.
-  MYDISPLAY::showThreeCentered(
+  MYDISPLAY::showThreeLinesCentered(
     F("WLAN-SETUP AP"),
     F("SSID: NFC-Setup-AP"),
     apIp.toString()
@@ -189,7 +189,7 @@ LEDCTRL_FILAMENT::tagPresenceTick(true);
     lastSec = sec;
     char line2[24];
     snprintf(line2, sizeof(line2), "%lu s", (unsigned long)sec);
-    MYDISPLAY::showThreeCentered(
+    MYDISPLAY::showThreeLinesCentered(
       F("Reboot in :"),
       String(line2),
       F("Press to Cancel")
@@ -243,7 +243,8 @@ void handleUID(const String &uid, UidSource source) {
         activateLed(entry.ledIndex);
 
         // Display mit Filament-Infos
-        MYDISPLAY::show(entry);
+        //MYDISPLAY::show(entry);
+        MYDISPLAY::showFourLinesCentered(entry.vendor, entry.type, entry.color, entry.storage);
 
         if (CONFIGV2.mqttConfig.enabled) {
             publishFilamentState(entry);
@@ -375,8 +376,9 @@ void setup() {
   // Optional: neutrale Anzeige während autoConnect() entscheidet (Router vs. AP-Portal).
   // Wenn AP startet, überschreibt der Callback diese Anzeige automatisch.
   MYDISPLAY::showCentered("WLAN...");
+  
 
-  if (!wifiManager.autoConnect("NFC-Setup-AP")) {
+  if (!wifiManager.autoConnect("SpotMyFilament AP")) {
     ESP.restart();
   }
 
@@ -544,7 +546,7 @@ void loop() {
   // 
   if (rebootPending && now > rebootAt) {
     
-    MYDISPLAY::showThreeCentered(
+    MYDISPLAY::showThreeLinesCentered(
       F("-----------"),
       F("Reboot now!"),
       F("-----------")

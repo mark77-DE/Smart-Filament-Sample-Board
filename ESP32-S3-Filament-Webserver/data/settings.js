@@ -198,7 +198,7 @@ editToggle.addEventListener("change", () => {
 function applyEditMode() {
     const table = document.querySelector("#table");
     if (!table) return;
-    table.querySelectorAll(".tableRow").forEach(row => {
+    table.querySelectorAll(".itemBlock").forEach(row => {
         row.querySelectorAll("span[contenteditable]").forEach(cell => cell.contentEditable = EDIT_MODE);
         row.querySelectorAll("select").forEach(sel => sel.disabled = !EDIT_MODE);
         row.querySelectorAll(".saveBtn, .deleteBtn").forEach(btn => EDIT_MODE ? btn.removeAttribute("hidden") : btn.setAttribute("hidden", ""));
@@ -225,7 +225,7 @@ async function handleWSMessage(ev) {
     // UID nur Hex-Ziffern, Großschreibung vereinheitlicht
     const scannedUID = data.uid.replace(/[^a-fA-F0-9]/g, '').toUpperCase();
 
-    const rows = document.querySelectorAll("#db .tableRow");
+    const rows = document.querySelectorAll("#db .rowMain");
     let highlighted = false;
 
     rows.forEach((row) => {
@@ -330,7 +330,10 @@ addForm.addEventListener("submit", async e => {
         vendor: fd.get("vendor").trim(),
         type: fd.get("type"),
         color: fd.get("color").trim(),
-        ledIndex: Number(fd.get("ledIndex"))
+        ledIndex: Number(fd.get("ledIndex")),
+        info1: fd.get("info1").trim(),
+        info2: fd.get("info2").trim(),
+        storage: fd.get("storage").trim()
     };
     const db = await (await fetch("/filaments.json")).json();
     const used = db.find(e => Number(e.ledIndex) === entry.ledIndex);
@@ -352,41 +355,69 @@ function renderTable() {
     const data = FILAMENT_DATA;
     const usedLEDs = new Set(data.map(e => Number(e.ledIndex)));
 
-    let html = `
-        <div id="table">
-            <div id="tableHeader">
-                <span id="uidHeader" data-i18n="txt_uid">Tag UID</span>
-                <span id="vendorHeader" data-i18n="txt_vendor">Name</span>
-                <span id="typeHeader" data-i18n="txt_type">Type</span>
-                <span id="colorHeader" data-i18n="txt_color">Color</span>
-                <span id="ledHeader" data-i18n="txt_led">LED</span>
-                <span id="actionHeader" data-i18n="txt_action">Action</span>
-            </div>
-    `;
 
-    data.forEach((e, idx) => {
-        html += `
-            <div class="tableRow">
-                <span class="uid" contenteditable="${EDIT_MODE}" data-field="uid" data-idx="${idx}">${e.uid}</span>
-                <span class="vendor" contenteditable="${EDIT_MODE}" data-field="vendor" data-idx="${idx}">${e.vendor}</span>
-                <span class="type" data-idx="${idx}">
-                    <select data-field="type" ${EDIT_MODE ? "" : "disabled"}>
+    let number = 1;
+    let html = '<div id="table">';
+
+data.forEach((e, idx) => {
+    html += `
+        <div class="itemBlock">
+
+            <!-- Hauptzeile -->
+            <div class="rowMain">
+                <span class="number">#${number++}</span>
+                <span class="uid" data-max="20" contenteditable="${EDIT_MODE}" data-field="uid" data-idx="${idx}">${e.uid}</span>
+                <span class="vendor" data-max="30" contenteditable="${EDIT_MODE}" data-field="vendor" data-idx="${idx}">${e.vendor}</span>
+                <span class="type">
+                    <select data-field="type" data-idx="${idx}" ${EDIT_MODE ? "" : "disabled"}>
                         ${getTypeOptions(e.type)}
                     </select>
                 </span>
-                <span class="color" contenteditable="${EDIT_MODE}" data-field="color" data-idx="${idx}">${e.color}</span>
-                <span class="led" data-idx="${idx}">
+                <span class="color" data-max="30" contenteditable="${EDIT_MODE}" data-field="color" data-idx="${idx}">${e.color}</span>
+                <span class="led">
                     ${buildLedDropdown(Number(e.ledIndex), usedLEDs, !EDIT_MODE)}
                 </span>
-                <div class="actionCell">
+
+                
+            </div>
+
+            <!-- Info1 -->
+            <div class="rowInfo">
+                <label>Info 1:</label>
+                <span contenteditable="${EDIT_MODE}"
+                      data-max="60"
+                      data-field="info1"
+                      data-idx="${idx}">${e.info1 || ""}</span>
+            </div>
+
+            <!-- Info2 -->
+            <div class="rowInfo">
+                <label>Info 2:</label>
+                <span contenteditable="${EDIT_MODE}"
+                      data-max="60"
+                      data-field="info2"
+                      data-idx="${idx}">${e.info2 || ""}</span>
+            </div>
+
+            <!-- storage -->
+            <div class="rowInfo">
+                <label data-i18n="txt_storage">Storage:</label>
+                <span contenteditable="${EDIT_MODE}"
+                      data-max="30"
+                      data-field="storage"
+                      data-idx="${idx}">${e.storage || ""}</span>
+            </div>
+
+            <div class="actionCell">
                     <button class="saveBtn" data-idx="${idx}" ${EDIT_MODE ? "" : "hidden"}>Speichern</button>
                     <button class="deleteBtn" data-uid="${e.uid}" ${EDIT_MODE ? "" : "hidden"}>Löschen</button>
-                </div>
             </div>
-        `;
-    });
 
-    html += "</div>";
+        </div>
+    `;
+});
+
+    html += '</div>';
     dbDiv.innerHTML = html;
 
     const tableDiv = document.getElementById("table");  // jetzt existiert es
@@ -517,7 +548,38 @@ function renderTable() {
 
     // Nach dem Setzen: Sperrlogik ausführen
     updatePinOptions();
+
+    // initial update
+
+// Alle contenteditable mit data-max
+document.querySelectorAll('span[contenteditable][data-max]').forEach(el => {
+    updateCharsLeft(el); // initial
+
+
+    el.addEventListener('input', () => {
+        const max = parseInt(el.dataset.max || "60");
+
+        // überschüssige Zeichen abschneiden
+        if (el.textContent.length > max) {
+            el.textContent = el.textContent.slice(0, max);
+
+            // Cursor ans Ende setzen
+            const range = document.createRange();
+            const sel = window.getSelection();
+            range.selectNodeContents(el);
+            range.collapse(false);
+            sel.removeAllRanges();
+            sel.addRange(range);
+        }
+
+        updateCharsLeft(el); // live aktualisieren
+    });
+});
+
+
 }
+
+
 
 function getTypeOptions(selected) {
     return ["PLA", "PLA+", "PLA-CF", "PLA-Matte", "PLA-Silk", "PETG", "PETG-CF", "ABS", "ASA", "TPU", "Nylon", "Holz"]
@@ -540,7 +602,7 @@ function buildLedDropdown(currentLED, usedLEDs, disabled = false) {
 function activateButtons() {
     document.querySelectorAll(".saveBtn").forEach(btn => btn.addEventListener("click", async () => {
         //if (!confirm("Eintrag sichern?")) return;
-        const idx = Number(btn.dataset.idx); const row = btn.closest(".tableRow");
+        const idx = Number(btn.dataset.idx); const row = btn.closest(".itemBlock");
         const entry = { idx };
         row.querySelectorAll("[data-field]").forEach(el => {
             const field = el.dataset.field;
@@ -1188,6 +1250,46 @@ async function checkBoardVariant() {
 }
 
 
+// Alle contenteditable mit data-max
+document.querySelectorAll('#addForm input[data-max]').forEach(el => {
+    updateCharsLeftInput(el); // initial
+
+    el.addEventListener('input', () => {
+        const max = parseInt(el.dataset.max || "60");
+
+        // überschüssige Zeichen abschneiden
+        if (el.value.length > max) {
+            el.value = el.value.slice(0, max);
+        }
+
+        updateCharsLeftInput(el); // live aktualisieren
+    });
+});
+
+
+
+
+
+function updateCharsLeft(el) {
+
+    const max = parseInt(el.dataset.max || "60");
+    el.dataset.charsLeft = max - (el.textContent?.length || 0);
+    
+}
+
+function updateCharsLeftInput(el) {
+    const max = parseInt(el.dataset.max || "60");
+    const left = max - (el.value?.length || 0);
+
+    // Update data-attribute (optional)
+    el.dataset.charsLeft = left;
+
+    // Update Anzeige im span
+    const span = el.nextElementSibling; // muss direkt nach dem input sein
+    if (span && span.classList.contains("charsLeft")) {
+        span.textContent = `${left} chars left`;
+    }
+}
 
 
 
@@ -1195,10 +1297,10 @@ async function checkBoardVariant() {
 // -------------------- Init --------------------
 async function init() {
 
-    await getVersion();
+    
     await loadConfig_V2();
     await loadFilaments();
-    checkBoardVariant()
+    
     renderTable();
     updateAddFormSamples();
     updatePinOptions();
@@ -1206,6 +1308,11 @@ async function init() {
     initColorPresets();
     disableButton();
     disableBuzzer();
+
+    await getVersion();
+    checkBoardVariant();
+
+    document.querySelectorAll('#addForm input[data-max]').forEach(el => updateCharsLeft(el));
     
     
 }

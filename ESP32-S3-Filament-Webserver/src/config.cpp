@@ -842,12 +842,12 @@ uint32_t colorFromArrayV2(JsonArrayConst arr) {
            (uint32_t)arr[2];
 }
 
-void setColorArrayV2(JsonObject& opt, const char* key, uint32_t color) {
-  JsonArray arr = opt[key].to<JsonArray>();
-  arr.add((color >> 16) & 0xFF);
-  arr.add((color >>  8) & 0xFF);
-  arr.add((color      ) & 0xFF);
-}
+// void setColorArrayV2(JsonObject& opt, const char* key, uint32_t color) {
+//   JsonArray arr = opt[key].to<JsonArray>();
+//   arr.add((color >> 16) & 0xFF);
+//   arr.add((color >>  8) & 0xFF);
+//   arr.add((color      ) & 0xFF);
+// }
 
 
 // ============================================================================

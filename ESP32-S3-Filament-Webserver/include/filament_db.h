@@ -17,6 +17,9 @@ struct FilamentEntry {
     String vendor;       ///< Hersteller
     String type;         ///< Filament-Typ (z.B. PLA, PETG)
     String color;        ///< Farbe (String)
+    String info1;         ///< Info Text
+    String info2;         ///< link zum Hersteller oder ähnlichen
+    String storage;
 };
 
 namespace FilamentDB {

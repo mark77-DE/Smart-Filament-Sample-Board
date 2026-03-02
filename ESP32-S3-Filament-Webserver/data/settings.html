@@ -54,16 +54,120 @@
         </div>
 
 
-
-
-
-
-
         <div class="sysGroup">
             <div id="wsStatus" class="ws-status ws-disconnected">WebSocket: getrennt</div>
         </div>
 
     </div>
+
+
+
+<!-- add entry section -->
+
+ <div id="tableAdd">
+        
+        <form id="addForm" class="itemBlock">
+
+    <!-- Hauptzeile -->
+    <div class="rowMain">
+
+        <span>
+            <label for="uid">UID</label>
+            <input type="text" data-max="20" name="uid" required>
+            <span class="charsLeft"></span>
+        </span>
+
+
+        
+
+        <span>
+            <label for="vendor" data-i18n="txt_vendor">vendor</label>
+            <input type="text" data-max="30" name="vendor" required>
+            <span class="charsLeft"></span>
+        </span>
+
+        <span>
+            <label for="color" data-i18n="txt_color">color</label>
+            <input type="text" name="color" data-max="30"  required>
+            <span class="charsLeft"></span>
+        </span>
+
+        
+
+        
+    </div>
+
+    <div class="rowSelectable">
+        <span>
+            <label for="type">material</label>
+            <select name="type" id="selectType" required>
+                <option value="" data-i18n="sel_txt_type">-- choose --</option>
+                <option value="PLA">PLA</option>
+                <option value="PLA+">PLA+</option>
+                <option value="PLA-CF">PLA-CF</option>
+                <option value="PLA-Matte">PLA-Matte</option>
+                <option value="PLA-Silk">PLA-Silk</option>
+                <option value="PETG">PETG</option>
+                <option value="PETG-CF">PETG-CF</option>
+                <option value="ABS">ABS</option>
+                <option value="ASA">ASA</option>
+                <option value="TPU">TPU</option>
+                <option value="Nylon">Nylon</option>
+                <option value="Holz">Holz</option>
+            </select>
+        </span>
+
+        <span>
+            <label for="ledIndex">LED</label>
+            <select name="ledIndex"
+                    id="ledIndexSelect"
+                    required></select>
+        </span>
+    </div>
+
+
+    <!-- Info1 -->
+    <div class="rowInfo">
+        <label data-i18n="txt_info1">Info 1:</label>
+        <input type="text"
+               data-max="60"
+               name="info1" id="addInfo1">
+        <span class="charsLeft"></span>
+    </div>
+
+    <!-- Info2 -->
+    <div class="rowInfo">
+        <label data-i18n="txt_info2">Info 2:</label>
+        <input type="text"
+               data-max="60"
+               name="info2" id="addInfo2">
+        <span class="charsLeft"></span>
+    </div>
+
+    <!-- Storage -->
+    <div class="rowInfo">
+        <label data-i18n="txt_storage">Storage:</label>
+        <input type="text"
+               data-max="30"
+               name="storage" id="addStorage">
+        <span class="charsLeft"></span>
+    </div>
+
+    <div>
+        <button id="addBtn" type="submit" class="primaryBtn" data-i18n="btn_add">Hinzufügen</button>
+    </div>
+
+
+</form>
+
+    </div>
+
+    <!-- Database Entries -->
+
+    <div id="db"></div>
+
+<!-- setting overlay begin -->
+
 
     <div id="settingsOverlay" class="overlay">
         <div class="settingsLayout">
@@ -712,43 +816,7 @@
 
 
 
-    <div id="tableAdd">
-        <div id="tableHeaderAdd">
-            <span id="uidHeaderAdd" data-i18n="txt_uid">Tag UID</span>
-            <span id="vendorHeaderAdd" data-i18n="txt_vendor">Name</span>
-            <span id="typeHeaderAdd" data-i18n="txt_type">Typ</span>
-            <span id="colorHeaderAdd" data-i18n="txt_color">Farbe</span>
-            <span id="ledHeaderAdd" data-i18n="txt_led">LED</span>
-            <span id="actionHeaderAdd" data-i18n="txt_action">Aktion</span>
-        </div>
-        <form id="addForm" class="tableAddRow">
-            <span><input type="text" maxlength="20" name="uid" placeholder="UID (z. B. 04:...)" required></span>
-            <span><input type="text" maxlength="30" name="vendor" placeholder="Name" required></span>
-            <span><select name="type" id="selectType" required>
-                    <option value="" data-i18n="sel_txt_type">-- choose type --</option>
-                    <option value="PLA">PLA</option>
-                    <option value="PLA+">PLA+</option>
-                    <option value="PLA-CF">PLA-CF</option>
-                    <option value="PLA-Matte">PLA-Matte</option>
-                    <option value="PLA-Silk">PLA-Silk</option>
-                    <option value="PETG">PETG</option>
-                    <option value="PETG-CF">PETG-CF</option>
-                    <option value="ABS">ABS</option>
-                    <option value="ASA">ASA</option>
-                    <option value="TPU">TPU</option>
-                    <option value="Nylon">Nylon</option>
-                    <option value="Holz">Holz</option>
-                </select></span>
-            <span><input type="text" name="color" maxlength="30" placeholder="Farbe" required></span>
-            <span><select name="ledIndex" id="ledIndexSelect" required></select></span>
-            <span><button id="addBtn" type="submit" class="primaryBtn" data-i18n="btn_add">Hinzufügen</button></span>
-        </form>
-
-    </div>
-
-    <!-- Database Entries -->
-
-    <div id="db"></div>
+   
 
     <div id="about">
         <span id="fwVersion" class="version"></span>
