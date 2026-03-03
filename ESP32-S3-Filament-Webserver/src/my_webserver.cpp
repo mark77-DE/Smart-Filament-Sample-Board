@@ -15,6 +15,7 @@
 #include "display_anim.h"
 #include "esp_image_format.h"
 #include "config.h"
+#include "pins.h"
 
 
 
@@ -316,6 +317,7 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
         
         doc["spiffs_size"]              = LittleFS.totalBytes();
         doc["free_spiffs"]              = LittleFS.usedBytes();
+
         
     
 
@@ -324,6 +326,40 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
         serializeJson(doc, response);
         request->send(200, "application/json", response);
     });
+
+
+
+    server.on("/api/pinout", HTTP_GET, [](AsyncWebServerRequest *request) {
+
+        
+
+        // FIX: Netzlast-Hinweis – JSON bauen/senden
+        LEDCTRL_FILAMENT::netBusyHint(250);
+        LEDCTRL_NFC::netBusyHint(250);
+
+        JsonDocument doc;
+        doc["SCL_PIN"]                  = SCL_PIN;
+        doc["SDA_PIN"]                  = SDA_PIN;
+        
+        doc["LED_PIN"]             = LED_PIN;
+        doc["NFC_LED_PIN"]              = NFC_LED_PIN;
+
+        doc["SCK_PIN"]                = PN532_SCK;
+        doc["MISO_PIN"]               = PN532_MISO;
+        doc["MOSI_PIN"]               = PN532_MOSI;
+        doc["SS_PIN"]                 = PN532_CS;
+
+        doc["BTN_PIN"]                  = BTN_PIN;
+        doc["BUZ_PIN"]                  = BUZ_PIN;
+        
+        
+        String response;
+        serializeJson(doc, response);
+        request->send(200, "application/json", response);
+    });
+    
+
+
 
     // Filament-Liste als JSON
     server.on("/filaments.json", HTTP_GET, [](AsyncWebServerRequest *request){

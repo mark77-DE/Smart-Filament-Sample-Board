@@ -43,7 +43,7 @@ const infoSpiffsSize = document.getElementById("infoSpiffsSize");
 const infoFreeSpiffs = document.getElementById("infoFreeSpiffs");
 const infoBoardVariant = document.getElementById("infoBoardVariant");
 
-const ledPinSelect = document.getElementById("ledPin");
+
 const ledBrightnessInput = document.getElementById("ledBrightness");
 const maxLEDInput = document.getElementById("maxLED");
 const ledColorInput = document.getElementById("ledColor");
@@ -53,7 +53,7 @@ const ledTimeoutInput = document.getElementById("ledTimeout");
 const animationAfterBootInput = document.getElementById("animationAfterBoot");
 
 
-const nfcLedPinSelect = document.getElementById("nfcLedPin");
+
 const nfcLedBrightnessInput = document.getElementById("nfcLedBrightness");
 const nfcMaxLEDInput = document.getElementById("nfcMaxLED");
 const nfcLedColorSuccessInput = document.getElementById("nfcLedColorSuccess");
@@ -65,18 +65,16 @@ const nfcLedSuccessBlinkMsInput = document.getElementById("nfcLedSuccessBlinkMs"
 const nfcLedTimeoutInput = document.getElementById("nfcLedTimeout");
 
 
-
-const buttonEnabledDiv = document.getElementById("buttonEnabled");
-const buttonPinSelect = document.getElementById("buttonPin");
+const buttonEnabledInput = document.getElementById("buttonEnabled");
+const buttonEnabledDiv = document.getElementById("buttonEnabledDiv");
 const buttonPullupInput = document.getElementById("buttonPullup");
 const buttonDebounceInput = document.getElementById("buttonDebounceMs");
 const buttonLongInput = document.getElementById("buttonLongMs");
 const buttonDoubleInput = document.getElementById("buttonDoubleMs");
 const buttonHoldInput = document.getElementById("buttonHoldMs");
 
-
-const buzzerEnabledDiv = document.getElementById("buzzerEnabled");
-const buzzerPinSelect = document.getElementById("buzzerPin");
+const buzzerEnabledInput = document.getElementById("buzzerEnabled");
+const buzzerEnabledDiv = document.getElementById("buzzerEnabledDiv");
 const buzzerPassiveInput = document.getElementById("buzzerPassive");
 const buzzerActiveHighInput = document.getElementById("buzzerActiveHigh");
 const buzzerFreqInput = document.getElementById("buzzerFreq");
@@ -111,6 +109,19 @@ const uidInput = document.querySelector('input[name="uid"]');
 const hostnameInput = document.getElementById("hostname");
 
 const ledSelect = document.getElementById("ledIndexSelect");
+
+
+
+const sclPin = document.getElementById("sclPin");
+const sdaPin = document.getElementById("sdaPin");
+const ledPin = document.getElementById("ledPin");
+const nfcLedPin = document.getElementById("nfcLedPin");
+const buttonPin = document.getElementById("buttonPin");
+const buzzerPin = document.getElementById("buzzerPin");
+const sckPin = document.getElementById("sckPin");
+const misoPin = document.getElementById("misoPin");
+const mosiPin = document.getElementById("mosiPin");
+const ssPin = document.getElementById("ssPin");
 
 
 
@@ -273,7 +284,7 @@ document.getElementById("exportAllBtn").addEventListener("click", async () => {
 
         const a = document.createElement("a");
         a.href = url;
-        a.download = `SpotMyFilament_${timestamp}_${infoBoardVariant.textContent}.json`;
+        a.download = `SpotMyFilament_${timestamp}_${BOARD_VARIANT}.json`;
         document.body.appendChild(a);
         a.click();
         a.remove();
@@ -464,17 +475,11 @@ data.forEach((e, idx) => {
     // Help-Icons einfügen
     injectHelpIcons();
 
-    // --- Mögliche fehlende Pins in den Dropdowns ergänzen ---
-    ensureOption(ledPinSelect, led.pin);
-    ensureOption(nfcLedPinSelect, nfc.pin);
-    if (buttonPinSelect) ensureOption(buttonPinSelect, btn.pin ?? -1);
-    if (buzzerPinSelect) ensureOption(buzzerPinSelect, buz.pin ?? -1);
+    
+    
 
     // --- Werte setzen ---
-    ledPinSelect.value = String(led.pin);
-    nfcLedPinSelect.value = String(nfc.pin);
-    if (buttonPinSelect) buttonPinSelect.value = String(btn.pin ?? -1);
-    if (buzzerPinSelect) buzzerPinSelect.value = String(buz.pin ?? -1);
+    
 
     ledBrightnessInput.value = ledValueToPercent(led.brightness ?? 99);
     nfcLedBrightnessInput.value = ledValueToPercent(nfc.brightness ?? 99);
@@ -512,6 +517,7 @@ data.forEach((e, idx) => {
     syncBlinkUi();
 
     // --- Button UI ---
+    if (buttonEnabledInput) buttonEnabledInput.checked = (btn.enabled ?? true);
     if (buttonPullupInput) buttonPullupInput.checked = (btn.pullup ?? true);
     if (buttonDebounceInput) buttonDebounceInput.value = btn.debounceMs ?? 33;
     if (buttonLongInput) buttonLongInput.value = btn.longMs ?? 888;
@@ -519,6 +525,7 @@ data.forEach((e, idx) => {
     if (buttonHoldInput) buttonHoldInput.value = btn.holdMs ?? 222;
 
     // --- Buzzer UI ---
+    if (buzzerEnabledInput) buzzerEnabledInput.checked = (buz.enabled ?? true);
     if (buzzerPassiveInput) buzzerPassiveInput.checked = (buz.passive ?? false);
     if (buzzerActiveHighInput) buzzerActiveHighInput.checked = (buz.activeHigh ?? true);
     if (buzzerFreqInput) buzzerFreqInput.value = buz.freq ?? 4444;
@@ -547,7 +554,7 @@ data.forEach((e, idx) => {
     document.body.classList.toggle("daymode", daynightToggle.checked);
 
     // Nach dem Setzen: Sperrlogik ausführen
-    updatePinOptions();
+    
 
     // initial update
 
@@ -649,7 +656,6 @@ async function saveConfigHandler() {
 
     // --- Filament LED ---
     const ledCount = Number(document.getElementById("maxLED").value);
-    const ledPin = Number(document.getElementById("ledPin").value);
     const ledBrightness = percentToLedValue(Number(document.getElementById("ledBrightness").value));
     const ledColor = hexToRgb(document.getElementById("ledColor").value);
     const ledColorError = hexToRgb(document.getElementById("ledColorError").value);
@@ -665,7 +671,6 @@ async function saveConfigHandler() {
 
     // --- NFC ---
     const nfcLedCount = Number(document.getElementById("nfcMaxLED").value);
-    const nfcLedPin = Number(document.getElementById("nfcLedPin").value);
     const nfcLedBrightness = percentToLedValue(Number(document.getElementById("nfcLedBrightness").value));
     const nfcLedColorSuccess = hexToRgb(document.getElementById("nfcLedColorSuccess").value);
     const nfcLedColorError = hexToRgb(document.getElementById("nfcLedColorError").value);
@@ -676,7 +681,7 @@ async function saveConfigHandler() {
     const nfcLedSuccessBlinkMs = Number(document.getElementById("nfcLedSuccessBlinkMs").value);
 
     // --- Button ---
-    const buttonPin = buttonPinSelect ? Number(buttonPinSelect.value) : -1;
+    const buttonEnabled = buttonEnabledInput ? buttonEnabledInput.checked : true;
     const buttonPullup = buttonPullupInput ? buttonPullupInput.checked : true;
     const buttonDebounceMs = buttonDebounceInput ? Number(buttonDebounceInput.value) : 30;
     const buttonLongMs = buttonLongInput ? Number(buttonLongInput.value) : 800;
@@ -684,7 +689,7 @@ async function saveConfigHandler() {
     const buttonHoldMs = buttonHoldInput ? Number(buttonHoldInput.value) : 250;
 
     // --- Buzzer ---
-    const buzzerPin = buzzerPinSelect ? Number(buzzerPinSelect.value) : -1;
+    const buzzerEnabled = buzzerEnabledInput ? buzzerEnabledInput.checked : true;
     const buzzerActiveHigh = buzzerActiveHighInput ? buzzerActiveHighInput.checked : true;
     const buzzerFreq = buzzerFreqInput ? Number(buzzerFreqInput.value) : 4000;
     const buzzerSingleMs = buzzerSingleMsInput ? Number(buzzerSingleMsInput.value) : 80;
@@ -723,7 +728,6 @@ async function saveConfigHandler() {
                 },
                 led: {
                     count: ledCount,
-                    pin: ledPin,
                     brightness: ledBrightness,
                     timeout: ledTimeout,
                     color: ledColor,
@@ -732,7 +736,6 @@ async function saveConfigHandler() {
                 },
                 nfc: {
                     count: nfcLedCount,
-                    pin: nfcLedPin,
                     brightness: nfcLedBrightness,
                     timeout: nfcLedTimeout,
                     colorSuccess: nfcLedColorSuccess,
@@ -743,7 +746,7 @@ async function saveConfigHandler() {
                     successBlinkMs: nfcLedSuccessBlinkMs
                 },
                 button: {
-                    pin: buttonPin,
+                    enabled: buttonEnabled,
                     pullup: buttonPullup,
                     debounceMs: buttonDebounceMs,
                     longMs: buttonLongMs,
@@ -751,7 +754,7 @@ async function saveConfigHandler() {
                     holdMs: buttonHoldMs
                 },
                 buzzer: {
-                    pin: buzzerPin,
+                    enabled: buzzerEnabled,
                     activeHigh: buzzerActiveHigh,
                     freq: buzzerFreq,
                     singleMs: buzzerSingleMs,
@@ -806,27 +809,7 @@ function ensureOption(select, value) {
     }
 }
 
-// Sperrlogik: alle vier (falls vorhanden) gegenseitig exklusiv, "-1" bleibt frei
-function updatePinOptions() {
-    const selects = [ledPinSelect, nfcLedPinSelect, buttonPinSelect, buzzerPinSelect].filter(Boolean);
 
-    // Alle Optionen aktivieren
-    selects.forEach(s => Array.from(s.options).forEach(o => o.disabled = false));
-
-    // Jeden Select gegen die anderen abgleichen
-    selects.forEach(s => {
-        const selectedValuesOfOthers = new Set(
-            selects.filter(other => other !== s).map(other => String(other.value))
-        );
-        Array.from(s.options).forEach(o => {
-            const val = String(o.value);
-            // "-1" (deaktiviert) niemals sperren, und nicht die eigene Auswahl
-            if (val !== String(s.value) && val !== "-1" && selectedValuesOfOthers.has(val)) {
-                o.disabled = true;
-            }
-        });
-    });
-}
 
 
 
@@ -919,24 +902,18 @@ function initColorPresets() {
 
 
 function disableButton() {
-    const pin = parseInt(buttonPinSelect.value, 10);
-
-
-    if (pin === -1) {
-        buttonEnabledDiv.classList.add("disabled");
-    } else {
+    if (buttonEnabledInput.checked) {
         buttonEnabledDiv.classList.remove("disabled");
+    } else {        
+        buttonEnabledDiv.classList.add("disabled");
     }
 }
 
 function disableBuzzer() {
-    const pin = parseInt(buzzerPinSelect.value, 10);
-
-
-    if (pin === -1) {
-        buzzerEnabledDiv.classList.add("disabled");
-    } else {
+    if (buzzerEnabledInput.checked) {
         buzzerEnabledDiv.classList.remove("disabled");
+    } else {
+        buzzerEnabledDiv.classList.add("disabled");
     }
 }
 
@@ -1018,15 +995,9 @@ function validateUIDSpan(span) {
 
 
 // Eventlistener hinzufügen
-ledPinSelect.addEventListener("change", updatePinOptions);
-nfcLedPinSelect.addEventListener("change", updatePinOptions);
-buttonPinSelect.addEventListener("change", updatePinOptions);
-buzzerPinSelect.addEventListener("change", updatePinOptions);
 importFileInput.addEventListener("change", updateImportUI);
 
 
-buttonPinSelect.addEventListener("change", disableButton);
-buzzerPinSelect.addEventListener("change", disableBuzzer);
 
 document.getElementById("saveConfig")
     ?.addEventListener("click", saveConfigHandler);
@@ -1121,17 +1092,14 @@ async function getVersion() {
         .then(r => r.json())
         .then(data => {
 
-            
-            //console.log("Version Info:", data);
-        
+                    
             document.getElementById("fwVersion").textContent = "FW-Version: " + data.firmware;
-            //document.getElementById("gitHash").textContent = "Git hash: " + data.git_hash;
             document.getElementById("build_date").textContent = "Build date: " + data.build_date_short;
 
-            BOARD_VARIANT = data.boardVariant; // global verfügbar machen
+            BOARD_VARIANT = data.boardVariant; // global für andere Funktionen verfügbar
     
             infoChipName.textContent = data.chipName;
-            infoBoardVariant.textContent = BOARD_VARIANT;
+            infoBoardVariant.textContent = data.boardVariant;
             infoCores.textContent = data.cores;
             infoRevision.textContent = data.revision;
             infoFlashSize.textContent = data.flashSize + " bytes";
@@ -1166,6 +1134,28 @@ async function getVersion() {
         })
         .catch(err => console.error("Version fetch failed:", err));
 }
+
+getPinout = async () => {
+    fetch("/api/pinout")
+        .then(r => r.json())
+        .then(data => {
+            
+            sclPin.textContent = data.SCL_PIN;
+            sdaPin.textContent = data.SDA_PIN;
+            ledPin.textContent = data.LED_PIN;
+            nfcLedPin.textContent = data.NFC_LED_PIN;
+            buttonPin.textContent = data.BTN_PIN;
+            buzzerPin.textContent = data.BUZ_PIN;
+            sckPin.textContent = data.SCK_PIN;
+            misoPin.textContent = data.MISO_PIN;
+            mosiPin.textContent = data.MOSI_PIN;
+            ssPin.textContent = data.SS_PIN;
+
+        })
+        .catch(err => console.error("Pinout fetch failed:", err));
+}
+
+
 
 
 document.querySelectorAll(".navItem").forEach(btn => {
@@ -1220,6 +1210,18 @@ daynightToggle.addEventListener("change", function () {
     document.body.classList.toggle("daymode", this.checked);
 });
 
+buzzerEnabledInput.addEventListener("change", function () {
+
+    disableBuzzer();
+   
+
+    });
+
+buttonEnabledInput.addEventListener("change", function () {
+    disableButton();
+   
+});
+
 
 
 
@@ -1236,18 +1238,7 @@ async function loadFilaments() {
 }
 
 
-async function checkBoardVariant() {
-    await loadHelpAndLang(CONFIGV2.system.defaultLanguage); // sicherstellen, dass i18nData geladen ist
 
-    if (CONFIGV2.boardVariant != BOARD_VARIANT) {
-        console.warn(`Board-Variante in config (${CONFIGV2.boardVariant}) stimmt nicht überein mit Firmware (${BOARD_VARIANT})!`);
-        alert(
-            t("txt_board_variant_mismatch") +
-            "\n\nconfig: " + CONFIGV2.boardVariant +
-            "\nfirmware: " + BOARD_VARIANT
-        );
-    }
-}
 
 
 // Alle contenteditable mit data-max
@@ -1303,14 +1294,15 @@ async function init() {
     
     renderTable();
     updateAddFormSamples();
-    updatePinOptions();
+   
     updateImportUI();
     initColorPresets();
     disableButton();
     disableBuzzer();
 
     await getVersion();
-    checkBoardVariant();
+    await getPinout();
+    
 
     document.querySelectorAll('#addForm input[data-max]').forEach(el => updateCharsLeft(el));
     

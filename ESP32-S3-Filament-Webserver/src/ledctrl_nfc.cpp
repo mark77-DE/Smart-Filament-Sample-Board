@@ -5,6 +5,7 @@
 #include <Adafruit_NeoPixel.h>
 #include "ledctrl_nfc.h"
 #include "neopixel_guard.h"
+#include "pins.h"
 
 // ============================================================================
 // Debug
@@ -29,7 +30,6 @@
 // Öffentliche Konfiguration (via loadNfcLedConfigV2 / config_v2.json)
 // ============================================================================
 int           NFC_LED_COUNT       = 8;
-int           NFC_LED_PIN         = 15;
 int           NFC_LED_BRIGHTNESS  = 255;
 unsigned long NFC_LED_TIMEOUT     = 6000;     // Timeout in ms (erst ab Tag-Entfernung)
 
@@ -198,12 +198,11 @@ static inline void dbgState(const char* where, LedState s) {
 // ============================================================================
 // Public API
 // ============================================================================
-void LEDCTRL_NFC::init(int count, int pin, int timeout_ms, int brightness,
+void LEDCTRL_NFC::init(int count, int timeout_ms, int brightness,
                        uint32_t colorSuccess, uint32_t colorError, uint32_t colorPulse,
                        bool successBlinkEnabled, int successBlinkCount, int successBlinkMs) {
 
   NFC_LED_COUNT       = max(0, count);
-  NFC_LED_PIN         = pin;
   NFC_LED_TIMEOUT     = (unsigned long)max(0, timeout_ms);
   NFC_LED_BRIGHTNESS  = constrain(brightness, 0, 255);
   NFC_LED_COLOR_SUCCESS = colorSuccess;

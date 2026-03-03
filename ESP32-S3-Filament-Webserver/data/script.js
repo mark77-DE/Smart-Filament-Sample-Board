@@ -281,9 +281,7 @@ async function loadFilamentTiles() {
 
   document.body.classList.toggle("daymode", !CONFIGV2.system.darkmode);
 
-  if(CONFIGV2.boardVariant == "unknown") {
-    alert("Warning: looks like first boot, please go to setting, configure pins an reboot esp");
-  }
+  
 
   // Filter füllen
   populateFilter("filterVendor", "vendor");

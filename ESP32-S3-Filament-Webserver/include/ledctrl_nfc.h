@@ -12,7 +12,6 @@ class Adafruit_NeoPixel;
 // ============================================================================
 
 extern int           NFC_LED_COUNT;          // Anzahl LEDs am NFC-Stripe
-extern int           NFC_LED_PIN;            // Daten-Pin des NFC-Stripe
 extern int           NFC_LED_BRIGHTNESS;     // 0..255 (wird intern geklemmt)
 extern unsigned long NFC_LED_TIMEOUT;        // ms, Timeout nach Tag-Entfernung
 
@@ -39,7 +38,6 @@ public:
   /**
    * @brief Strip initialisieren und internen Zustand zurücksetzen.
    * @param count         Anzahl Pixel
-   * @param pin           GPIO-Pin
    * @param timeout_ms    Timeout in Millisekunden (wirkt erst ab Tag-Entfernung)
    * @param brightness    Helligkeit [0..255]
    * @param colorSuccess  Standardfarbe 0xRRGGBB
@@ -50,7 +48,7 @@ public:
    * @param successBlinkMs       Blink-Intervall in ms
    */
   // --------------------------------------------------------------------------
-  static void init(int count, int pin, int timeout_ms, int brightness, uint32_t colorSuccess, uint32_t colorError, uint32_t colorPulse,
+  static void init(int count, int timeout_ms, int brightness, uint32_t colorSuccess, uint32_t colorError, uint32_t colorPulse,
                    bool successBlinkEnabled, int successBlinkCount, int successBlinkMs);
 
   // --------------------------------------------------------------------------

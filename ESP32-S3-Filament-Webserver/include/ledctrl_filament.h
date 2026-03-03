@@ -10,7 +10,6 @@ class Adafruit_NeoPixel;
 //     gelesen und anschließend per LEDCTRL_FILAMENT::init(...) angewendet
 // ============================================================================
 extern int      LED_COUNT;        // Anzahl Pixel des Filament-Strips
-extern int      LED_PIN;          // GPIO-Pin des Filament-Strips
 extern int      LED_TIMEOUT;      // Timeout in ms (erst ab Tag-Entfernung)
 extern int      LED_BRIGHTNESS;   // Helligkeit [0..255]
 
@@ -37,14 +36,13 @@ public:
   /**
    * @brief Strip initialisieren und internen Zustand zurücksetzen.
    * @param count       Anzahl Pixel
-   * @param pin         GPIO-Pin
    * @param timeout_ms  Timeout in Millisekunden (wirkt erst ab Tag-Entfernung)
    * @param brightness  Helligkeit [0..255]
    * @param color       Standardfarbe 0xRRGGBB
    * @param colorError  Fehlerfarbe 0xRRGGBB
    * @param colorPulse  Idle-Pulse-Farbe 0xRRGGBB
    */
-  static void init(int count, int pin, int timeout_ms, int brightness, uint32_t color, uint32_t colorError, uint32_t colorPulse);
+  static void init(int count, int timeout_ms, int brightness, uint32_t color, uint32_t colorError, uint32_t colorPulse);
 
   /**
    * @brief In der main-Loop zyklisch aufrufen.

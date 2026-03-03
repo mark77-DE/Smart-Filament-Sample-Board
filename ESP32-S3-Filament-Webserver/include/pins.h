@@ -22,3 +22,21 @@
 #define SCL_PIN 22
 #endif
 
+
+// ----------------- Button & Buzzer -----------------
+#ifndef BTN_PIN
+#define BTN_PIN 32
+#endif
+#ifndef BUZ_PIN 
+#define BUZ_PIN 33
+#endif
+
+
+// ----------------- LEDs -----------------
+#ifndef LED_PIN
+#define LED_PIN 4
+#endif
+#ifndef NFC_LED_PIN
+#define NFC_LED_PIN 15
+#endif
+

@@ -458,18 +458,18 @@ input[type="color"] {
 }
 
 
-#buttonEnabled,
-#buzzerEnabled {
+#buttonEnabledDiv,
+#buzzerEnabledDiv {
     transition: opacity 0.2s ease;
 }
 
-#buttonEnabled.disabled,
-#buzzerEnabled.disabled {
+#buttonEnabledDiv.disabled,
+#buzzerEnabledDiv.disabled {
     display: none;
 }
 
-#buttonEnabled,
-#buzzerEnabled {
+#buttonEnabledDiv,
+#buzzerEnabledDiv {
     grid-column: 1 / -1;
     /* volle Breite im äußeren Grid */
     display: grid;

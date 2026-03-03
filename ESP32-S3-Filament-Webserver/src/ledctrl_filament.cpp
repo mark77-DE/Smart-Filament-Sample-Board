@@ -9,6 +9,7 @@
 #include "neopixel_guard.h"
 #include "config.h"
 #include "mqtt_manager.h"
+#include "pins.h"
 
 // Debug-Ausgaben einschalten mit -DLED_FIL_DEBUG (build_flags)
 #ifdef LED_FIL_DEBUG
@@ -22,7 +23,7 @@
 // Öffentliche Konfig-Variablen (werden von loadLedConfig() überschrieben)
 // ============================================================================
 int       LED_COUNT       = 0;
-int       LED_PIN         = 4;
+// int       LED_PIN         = 4;
 int       LED_TIMEOUT     = 3000;
 int       LED_BRIGHTNESS  = 50;
 
@@ -204,9 +205,9 @@ static void renderIdlePulseFrame(Adafruit_NeoPixel* s,
 // ============================================================================
 // Public API
 // ============================================================================
-void LEDCTRL_FILAMENT::init(int count, int pin, int timeout_ms, int brightness, u_int32_t color, uint32_t colorError, uint32_t colorPulse) {
+void LEDCTRL_FILAMENT::init(int count, int timeout_ms, int brightness, u_int32_t color, uint32_t colorError, uint32_t colorPulse) {
   LED_COUNT      = max(0, count);
-  LED_PIN        = pin;
+  
   LED_TIMEOUT    = max(0, timeout_ms);
   LED_BRIGHTNESS = constrain(brightness, 0, 255);
   LED_COLOR      = color;

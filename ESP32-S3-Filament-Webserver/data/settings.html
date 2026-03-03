@@ -62,43 +62,43 @@
 
 
 
-<!-- add entry section -->
+    <!-- add entry section -->
 
- <div id="tableAdd">
-        
+    <div id="tableAdd">
+
         <form id="addForm" class="itemBlock">
 
-    <!-- Hauptzeile -->
-    <div class="rowMain">
+            <!-- Hauptzeile -->
+            <div class="rowMain">
 
-        <span>
+                <span>
             <label for="uid">UID</label>
             <input type="text" data-max="20" name="uid" required>
             <span class="charsLeft"></span>
-        </span>
+                </span>
 
 
-        
 
-        <span>
+
+                <span>
             <label for="vendor" data-i18n="txt_vendor">vendor</label>
             <input type="text" data-max="30" name="vendor" required>
             <span class="charsLeft"></span>
-        </span>
+                </span>
 
-        <span>
+                <span>
             <label for="color" data-i18n="txt_color">color</label>
             <input type="text" name="color" data-max="30"  required>
             <span class="charsLeft"></span>
-        </span>
+                </span>
 
-        
 
-        
-    </div>
 
-    <div class="rowSelectable">
-        <span>
+
+            </div>
+
+            <div class="rowSelectable">
+                <span>
             <label for="type">material</label>
             <select name="type" id="selectType" required>
                 <option value="" data-i18n="sel_txt_type">-- choose --</option>
@@ -117,48 +117,42 @@
             </select>
         </span>
 
-        <span>
+                <span>
             <label for="ledIndex">LED</label>
             <select name="ledIndex"
                     id="ledIndexSelect"
                     required></select>
         </span>
-    </div>
+            </div>
 
 
-    <!-- Info1 -->
-    <div class="rowInfo">
-        <label data-i18n="txt_info1">Info 1:</label>
-        <input type="text"
-               data-max="60"
-               name="info1" id="addInfo1">
-        <span class="charsLeft"></span>
-    </div>
+            <!-- Info1 -->
+            <div class="rowInfo">
+                <label data-i18n="txt_info1">Info 1:</label>
+                <input type="text" data-max="60" name="info1" id="addInfo1">
+                <span class="charsLeft"></span>
+            </div>
 
-    <!-- Info2 -->
-    <div class="rowInfo">
-        <label data-i18n="txt_info2">Info 2:</label>
-        <input type="text"
-               data-max="60"
-               name="info2" id="addInfo2">
-        <span class="charsLeft"></span>
-    </div>
+            <!-- Info2 -->
+            <div class="rowInfo">
+                <label data-i18n="txt_info2">Info 2:</label>
+                <input type="text" data-max="60" name="info2" id="addInfo2">
+                <span class="charsLeft"></span>
+            </div>
 
-    <!-- Storage -->
-    <div class="rowInfo">
-        <label data-i18n="txt_storage">Storage:</label>
-        <input type="text"
-               data-max="30"
-               name="storage" id="addStorage">
-        <span class="charsLeft"></span>
-    </div>
+            <!-- Storage -->
+            <div class="rowInfo">
+                <label data-i18n="txt_storage">Storage:</label>
+                <input type="text" data-max="30" name="storage" id="addStorage">
+                <span class="charsLeft"></span>
+            </div>
 
-    <div>
-        <button id="addBtn" type="submit" class="primaryBtn" data-i18n="btn_add">Hinzufügen</button>
-    </div>
+            <div>
+                <button id="addBtn" type="submit" class="primaryBtn" data-i18n="btn_add">Hinzufügen</button>
+            </div>
 
 
-</form>
+        </form>
 
     </div>
 
@@ -166,7 +160,7 @@
 
     <div id="db"></div>
 
-<!-- setting overlay begin -->
+    <!-- setting overlay begin -->
 
 
     <div id="settingsOverlay" class="overlay">
@@ -184,6 +178,7 @@
                 <button class="navItem" data-target="panel-debug">Debug</button>
                 <button class="navItem" data-target="panel-host">Host</button>
                 <button class="navItem" data-target="panel-info">Info</button>
+                <button class="navItem" data-target="panel-pinout">Pinout</button>
 
 
                 <!-- Footer Buttons -->
@@ -210,48 +205,24 @@
                             <label for="ledBrightness" data-i18n="txt_led_brightness">Brightness (%):</label>
                             <input type="number" id="ledBrightness" name="ledBrightness" min="0" max="255" value="111">
 
-                            <label for="ledPin">LED Pin:</label>
-                            <select id="ledPin" name="ledPin">
-                                <option value="1">1</option>
-                                <option value="2">2</option>
-                                <option value="3">3</option>
-                                <option value="4">4</option>
-                                <option value="5">5</option>
-                                <option value="6">6</option>
-                                <option value="7">7</option>
-                                <option value="8">8</option>
-                                <option value="9">9</option>
-                                <option value="10">10</option>
-                                <option value="11">11</option>
-                                <option value="12">12</option>
-                                <option value="14">14</option>
-                                <option value="15">15</option>
-                                <option value="16">16</option>
-                                <option value="17">17</option>
-                                <option value="32">32</option>
-                                <option value="33">33</option>
-                            </select>
 
                             <label for="ledColor" title="Format: #RRGGBB" data-i18n="txt_led_color">LED Color:</label>
                             <div class="hexField">
-                                <input type="text" id="ledColor" name="ledColor" value="#abcdef" maxlength="7"
-                                    pattern="^#([0-9a-fA-F]{6})$" title="Format: #RRGGBB" placeholder="#RRGGBB">
+                                <input type="text" id="ledColor" name="ledColor" value="#abcdef" maxlength="7" pattern="^#([0-9a-fA-F]{6})$" title="Format: #RRGGBB" placeholder="#RRGGBB">
                                 <div class="colorPresets" data-target="ledColor"></div>
                             </div>
 
-                            <label for="ledColorError" title="Format: #RRGGBB" data-i18n="txt_led_color_error">LED Color
-                                Error:</label>
+                            <label for="ledColorError" title="Format: #RRGGBB" data-i18n="txt_led_color_error">LED Color Error:
+                            </label>
                             <div class="hexField">
-                                <input type="text" id="ledColorError" name="ledColorError" value="#abcdef" maxlength="7"
-                                    pattern="^#([0-9a-fA-F]{6})$" title="Format: #RRGGBB" placeholder="#RRGGBB">
+                                <input type="text" id="ledColorError" name="ledColorError" value="#abcdef" maxlength="7" pattern="^#([0-9a-fA-F]{6})$" title="Format: #RRGGBB" placeholder="#RRGGBB">
                                 <div class="colorPresets" data-target="ledColorError"></div>
                             </div>
 
-                            <label for="ledColorPulse" title="Format: #RRGGBB" data-i18n="txt_led_color_pulse">LED Color
-                                Pulse:</label>
+                            <label for="ledColorPulse" title="Format: #RRGGBB" data-i18n="txt_led_color_pulse">LED Color Pulse:
+                            </label>
                             <div class="hexField">
-                                <input type="text" id="ledColorPulse" name="ledColorPulse" value="#abcdef" maxlength="7"
-                                    pattern="^#([0-9a-fA-F]{6})$" title="Format: #RRGGBB" placeholder="#RRGGBB">
+                                <input type="text" id="ledColorPulse" name="ledColorPulse" value="#abcdef" maxlength="7" pattern="^#([0-9a-fA-F]{6})$" title="Format: #RRGGBB" placeholder="#RRGGBB">
                                 <div class="colorPresets" data-target="ledColorPulse"></div>
                             </div>
 
@@ -274,75 +245,42 @@
                             <input type="number" id="nfcMaxLED" name="nfcMaxLED" min="1" max="16" value="0">
 
                             <label for="nfcLedBrightness" data-i18n="txt_led_brightness">Brightness (%):</label>
-                            <input type="number" id="nfcLedBrightness" name="nfcLedBrightness" min="0" max="255"
-                                value="99">
+                            <input type="number" id="nfcLedBrightness" name="nfcLedBrightness" min="0" max="255" value="99">
 
-                            <label for="nfcLedPin">LED Pin:</label>
-                            <select id="nfcLedPin" name="nfcLedPin">
-                                <option value="1">1</option>
-                                <option value="2">2</option>
-                                <option value="3">3</option>
-                                <option value="4">4</option>
-                                <option value="5">5</option>
-                                <option value="6">6</option>
-                                <option value="7">7</option>
-                                <option value="8">8</option>
-                                <option value="9">9</option>
-                                <option value="10">10</option>
-                                <option value="11">11</option>
-                                <option value="12">12</option>
-                                <option value="14">14</option>
-                                <option value="15">15</option>
-                                <option value="16">16</option>
-                                <option value="17">17</option>
-                                <option value="32">32</option>
-                                <option value="33">33</option>
-                            </select>
 
-                            <label for="nfcLedColorSuccess" title="Format: #RRGGBB"
-                                data-i18n="txt_nfcled_color_success">LED Color (NFC-Erkannt):</label>
+
+                            <label for="nfcLedColorSuccess" title="Format: #RRGGBB" data-i18n="txt_nfcled_color_success">LED Color (NFC-Erkannt):</label>
                             <div class="hexField">
-                                <input type="text" id="nfcLedColorSuccess" name="nfcLedColorSuccess" value="#abcdef"
-                                    maxlength="7" pattern="^#([0-9a-fA-F]{6})$" title="Format: #RRGGBB"
-                                    placeholder="#RRGGBB">
+                                <input type="text" id="nfcLedColorSuccess" name="nfcLedColorSuccess" value="#abcdef" maxlength="7" pattern="^#([0-9a-fA-F]{6})$" title="Format: #RRGGBB" placeholder="#RRGGBB">
                                 <div class="colorPresets" data-target="nfcLedColorSuccess"></div>
                             </div>
 
-                            <label for="nfcLedColorError" title="Format: #RRGGBB" data-i18n="txt_nfcled_color_error">LED
-                                Color (NFC-Error):</label>
+                            <label for="nfcLedColorError" title="Format: #RRGGBB" data-i18n="txt_nfcled_color_error">LED Color (NFC-Error):</label>
                             <div class="hexField">
-                                <input type="text" id="nfcLedColorError" name="nfcLedColorError" value="#abcdef"
-                                    maxlength="7" pattern="^#([0-9a-fA-F]{6})$" title="Format: #RRGGBB"
-                                    placeholder="#RRGGBB">
+                                <input type="text" id="nfcLedColorError" name="nfcLedColorError" value="#abcdef" maxlength="7" pattern="^#([0-9a-fA-F]{6})$" title="Format: #RRGGBB" placeholder="#RRGGBB">
                                 <div class="colorPresets" data-target="nfcLedColorError"></div>
                             </div>
 
                             <label for="nfcLedTimeout">LED Timeout (ms):</label>
-                            <input type="number" id="nfcLedTimeout" name="nfcLedTimeout" min="500" max="30000"
-                                value="399">
+                            <input type="number" id="nfcLedTimeout" name="nfcLedTimeout" min="500" max="30000" value="399">
 
-                            <label for="nfcLedColorPulse" title="Format: #RRGGBB" data-i18n="txt_nfcled_color_pulse">LED
-                                Color (Standby-Effekt):</label>
+                            <label for="nfcLedColorPulse" title="Format: #RRGGBB" data-i18n="txt_nfcled_color_pulse">LED Color (Standby-Effekt):</label>
                             <div class="hexField">
-                                <input type="text" id="nfcLedColorPulse" name="nfcLedColorPulse" value="#abcdef"
-                                    maxlength="7" pattern="^#([0-9a-fA-F]{6})$" title="Format: #RRGGBB">
+                                <input type="text" id="nfcLedColorPulse" name="nfcLedColorPulse" value="#abcdef" maxlength="7" pattern="^#([0-9a-fA-F]{6})$" title="Format: #RRGGBB">
                                 <div class="colorPresets" data-target="nfcLedColorPulse"></div>
                             </div>
 
-                            <label for="nfcLedSuccessBlinkEnabled" data-i18n="txt_nfcled_blink">NFC-Erkannt blinken
-                                aktiv:</label>
-                            <input type="checkbox" id="nfcLedSuccessBlinkEnabled" name="nfcLedSuccessBlinkEnabled"
-                                checked>
+                            <label for="nfcLedSuccessBlinkEnabled" data-i18n="txt_nfcled_blink">NFC-Erkannt blinken aktiv:
+                            </label>
+                            <input type="checkbox" id="nfcLedSuccessBlinkEnabled" name="nfcLedSuccessBlinkEnabled" checked>
 
-                            <label for="nfcLedSuccessBlinkCount" data-i18n="txt_nfcled_blink_count">Blinken
-                                Anzahl:</label>
-                            <input type="number" id="nfcLedSuccessBlinkCount" name="nfcLedSuccessBlinkCount" min="0"
-                                max="10" value="1">
+                            <label for="nfcLedSuccessBlinkCount" data-i18n="txt_nfcled_blink_count">Blinken Anzahl:
+                            </label>
+                            <input type="number" id="nfcLedSuccessBlinkCount" name="nfcLedSuccessBlinkCount" min="0" max="10" value="1">
 
-                            <label for="nfcLedSuccessBlinkMs" data-i18n="txt_nfcled_blink_ms">Blinken Intervall
-                                (ms):</label>
-                            <input type="number" id="nfcLedSuccessBlinkMs" name="nfcLedSuccessBlinkMs" min="20"
-                                max="2000" step="10" value="147">
+                            <label for="nfcLedSuccessBlinkMs" data-i18n="txt_nfcled_blink_ms">Blinken Intervall (ms):
+                            </label>
+                            <input type="number" id="nfcLedSuccessBlinkMs" name="nfcLedSuccessBlinkMs" min="20" max="2000" step="10" value="147">
 
                         </div>
                     </div>
@@ -350,47 +288,34 @@
 
                 <div class="settingsPanel" id="panel-button">
                     <div id="buttonSettings" class="card" data-help="button">
-                        <div class="cardHeader"><span data-i18n="txt_pushbutton_settings">Pushbutton Settings</span>
+                        <div class="cardHeader">
+                            <span data-i18n="txt_pushbutton_settings">Pushbutton Settings</span>
                         </div>
                         <div class="formGrid">
 
-                            <label for="buttonPin" data-i18n="txt_button_pin">Button Pin:</label>
-                            <select id="buttonPin" name="buttonPin">
-                                <option value="-1">disabled</option>
-                                <option value="2">2</option>
-                                <option value="4">4</option>
-                                <option value="5">5</option>
-                                <option value="12">12</option>
-                                <option value="14">14</option>
-                                <option value="15">15</option>
-                                <option value="16">16</option>
-                                <option value="17">17</option>
-                                <option value="32">32</option>
-                                <option value="33">33</option>
-                            </select>
+                            <span>
+                                <label for="buttonEnabled" data-i18n="txt_button_enabled">Button enabled:</label>
+                                <input id="buttonEnabled" name="buttonEnabled" type="checkbox" checked>
+                            </span>
 
-                            <div id="buttonEnabled">
+                            <div id="buttonEnabledDiv">
 
-                                <label for="buttonPullup" data-i18n="txt_button_pullup">Use internal Pull-Up
-                                    (active-low):</label>
+                                <label for="buttonPullup" data-i18n="txt_button_pullup">Use internal Pull-Up (active-low):
+                                </label>
                                 <input type="checkbox" id="buttonPullup" name="buttonPullup" checked>
 
                                 <label for="buttonDebounceMs" data-i18n="txt_button_debounce">Debounce (ms):</label>
-                                <input type="number" id="buttonDebounceMs" name="buttonDebounceMs" min="1" max="200"
-                                    value="33">
+                                <input type="number" id="buttonDebounceMs" name="buttonDebounceMs" min="1" max="200" value="33">
 
                                 <label for="buttonLongMs" data-i18n="txt_button_longpress">Long-Press (ms):</label>
-                                <input type="number" id="buttonLongMs" name="buttonLongMs" min="100" max="5000"
-                                    value="799">
+                                <input type="number" id="buttonLongMs" name="buttonLongMs" min="100" max="5000" value="799">
 
-                                <label for="buttonDoubleMs" data-i18n="txt_button_doublepress">Double-Press Gap
-                                    (ms):</label>
-                                <input type="number" id="buttonDoubleMs" name="buttonDoubleMs" min="50" max="2000"
-                                    value="399">
+                                <label for="buttonDoubleMs" data-i18n="txt_button_doublepress">Double-Press Gap (ms):
+                                </label>
+                                <input type="number" id="buttonDoubleMs" name="buttonDoubleMs" min="50" max="2000" value="399">
 
                                 <label for="buttonHoldMs" data-i18n="txt_button_hold">Hold Repeat (ms):</label>
-                                <input type="number" id="buttonHoldMs" name="buttonHoldMs" min="50" max="2000"
-                                    value="249">
+                                <input type="number" id="buttonHoldMs" name="buttonHoldMs" min="50" max="2000" value="249">
 
                             </div>
                         </div>
@@ -399,63 +324,49 @@
 
                 <div class="settingsPanel" id="panel-buzzer">
                     <div id="buzzerSettings" class="card" data-help="buzzer">
-                        <div class="cardHeader" data-i18n="txt_buzzer_settings">Buzzer Settings</div>
+                        <div class="cardHeader">
+                            <span data-i18n="txt_buzzer_settings">Buzzer Settings</span>
+                        </div>
                         <div class="formGrid">
 
-                            <label for="buzzerPin" data-i18n="txt_buzzer_pin">Buzzer Pin:</label>
-                            <select id="buzzerPin" name="buzzerPin">
-                                <option value="-1">disabled</option>
-                                <option value="2">2</option>
-                                <option value="4">4</option>
-                                <option value="5">5</option>
-                                <option value="12">12</option>
-                                <option value="14">14</option>
-                                <option value="15">15</option>
-                                <option value="16">16</option>
-                                <option value="17">17</option>
-                                <option value="32">32</option>
-                                <option value="33">33</option>
-                            </select>
+                            <span>
+                                <label for="buzzerEnabled" data-i18n="txt_buzzer_enabled">Buzzer enabled:</label>
+                                <input id="buzzerEnabled" name="buzzerEnabled" type="checkbox" checked>
+                            </span>
 
-                            <div id="buzzerEnabled">
 
-                                <label for="buzzerActiveHigh" data-i18n="txt_buzzer_activehigh">Active-High
-                                    Output:</label>
+
+                            <div id="buzzerEnabledDiv">
+
+                                <label for="buzzerActiveHigh" data-i18n="txt_buzzer_activehigh">Active-High Output:</label>
                                 <input type="checkbox" id="buzzerActiveHigh" name="buzzerActiveHigh" checked>
 
                                 <label for="buzzerFreq" data-i18n="txt_buzzer_freq">Frequency (Hz):</label>
-                                <input type="number" id="buzzerFreq" name="buzzerFreq" min="50" max="10000"
-                                    value="3999">
+                                <input type="number" id="buzzerFreq" name="buzzerFreq" min="50" max="10000" value="3999">
 
-                                <label for="buzzerSingleMs" data-i18n="txt_buzzer_single_ms">Single Beep On
-                                    (ms):</label>
-                                <input type="number" id="buzzerSingleMs" name="buzzerSingleMs" min="10" max="2000"
-                                    value="81">
+                                <label for="buzzerSingleMs" data-i18n="txt_buzzer_single_ms">Single Beep On (ms):
+                                </label>
+                                <input type="number" id="buzzerSingleMs" name="buzzerSingleMs" min="10" max="2000" value="81">
 
-                                <label for="buzzerDoubleOnMs" data-i18n="txt_buzzer_double_on_ms">Double Beep On
-                                    (ms):</label>
-                                <input type="number" id="buzzerDoubleOnMs" name="buzzerDoubleOnMs" min="10" max="2000"
-                                    value="61">
+                                <label for="buzzerDoubleOnMs" data-i18n="txt_buzzer_double_on_ms">Double Beep On (ms):
+                                </label>
+                                <input type="number" id="buzzerDoubleOnMs" name="buzzerDoubleOnMs" min="10" max="2000" value="61">
 
-                                <label for="buzzerDoubleGapMs" data-i18n="txt_buzzer_double_gap_ms">Double Beep Gap
-                                    (ms):</label>
-                                <input type="number" id="buzzerDoubleGapMs" name="buzzerDoubleGapMs" min="10" max="2000"
-                                    value="81">
+                                <label for="buzzerDoubleGapMs" data-i18n="txt_buzzer_double_gap_ms">Double Beep Gap (ms):
+                                </label>
+                                <input type="number" id="buzzerDoubleGapMs" name="buzzerDoubleGapMs" min="10" max="2000" value="81">
 
-                                <label for="buzzerErrorOnMs" data-i18n="txt_buzzer_error_on_ms">Error Beep On
-                                    (ms):</label>
-                                <input type="number" id="buzzerErrorOnMs" name="buzzerErrorOnMs" min="10" max="2000"
-                                    value="51">
+                                <label for="buzzerErrorOnMs" data-i18n="txt_buzzer_error_on_ms">Error Beep On (ms):
+                                </label>
+                                <input type="number" id="buzzerErrorOnMs" name="buzzerErrorOnMs" min="10" max="2000" value="51">
 
-                                <label for="buzzerErrorGapMs" data-i18n="txt_buzzer_error_gap_ms">Error Beep Gap
-                                    (ms):</label>
-                                <input type="number" id="buzzerErrorGapMs" name="buzzerErrorGapMs" min="10" max="2000"
-                                    value="61">
+                                <label for="buzzerErrorGapMs" data-i18n="txt_buzzer_error_gap_ms">Error Beep Gap (ms):
+                                </label>
+                                <input type="number" id="buzzerErrorGapMs" name="buzzerErrorGapMs" min="10" max="2000" value="61">
 
-                                <label for="buzzerErrorCount" data-i18n="txt_buzzer_error_count">Error Beep
-                                    Count:</label>
-                                <input type="number" id="buzzerErrorCount" name="buzzerErrorCount" min="1" max="10"
-                                    value="1">
+                                <label for="buzzerErrorCount" data-i18n="txt_buzzer_error_count">Error Beep Count:
+                                </label>
+                                <input type="number" id="buzzerErrorCount" name="buzzerErrorCount" min="1" max="10" value="1">
                             </div>
                         </div>
                     </div>
@@ -472,8 +383,7 @@
 
                             <label for="mqttServerIP" title="">MQTT Server:</label>
                             <div class="textField">
-                                <input type="text" id="mqttBroker" name="mqttBroker" value="192.168.0.1" title=""
-                                    placeholder="127.0.0.1">
+                                <input type="text" id="mqttBroker" name="mqttBroker" value="192.168.0.1" title="" placeholder="127.0.0.1">
                             </div>
 
                             <label for="mqttServerPort" title="">MQTT Port:</label>
@@ -483,22 +393,19 @@
                             <input type="text" id="mqttUser" name="mqttUser" value="mqttuser" placeholder="username">
 
                             <label for="mqttPassword" title="" data-i18n="txt_mqtt_password">MQTT Password:</label>
-                            <input type="password" id="mqttPassword" name="mqttPassword" value=""
-                                placeholder="password">
+                            <input type="password" id="mqttPassword" name="mqttPassword" value="" placeholder="password">
 
                             <label for="mqttClientId" title="">MQTT Client ID:</label>
                             <input type="text" id="mqttClientId" name="mqttClientId" value="" placeholder="client ID">
 
                             <label for="mqttBaseTopic" title="">MQTT Base Topic:</label>
-                            <input type="text" id="mqttBaseTopic" name="mqttBaseTopic" value=""
-                                placeholder="base topic">
+                            <input type="text" id="mqttBaseTopic" name="mqttBaseTopic" value="" placeholder="base topic">
 
                             <label for="mqttHADiscovery" title="">Home Assistant Discovery:</label>
                             <input type="checkbox" id="mqttHADiscovery" name="mqttHADiscovery">
 
                             <label for="mqttHADiscoveryPrefix" title="">Home Assistant Discovery Prefix:</label>
-                            <input type="text" id="mqttHADiscoveryPrefix" name="mqttHADiscoveryPrefix" value=""
-                                placeholder="discovery prefix">
+                            <input type="text" id="mqttHADiscoveryPrefix" name="mqttHADiscoveryPrefix" value="" placeholder="discovery prefix">
 
                             <div id="warningMqtt" data-i18n="txt_mqtt_rebootMsg">REBOOT REQUIRED AFTER CHANGES</div>
 
@@ -513,12 +420,11 @@
                         <div class="formGrid">
 
                             <label for="webLedTimeout">Highlight "LED" Timeout (ms):</label>
-                            <input type="number" id="webLedTimeout" name="webLedTimeout" min="500" max="60000"
-                                value="4999">
+                            <input type="number" id="webLedTimeout" name="webLedTimeout" min="500" max="60000" value="4999">
 
 
-                            <label for="daynightToggle" class="debug-toggle" data-i18n="txt_start_daymode">Start in day
-                                mode:</label>
+                            <label for="daynightToggle" class="debug-toggle" data-i18n="txt_start_daymode">Start in day mode:
+                            </label>
                             <input class="slider" type="checkbox" id="daynightToggle">
 
                             <label for="langSelect" data-i18n="txt_language">Language:</label>
@@ -558,8 +464,7 @@
 
                                 <form id="importAllForm" method="POST" enctype="multipart/form-data" class="importForm">
 
-                                    <label for="importFile" id="uploadLabel" class="upload-btn"
-                                        data-i18n="txt_choose_file">
+                                    <label for="importFile" id="uploadLabel" class="upload-btn" data-i18n="txt_choose_file">
                                         Choose file
                                     </label>
 
@@ -569,18 +474,15 @@
                                         No file selected
                                     </span>
 
-                                    <button id="importBtn" type="submit" class="primaryBtn" disabled
-                                        data-i18n="btn_import">
+                                    <button id="importBtn" type="submit" class="primaryBtn" disabled data-i18n="btn_import">
                                         Import
                                     </button>
 
 
 
                                 </form>
-                                <div id="importWarning" data-i18n="txt_import_warning">WARNING: This will overwrite all
-                                    current settings and filaments!</div>
-                                <div id="importReboot" data-i18n="txt_import_reboot">Please reboot the device after
-                                    importing settings.</div>
+                                <div id="importWarning" data-i18n="txt_import_warning">WARNING: This will overwrite all current settings and filaments!</div>
+                                <div id="importReboot" data-i18n="txt_import_reboot">Please reboot the device after importing settings.</div>
                             </div>
 
                         </div>
@@ -626,14 +528,6 @@
                     <div id="infoSettings" class="card" data-help="info">
                         <div class="cardHeader">Information</div>
                         <div class="formGrid">
-
-
-
-
-
-
-
-
 
                             <!-- Host Section -->
                             <div class="infoBlock">
@@ -809,6 +703,24 @@
                     </div>
                 </div>
 
+                <div class="settingsPanel" id="panel-pinout">
+                    <div id="pinoutSettings" class="card" data-help="pinout">
+                        <div class="cardHeader"><span data-i18n="txt_pinout_settings">Pinout</span></div>
+                        <div class="formGrid">
+                            <span>SCL Pin:</span><span id="sclPin"></span>
+                            <span>SDA Pin:</span><span id="sdaPin"></span>
+                            <span>LED Pin:</span><span id="ledPin"></span>
+                            <span>NFC LED Pin:</span><span id="nfcLedPin"></span>
+                            <span>Button Pin:</span><span id="buttonPin"></span>
+                            <span>Buzzer Pin:</span><span id="buzzerPin"></span>
+                            <span>SCK Pin:</span><span id="sckPin"></span>
+                            <span>MOSI Pin:</span><span id="mosiPin"></span>
+                            <span>MISO Pin:</span><span id="misoPin"></span>
+                            <span>SS Pin:</span><span id="ssPin"></span>
+                        </div>
+                    </div>
+                </div>
+
             </div>
 
         </div>
@@ -816,12 +728,12 @@
 
 
 
-   
+
 
     <div id="about">
         <span id="fwVersion" class="version"></span>
-        <!-- <span id="gitHash" class="version"></span> -->
         <span id="build_date" class="version"></span>
+        <span id="githublink" class="version"><a href="https://github.com/mark77-DE/Smart-Filament-Sample-Board" target="_blank">GitHub</a></span>
     </div>
 
     <div id="helpOverlay" class="helpOverlay">
@@ -834,8 +746,8 @@
         </div>
     </div>
 
-    
-   
+
+
 
 
     <script src="/i18n_help.js"></script>
