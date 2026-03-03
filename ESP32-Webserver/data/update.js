@@ -49,8 +49,8 @@ async function uploadFS() {
   const file = fileInput.files[0];
 
   // einfache Flüchtigkeitsprüfung
-  if (file.name !== "littlefs.bin") {
-    return alert("The FS file must be named 'littlefs.bin'!");
+  if (!file.name.endsWith("littlefs.bin")) {
+    return alert("FS file needs to start with 'littlefs' and end with '.bin'!");
   }
 
   const status = document.getElementById('status');
@@ -80,7 +80,7 @@ async function uploadFirmware() {
   const file = fileInput.files[0];
 
   // einfache Flüchtigkeitsprüfung
-  if (!file.name.startsWith("firmware") || !file.name.endsWith(".bin")) {
+  if (!file.name.endsWith("firmware.bin")) {
     return alert("Firmware file needs to start with 'firmware' and end with '.bin'!");
   }
 

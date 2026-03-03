@@ -1,0 +1,406 @@
+body {
+    background-color: #071325;
+    color: #7f8c8d;
+}
+
+#header {
+    display: flex;
+    align-items: center;  /* vertikal zentrieren */
+    gap: 20px;            /* Abstand zwischen Logo und Headline */
+    padding: 10px 30px;   /* optional, innen Abstand */
+    border-bottom: 1px solid #4f4f4f;
+    
+}
+
+#headline {
+    font-size: 24px; /* Haupttextgröße */
+    font-weight: bold;
+    text-align: center;
+}
+
+#subheadline {
+    font-size: 50%; /* halbe Schriftgröße des Elterntexts */
+    font-weight: normal;
+    text-align: center;
+    color: #666; /* optional etwas dezenter */
+}
+
+.logo {
+    width: 150px;      /* z.B. feste Breite */
+    height: auto;      /* Höhe proportional */
+    
+    margin: 10px auto; /* zentrieren */
+}
+
+#about {
+    margin-top: 20px;
+    text-align: center;
+}
+
+.version {
+    font-size: 0.8em;
+    color: #7f8c8d;
+    text-align: center;
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+.active { 
+    background-color: yellow; 
+    transition: background-color 0.5s; 
+}
+
+
+button {
+    padding: 8px 10px;
+    margin: 0;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
+    background-color: #2c3e50;
+    color: #7f8c8d;
+}
+
+#unknown { 
+    position: fixed; 
+    top: 20px; 
+    left: 50%; 
+    transform: translateX(-50%); 
+    background: red; 
+    color: white; 
+    font-weight: bold; 
+    padding: 10px 20px; 
+    border-radius: 5px; 
+    display: inline; 
+    z-index: 1000; 
+}
+
+.grid-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  width: 180px;
+}
+
+#filamentGrid {
+    margin: 20px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 10px;
+    width: 100%;
+    max-width: calc(100% - 40px); /* optional, für sauberes Layout */
+}
+
+.tile {
+    padding: 5px;
+    text-align: center;
+    cursor: pointer;
+    min-height: 90px;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    border: 2px solid #2980b9;
+    border-radius: 10px;
+    width: 150px;
+    user-select: none;
+    -webkit-user-select: none; /* Safari */
+    -ms-user-select: none;     /* alte Edge */
+}
+
+
+.vendor {
+    font-weight: bold; 
+    font-size: 1.2em;
+    padding: 5px;
+    
+}
+
+.color {
+    padding: 5px;
+}
+
+.type {
+    padding: 5px;
+}
+
+
+#style_head_uid, #style_uid, #style_head_led, #style_led {
+    display: none;
+}
+
+.ws-connected {
+    color: green;
+    font-weight: bold;
+    display: none;
+}
+
+.ws-disconnected {
+    color: red;
+    font-weight: bold;
+}
+
+
+
+
+#filamentGrid {
+    grid-template-columns: repeat(10, 1fr); /* Desktop */
+}
+
+
+
+
+
+
+/* -------------------- DAY MODE -------------------- */
+body.daymode {
+    background-color: #f4f6f8;   /* sehr helles Grau statt Weiß */
+    color: #2c3e50;              /* dunkles Blau-Grau */
+}
+
+/* Header */
+body.daymode #header {
+    background-color: #f4f6f8;
+    border-bottom: 1px solid #dcdfe3;
+}
+
+body.daymode #subheadline {
+    color: #6c7a89;
+}
+
+/* Version Text */
+body.daymode .version {
+    color: #6c7a89;
+}
+
+/* Buttons */
+body.daymode button {
+    background-color: #2980b9;
+    color: #ffffff;
+}
+
+body.daymode button:hover {
+    background-color: #1f6391;
+}
+
+/* Grid Tiles */
+body.daymode .tile {
+    background-color: #ffffff;
+    border: 2px solid #2980b9;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.5);
+}
+
+/* Active Highlight */
+body.daymode .active {
+    background-color: #f1c40f;
+    transition: background-color 0.3s;
+}
+
+/* Unknown Warning */
+body.daymode #unknown {
+    background: #e74c3c;
+}
+
+/* WebSocket Status */
+body.daymode .ws-connected {
+    color: #27ae60;
+}
+
+body.daymode .ws-disconnected {
+    color: #c0392b;
+}
+
+
+
+
+
+select {
+    appearance: none;          /* entfernt Standard-Pfeil/Styling */
+    -webkit-appearance: none;  /* Safari/Chrome */
+    -moz-appearance: none;     /* Firefox */
+    
+    padding: 6px 12px;
+    font-size: 0.9em;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    background-color: #2c3e50; /* Darkmode Default */
+    color: #ecf0f1;
+    cursor: pointer;
+
+    min-width: 150px;
+    transition: all 0.3s ease;
+}
+
+/* Hover / Fokus */
+select:hover {
+    border-color: #2980b9;
+}
+
+select:focus {
+    outline: none;
+    border-color: #2980b9;
+    box-shadow: 0 0 5px rgba(41,128,185,0.5);
+}
+
+
+
+body.daymode select {
+    background-color: #ffffff;
+    color: #2c3e50;
+    border: 1px solid #ccc;
+}
+
+body.daymode .select-wrapper::after {
+    color: #2c3e50;
+}
+
+
+
+select {
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+
+select, .select-wrapper::after {
+    transition: all 0.3s ease;
+}
+
+
+
+
+.tile .vendor,
+.tile .color,
+.tile .type {
+    overflow-wrap: break-word; /* Zeilenumbruch bei langen Wörtern */
+    word-wrap: break-word;     /* alte Browser */
+    word-break: break-word;    /* alternative, je nach Browser */
+    text-align: center;
+}
+
+
+
+
+
+
+
+
+
+/* ---------------- DETAIL OVERLAY ---------------- */
+
+#detailOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+#detailOverlay.hidden {
+    display: none;
+}
+
+.detailModal {
+    background: #1e293b;
+    color: #ecf0f1;
+    width: 90%;
+    max-width: 500px;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.5);
+    position: relative;
+}
+
+body.daymode .detailModal {
+    background:  #f4f6f8;
+    color: #2c3e50;
+    width: 90%;
+    max-width: 500px;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 15px 40px rgba(0,0,0,1.5);
+    position: relative;
+}
+
+#detailCloseBtn {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    background: none;
+    border: none;
+    font-size: 22px;
+    cursor: pointer;
+    color: #ecf0f1;
+}
+
+body.daymode #detailCloseBtn {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    background: none;
+    border: none;
+    font-size: 22px;
+    cursor: pointer;
+    color: #2c3e50;
+}
+
+
+
+
+.storage-badge {
+    font-size: 0.7em;
+    margin-top: 5px;
+    padding: 2px 6px;
+    background: #34495e;
+    border-radius: 10px;
+}
+
+body.daymode .storage-badge {
+    background: lightgray;
+}
+
+
+
+#filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    padding-bottom: 15px;
+    padding-top: 5px;
+    border-bottom: 1px solid #4f4f4f;
+}
+
+body.daymode #filters {
+     border-bottom: 1px solid #dcdfe3;
+}
+
+.filterElement {
+    display: flex;
+    flex-direction: column;   /* Label über Select */
+}
+
+.filterLabel {
+    margin-bottom: 4px;
+    padding-top: 5px;
+    padding-left: 10px;
+    font-size: 0.85rem;
+}
+
+#filterFree {
+    height: 27px;
+    background: #34495e;
+    color: #ecf0f1;
+    font-size: 1.05em;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+body.daymode #filterFree {
+    background: #ffffff;
+    color: #000000;
+}
