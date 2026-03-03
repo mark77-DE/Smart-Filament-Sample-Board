@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Spot My Filament - Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <div id="header">
+    <div id="logo">
+      <img src="/logo.png" alt="Logo" class="logo">
+    </div>
+    <div id="headline">
+      Spot My Filament
+      <div id="subheadline">Smart Filament Sample Board</div>
+    </div>
+    <div id="adminBtn">
+      <button onclick="window.location.href='/settings'" data-i18n="settings">
+        Settings
+      </button>
+    </div>
+    <div>
+      <button id="themeToggle" data-i18n="btn_daynight_mode">Day/Night Mode</button>
+    </div>
+    <div id="wsStatus">disconnected</div>
+    <div id="updateStatus"></div>
+    
+    <div id="languageSwitcher">                    
+      <select id="langSelect">
+        <option value="en" data-i18n="txt_english">English</option>
+        <option value="de" data-i18n="txt_german">Deutsch</option>
+      </select>
+    </div>
+  </div>
+
+  <div id="filters">
+    <div class="filterElement"><label class="filterLabel" for="filterVendor" data-i18n="txt_manufactors"></label>
+    <select id="filterVendor">
+      <option value="">all manufactor</option>
+    </select>
+  </div>
+
+    <div class="filterElement"><label class="filterLabel" for="filterColor" data-i18n="txt_colors"></label>
+    <select id="filterColor">
+      <option value="">all colors</option>
+    </select>
+  </div>
+
+    <div class="filterElement"><label class="filterLabel" for="filterType" data-i18n="txt_materials"></label>
+    <select id="filterType">
+      <option value="">all types</option>
+    </select>
+  </div>
+
+    <div class="filterElement"><label class="filterLabel" for="filterStorage" data-i18n="txt_storage"></label>
+    <select id="filterStorage">
+      <option value="">all places</option>
+    </select>
+  </div>
+
+    <div class="filterElement"><label class="filterLabel" for="filterTree" data-i18n="txt_filter_free"></label><input type="text" id="filterFree"></div>
+
+  </div>
+
+
+  <div id="filamentGrid" class="grid-container">
+    <!-- Kacheln werden hier per JS eingefügt -->
+  </div>
+
+  <div id="about">
+    <span id="fwVersion" class="version"></span>
+    <span id="build_date" class="version"></span>
+    <span id="githublink" class="version"><a href="https://github.com/mark77-DE/Smart-Filament-Sample-Board" target="_blank">GitHub</a></span>
+  </div>
+
+
+
+<div id="detailOverlay" class="hidden">
+  <div class="detailModal">
+    <button id="detailCloseBtn">×</button>
+    <div id="detailContent"></div>
+  </div>
+</div>
+
+  <script src="/script.js"></script>
+  <script src="/i18n_help.js"></script>
+
+</body>
+
+</html>
