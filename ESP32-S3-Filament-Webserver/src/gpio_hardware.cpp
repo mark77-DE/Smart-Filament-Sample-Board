@@ -1,5 +1,6 @@
 #include "gpio_hardware.h"
 #include "config.h"
+#include "pins.h"
 
 // ------------------------ Debug ------------------------
 #ifdef GPIO_HW_DEBUG
@@ -11,14 +12,14 @@
 // ============================================================================
 // Konfig-Defaults (greifen, falls Keys in config_v2.json fehlen)
 // ============================================================================
-static int   CFG_BTN_PIN            = 32;    // -1 = deaktiviert
+
 static bool  CFG_BTN_PULLUP         = true;  // interner PullUp -> active-low
 static int   CFG_BTN_DEBOUNCE_MS    = 30;
 static int   CFG_BTN_LONG_MS        = 800;
 static int   CFG_BTN_DOUBLE_MS      = 400;
 static int   CFG_BTN_HOLD_MS        = 250;
 
-static int   CFG_BUZ_PIN            = 33;    // -1 = deaktiviert
+
 static bool  CFG_BUZ_ACTIVE_HIGH    = true;  // HIGH = an (bei aktivem Buzzer)
 static bool  CFG_BUZ_PASSIVE        = false; // false=aktiv (on/off), true=passiv (PWM/tone)
 static int   CFG_BUZ_FREQ_HZ        = 4000;
@@ -88,17 +89,17 @@ static inline void buzzer_output(bool on) {
     if (on) ledcWriteTone((uint8_t)s_ledcChannel, (uint32_t)CFG_BUZ_FREQ_HZ);
     else    ledcWriteTone((uint8_t)s_ledcChannel, 0);
   #else
-    if (CFG_BUZ_PIN < 0) return;
-    if (on) tone((uint8_t)CFG_BUZ_PIN, (unsigned)CFG_BUZ_FREQ_HZ);
-    else    noTone((uint8_t)CFG_BUZ_PIN);
+    if (BUZ_PIN < 0) return;
+    if (on) tone((uint8_t)BUZ_PIN, (unsigned)CFG_BUZ_FREQ_HZ);
+    else    noTone((uint8_t)BUZ_PIN);
   #endif
     return;
   }
 
   // AKTIVER BUZZER -> Pegel schalten
-  if (CFG_BUZ_PIN < 0) return;
-  if (on)  digitalWrite(CFG_BUZ_PIN, CFG_BUZ_ACTIVE_HIGH ? HIGH : LOW);
-  else     digitalWrite(CFG_BUZ_PIN, CFG_BUZ_ACTIVE_HIGH ? LOW  : HIGH);
+  if (BUZ_PIN < 0) return;
+  if (on)  digitalWrite(BUZ_PIN, CFG_BUZ_ACTIVE_HIGH ? HIGH : LOW);
+  else     digitalWrite(BUZ_PIN, CFG_BUZ_ACTIVE_HIGH ? LOW  : HIGH);
 }
 
 static inline void buzzer_start_sequence(const Step* seq, uint8_t len) {
@@ -134,30 +135,30 @@ void gpiohw_init() {
       ledcWriteTone((uint8_t)s_ledcChannel, 0);
     #if defined(ESP_ARDUINO_VERSION_MAJOR) && (ESP_ARDUINO_VERSION_MAJOR >= 3)
       // ESP32 core v3: detach am Pin (wichtig!)
-      ledcDetach((uint8_t)CFG_BUZ_PIN);
+      ledcDetach((uint8_t)BUZ_PIN);
     #else
       // core v2: detach Pin vom Kanal (wichtig!)
-      if (CFG_BUZ_PIN >= 0) ledcDetachPin((uint8_t)CFG_BUZ_PIN);
+      if (BUZ_PIN >= 0) ledcDetachPin((uint8_t)BUZ_PIN);
     #endif
       s_ledcChannel = -1;
     }
   #else
     // AVR/andere: tone sicher aus
-    if (CFG_BUZ_PIN >= 0) noTone((uint8_t)CFG_BUZ_PIN);
+    if (BUZ_PIN >= 0) noTone((uint8_t)BUZ_PIN);
   #endif
 
     // Button-Events/Click-State hart resetten (gegen Phantom-Events nach ReInit)
     gpiohw_reset_click_state();
   // --- Button aus CONFIG übernehmen (falls vorhanden); sonst Defaults ---
   #ifdef CONFIG_HAS_GPIO
-    CFG_BTN_PIN         = CONFIGV2.button.pin;
+   
     CFG_BTN_PULLUP      = CONFIGV2.button.pullup;
     CFG_BTN_DEBOUNCE_MS = CONFIGV2.button.debounceMs;
     CFG_BTN_LONG_MS     = CONFIGV2.button.longMs;
     CFG_BTN_DOUBLE_MS   = CONFIGV2.button.doubleGapMs;
     CFG_BTN_HOLD_MS     = CONFIGV2.button.holdRepeatMs;
 
-    CFG_BUZ_PIN            = CONFIGV2.buzzer.pin;
+   
     CFG_BUZ_ACTIVE_HIGH    = CONFIGV2.buzzer.activeHigh;
     CFG_BUZ_PASSIVE        = CONFIGV2.buzzer.passive;
     CFG_BUZ_FREQ_HZ        = CONFIGV2.buzzer.freqHz;
@@ -170,14 +171,14 @@ void gpiohw_init() {
   #endif
 
   // --- Button einrichten ---
-  s_btnEnabled   = (CFG_BTN_PIN >= 0);
+  s_btnEnabled   = CONFIGV2.button.enabled || true; // Default: aktiv
   s_btnActiveLow = CFG_BTN_PULLUP;
 
   if (s_btnEnabled) {
-    pinMode(CFG_BTN_PIN, CFG_BTN_PULLUP ? INPUT_PULLUP : INPUT);
+    pinMode(BTN_PIN, CFG_BTN_PULLUP ? INPUT_PULLUP : INPUT);
 
-    s_btnRawLast     = s_btnActiveLow ? (digitalRead(CFG_BTN_PIN) == LOW)
-                                      : (digitalRead(CFG_BTN_PIN) == HIGH);
+    s_btnRawLast     = s_btnActiveLow ? (digitalRead(BTN_PIN) == LOW)
+                                      : (digitalRead(BTN_PIN) == HIGH);
     s_btnStable      = s_btnRawLast;
     s_btnPrevStable  = s_btnRawLast;
     s_btnChangeTs    = millis();
@@ -201,7 +202,7 @@ void gpiohw_init() {
   }
 
   // --- Buzzer einrichten ---
-  s_buzEnabled = (CFG_BUZ_PIN >= 0);
+  s_buzEnabled = CONFIGV2.buzzer.enabled || true; // Default: aktiv
   if (s_buzEnabled) {
     // Sicherheits-AUS nach (Re-)Init (verhindert "spinnt nach Import")
     s_buzLen = 0;
@@ -212,26 +213,26 @@ void gpiohw_init() {
   #ifdef ARDUINO_ARCH_ESP32
     if (CFG_BUZ_PASSIVE) {
     #if defined(ESP_ARDUINO_VERSION_MAJOR) && (ESP_ARDUINO_VERSION_MAJOR >= 3)
-      s_ledcChannel = ledcAttach((uint8_t)CFG_BUZ_PIN, (uint32_t)CFG_BUZ_FREQ_HZ, (uint8_t)LEDC_BITS);
+      s_ledcChannel = ledcAttach((uint8_t)BUZ_PIN, (uint32_t)CFG_BUZ_FREQ_HZ, (uint8_t)LEDC_BITS);
     #else
       s_ledcChannel = LEDC_CH;
       ledcSetup(s_ledcChannel, (double)CFG_BUZ_FREQ_HZ, LEDC_BITS);
-      ledcAttachPin((uint8_t)CFG_BUZ_PIN, s_ledcChannel);
+      ledcAttachPin((uint8_t)BUZ_PIN, s_ledcChannel);
     #endif
       if (s_ledcChannel >= 0) ledcWriteTone((uint8_t)s_ledcChannel, 0); // sicher aus
     } else {
-      pinMode(CFG_BUZ_PIN, OUTPUT);
-      digitalWrite(CFG_BUZ_PIN, CFG_BUZ_ACTIVE_HIGH ? LOW : HIGH); // AUS
+      pinMode(BUZ_PIN, OUTPUT);
+      digitalWrite(BUZ_PIN, CFG_BUZ_ACTIVE_HIGH ? LOW : HIGH); // AUS
     }
   #else
-    pinMode(CFG_BUZ_PIN, OUTPUT);
-    if (CFG_BUZ_PASSIVE) noTone((uint8_t)CFG_BUZ_PIN);
-    else                 digitalWrite(CFG_BUZ_PIN, CFG_BUZ_ACTIVE_HIGH ? LOW : HIGH);
+    pinMode(BUZ_PIN, OUTPUT);
+    if (CFG_BUZ_PASSIVE) noTone((uint8_t)BUZ_PIN);
+    else                 digitalWrite(BUZ_PIN, CFG_BUZ_ACTIVE_HIGH ? LOW : HIGH);
   #endif
   }
 
   GDBG("init: btnPin=%d pullup=%d buzPin=%d passive=%d freq=%dHz ch=%d\n",
-       CFG_BTN_PIN, (int)CFG_BTN_PULLUP, CFG_BUZ_PIN, (int)CFG_BUZ_PASSIVE, CFG_BUZ_FREQ_HZ,
+       BTN_PIN, (int)CFG_BTN_PULLUP, BUZ_PIN, (int)CFG_BUZ_PASSIVE, CFG_BUZ_FREQ_HZ,
   #ifdef ARDUINO_ARCH_ESP32
        s_ledcChannel
   #else
@@ -250,8 +251,8 @@ void gpiohw_update() {
 void gpiohw_tick(unsigned long now) {
   // -------- Button ----------
   if (s_btnEnabled) {
-    const bool raw = s_btnActiveLow ? (digitalRead(CFG_BTN_PIN) == LOW)
-                                    : (digitalRead(CFG_BTN_PIN) == HIGH);
+    const bool raw = s_btnActiveLow ? (digitalRead(BTN_PIN) == LOW)
+                                    : (digitalRead(BTN_PIN) == HIGH);
 
     if (raw != s_btnRawLast) {
       s_btnRawLast  = raw;

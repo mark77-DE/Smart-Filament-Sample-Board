@@ -43,6 +43,7 @@ struct NfcLedConfigV2 {
  * @brief Button-Konfiguration
  */
 struct ButtonConfigV2 {
+  bool enabled       = true; ///< Button aktiv?
   int  pin           = -1;   ///< GPIO des Buttons (-1 = aus)
   bool pullup        = true; ///< interner PullUp -> active-low
   int  debounceMs    = 30;   ///< Entprellzeit
@@ -55,6 +56,7 @@ struct ButtonConfigV2 {
  * @brief Buzzer-Konfiguration
  */
 struct BuzzerConfigV2 {
+  bool enabled       = true; ///< Buzzer aktiv?
   int  pin           = -1;    ///< GPIO des Buzzers (-1 = aus)
   bool activeHigh    = true;  ///< Aktivpegel HIGH?
   bool passive       = false; ///< false = aktiver Buzzer, true = passiver (PWM)
@@ -89,7 +91,6 @@ struct MqttConfigV2 {
 
 struct systemConfig {
   String        version = "error";
-  String        boardVariant = "unknown";
   bool          darkmode;    ///< Darkmode aktiv
   bool          debugMode;   ///< Debug-Modus aktiv
   uint32_t      webLEDTimeout;   // Default fürs Dashboard (ms)

@@ -7,6 +7,7 @@
 #include "gpio_hardware.h"   // für gpiohw_init()
 #include "globals.h"
 #include "filehandling.h"
+#include "pins.h"
 
 AppConfigV2 CONFIGV2;
 
@@ -65,17 +66,8 @@ bool loadConfigV2()
 
     // --- Version ---
     CONFIGV2.system.version = cfg["version"] | "error";
-    CONFIGV2.system.boardVariant = cfg["boardVariant"] | "unknown";
 
-    if(CONFIGV2.system.boardVariant != BOARD_VARIANT) {
-        Serial.println(F("***********************************************************"));
-        Serial.println(F("*                                                         *"));
-        Serial.println(F("*  WARNING: boardVariant missmatch, please check config!  *"));
-        Serial.println(F("*                                                         *"));
-        Serial.println(F("***********************************************************"));
-        Serial.println();
-    }
-
+    
 
 
     // --- Basis-Flags ---
@@ -88,7 +80,6 @@ bool loadConfigV2()
 
     // --- Filament-LED ---
     CONFIGV2.led.count = led["count"] | 8;
-    CONFIGV2.led.pin = led["pin"] | 4;
     CONFIGV2.led.brightness = led["brightness"] | 50;
     CONFIGV2.led.timeout = led["timeout"] | 3000;
     // --- Dashboard (Virtuelle LED)---
@@ -126,7 +117,6 @@ bool loadConfigV2()
 
     // --- NFC-LED ---
     CONFIGV2.nfc.count                      = nfc["count"] | 8;
-    CONFIGV2.nfc.pin                        = nfc["pin"] | 15;
     CONFIGV2.nfc.brightness                 = nfc["brightness"] | 100;
     CONFIGV2.nfc.timeout                    = nfc["timeout"] | 4000;
 
@@ -165,7 +155,7 @@ bool loadConfigV2()
     CONFIGV2.nfc.successBlinkMs             = nfc["successBlinkMs"] | 150;
 
     // --- Button ---
-    CONFIGV2.button.pin                     = btn["pin"] | CONFIGV2.button.pin;
+    CONFIGV2.button.enabled                 = btn["enabled"] | CONFIGV2.button.enabled;
     CONFIGV2.button.pullup                  = btn["pullup"] | CONFIGV2.button.pullup;
     CONFIGV2.button.debounceMs              = btn["debounceMs"] | CONFIGV2.button.debounceMs;
     CONFIGV2.button.longMs                  = btn["longMs"] | CONFIGV2.button.longMs;
@@ -173,7 +163,7 @@ bool loadConfigV2()
     CONFIGV2.button.holdRepeatMs            = btn["holdMs"] | CONFIGV2.button.holdRepeatMs;
 
     // --- Buzzer ---
-    CONFIGV2.buzzer.pin                     = buz["pin"] | CONFIGV2.buzzer.pin;
+    CONFIGV2.buzzer.enabled                 = buz["enabled"] | CONFIGV2.buzzer.enabled;
     CONFIGV2.buzzer.activeHigh              = buz["activeHigh"] | CONFIGV2.buzzer.activeHigh;
     CONFIGV2.buzzer.freqHz                  = buz["freq"] | CONFIGV2.buzzer.freqHz;
     CONFIGV2.buzzer.singleMs                = buz["singleMs"] | CONFIGV2.buzzer.singleMs;
@@ -220,7 +210,6 @@ void applyConfigV2() {
   // Filament-LEDs
   LEDCTRL_FILAMENT::init(
     CONFIGV2.led.count,
-    CONFIGV2.led.pin,
     CONFIGV2.led.timeout,
     CONFIGV2.led.brightness,
     CONFIGV2.led.color,
@@ -231,7 +220,6 @@ void applyConfigV2() {
   // NFC-LEDs
   LEDCTRL_NFC::init(
     CONFIGV2.nfc.count,
-    CONFIGV2.nfc.pin,
     CONFIGV2.nfc.timeout,
     CONFIGV2.nfc.brightness,
     CONFIGV2.nfc.colorSuccess,
@@ -265,7 +253,7 @@ void applyConfigV2() {
     Serial.println();
     Serial.println(F("LED Settings:"));
     Serial.print(F(" LED_COUNT = "));         Serial.println(CONFIGV2.led.count);
-    Serial.print(F(" LED_PIN = "));           Serial.println(CONFIGV2.led.pin);
+    Serial.print(F(" LED_PIN = "));           Serial.println(LED_PIN);
     Serial.print(F(" LED_TIMEOUT = "));       Serial.println(CONFIGV2.led.timeout);
     Serial.print(F(" LED_BRIGHTNESS = "));    Serial.println(CONFIGV2.led.brightness);
     Serial.print(F(" LED_COLOR = 0x"));       Serial.println(CONFIGV2.led.color, HEX);
@@ -277,7 +265,7 @@ void applyConfigV2() {
     Serial.println();
     Serial.println(F("NFC LED Settings:"));
     Serial.print(F(" NFC_LED_COUNT = "));     Serial.println(CONFIGV2.nfc.count);
-    Serial.print(F(" NFC_LED_PIN = "));       Serial.println(CONFIGV2.nfc.pin);
+    Serial.print(F(" NFC_LED_PIN = "));       Serial.println(NFC_LED_PIN);
     Serial.print(F(" NFC_LED_TIMEOUT = "));   Serial.println(CONFIGV2.nfc.timeout);
     Serial.print(F(" NFC_LED_BRIGHTNESS = "));Serial.println(CONFIGV2.nfc.brightness);
     Serial.print(F(" NFC_LED_COLOR_SUCCESS = 0x")); Serial.println(CONFIGV2.nfc.colorSuccess, HEX);
@@ -287,7 +275,8 @@ void applyConfigV2() {
 
     Serial.println();
     Serial.println(F("Button Settings:"));
-    Serial.print(F(" BUTTON pin="));          Serial.println(CONFIGV2.button.pin);
+    Serial.print(F(" BUTTON enabled="));       Serial.println(CONFIGV2.button.enabled ? F("true") : F("false"));
+    Serial.print(F(" BUTTON pin="));          Serial.println(BTN_PIN);
     Serial.print(F(" pullup="));              Serial.println(CONFIGV2.button.pullup);
     Serial.print(F(" debounce="));            Serial.println(CONFIGV2.button.debounceMs);
     Serial.print(F(" ms long="));              Serial.println(CONFIGV2.button.longMs);
@@ -296,7 +285,8 @@ void applyConfigV2() {
 
     Serial.println();
     Serial.println(F("Buzzer Settings:"));
-    Serial.print(F(" BUZZER pin="));          Serial.println(CONFIGV2.buzzer.pin);
+    Serial.print(F(" BUZZER enabled="));       Serial.println(CONFIGV2.buzzer.enabled ? F("true") : F("false"));
+    Serial.print(F(" BUZZER pin="));          Serial.println(BUZ_PIN);
     Serial.print(F(" activeHigh="));          Serial.println(CONFIGV2.buzzer.activeHigh);
     Serial.print(F(" freq="));                Serial.println(CONFIGV2.buzzer.freqHz);
     Serial.print(F(" Hz single="));            Serial.println(CONFIGV2.buzzer.singleMs);
@@ -358,7 +348,6 @@ bool updateConfigFromJsonV2(JsonDocument& doc) {
     if (cfg["led"].is<JsonObject>()) {
         JsonObject led = cfg["led"];
         CONFIGV2.led.count      = led["count"]      | CONFIGV2.led.count;
-        CONFIGV2.led.pin        = led["pin"]        | CONFIGV2.led.pin;
         CONFIGV2.led.brightness = led["brightness"] | CONFIGV2.led.brightness;
         CONFIGV2.led.timeout    = led["timeout"]    | CONFIGV2.led.timeout;
 
@@ -383,7 +372,6 @@ bool updateConfigFromJsonV2(JsonDocument& doc) {
 
         Serial.println(F("LED configuration updated:"));
         Serial.print(F("LED count set to: "));       Serial.println(CONFIGV2.led.count);
-        Serial.print(F("LED pin set to: "));         Serial.println(CONFIGV2.led.pin);
         Serial.print(F("LED brightness set to: "));  Serial.println(CONFIGV2.led.brightness);
         Serial.print(F("LED timeout set to: "));     Serial.println(CONFIGV2.led.timeout);
         Serial.print(F("LED color set to: 0x"));   Serial.println(CONFIGV2.led.color, HEX);
@@ -395,7 +383,6 @@ bool updateConfigFromJsonV2(JsonDocument& doc) {
     if (cfg["nfc"].is<JsonObject>()) {
         JsonObject nfc = cfg["nfc"];
         CONFIGV2.nfc.count  = nfc["count"]  | CONFIGV2.nfc.count;
-        CONFIGV2.nfc.pin    = nfc["pin"]    | CONFIGV2.nfc.pin;
         CONFIGV2.nfc.brightness = nfc["brightness"] | CONFIGV2.nfc.brightness;
         CONFIGV2.nfc.timeout    = nfc["timeout"]    | CONFIGV2.nfc.timeout;
 
@@ -424,7 +411,6 @@ bool updateConfigFromJsonV2(JsonDocument& doc) {
 
         Serial.println(F("NFC configuration updated:"));
         Serial.print(F("NFC count set to: "));       Serial.println(CONFIGV2.nfc.count);
-        Serial.print(F("NFC pin set to: "));         Serial.println(CONFIGV2.nfc.pin);
         Serial.print(F("NFC brightness set to: "));  Serial.println(CONFIGV2.nfc.brightness);
         Serial.print(F("NFC timeout set to: "));     Serial.println(CONFIGV2.nfc.timeout);
         Serial.print(F("NFC success color set to: 0x"));   Serial.println(CONFIGV2.nfc.colorSuccess, HEX);
@@ -437,7 +423,7 @@ bool updateConfigFromJsonV2(JsonDocument& doc) {
     // --- Button ---
     if (cfg["button"].is<JsonObject>()) {
         JsonObject btn = cfg["button"];
-        CONFIGV2.button.pin          = btn["pin"]         | CONFIGV2.button.pin;
+        CONFIGV2.button.enabled      = btn["enabled"]     | CONFIGV2.button.enabled;
         CONFIGV2.button.pullup       = btn["pullup"]      | CONFIGV2.button.pullup;
         CONFIGV2.button.debounceMs   = btn["debounceMs"]  | CONFIGV2.button.debounceMs;
         CONFIGV2.button.longMs       = btn["longMs"]      | CONFIGV2.button.longMs;
@@ -445,7 +431,7 @@ bool updateConfigFromJsonV2(JsonDocument& doc) {
         CONFIGV2.button.holdRepeatMs = btn["holdMs"]      | CONFIGV2.button.holdRepeatMs;
 
         Serial.println(F("Button configuration updated:"));
-        Serial.print(F("Button pin set to: "));        Serial.println(CONFIGV2.button.pin);
+        Serial.print(F("Button enabled set to: ")); Serial.println(CONFIGV2.button.enabled ? F("true") : F("false"));
         Serial.print(F("Button pullup set to: "));     Serial.println(CONFIGV2.button.pullup ? F("true") : F("false"));
         Serial.print(F("Button debounceMs set to: ")); Serial.println(CONFIGV2.button.debounceMs);
         Serial.print(F("Button longMs set to: "));     Serial.println(CONFIGV2.button.longMs);
@@ -456,7 +442,7 @@ bool updateConfigFromJsonV2(JsonDocument& doc) {
     // --- Buzzer ---
     if (cfg["buzzer"].is<JsonObject>()) {
         JsonObject buz = cfg["buzzer"];
-        CONFIGV2.buzzer.pin          = buz["pin"]         | CONFIGV2.buzzer.pin;
+        CONFIGV2.buzzer.enabled      = buz["enabled"]     | CONFIGV2.buzzer.enabled;
         CONFIGV2.buzzer.activeHigh   = buz["activeHigh"]  | CONFIGV2.buzzer.activeHigh;
         CONFIGV2.buzzer.freqHz       = buz["freq"]        | CONFIGV2.buzzer.freqHz;
         CONFIGV2.buzzer.singleMs     = buz["singleMs"]    | CONFIGV2.buzzer.singleMs;
@@ -467,7 +453,7 @@ bool updateConfigFromJsonV2(JsonDocument& doc) {
         CONFIGV2.buzzer.errorCount   = buz["errorCount"]  | CONFIGV2.buzzer.errorCount;
 
         Serial.println(F("Buzzer configuration updated:"));
-        Serial.print(F("Buzzer pin set to: "));         Serial.println(CONFIGV2.buzzer.pin);
+        Serial.print(F("Buzzer enabled set to: "));     Serial.println(CONFIGV2.buzzer.enabled ? F("true") : F("false"));
         Serial.print(F("Buzzer activeHigh set to: "));  Serial.println(CONFIGV2.buzzer.activeHigh ? F("true") : F("false"));
         Serial.print(F("Buzzer freqHz set to: "));      Serial.println(CONFIGV2.buzzer.freqHz);
         Serial.print(F("Buzzer singleMs set to: "));    Serial.println(CONFIGV2.buzzer.singleMs);
@@ -526,7 +512,6 @@ bool saveConfigV2() {
     // Version
     // =========================
     doc["version"] = CONFIGV2.system.version;
-    doc["boardVariant"] = BOARD_VARIANT;
 
     // =========================
     // System
@@ -544,7 +529,6 @@ bool saveConfigV2() {
     // =========================
     JsonObject led = doc["led"].to<JsonObject>();
     led["count"]      = CONFIGV2.led.count;
-    led["pin"]        = CONFIGV2.led.pin;
     led["brightness"] = CONFIGV2.led.brightness;
     led["timeout"]    = CONFIGV2.led.timeout;
     setColorArray(led, "color",      CONFIGV2.led.color);
@@ -556,7 +540,6 @@ bool saveConfigV2() {
     // =========================
     JsonObject nfc = doc["nfc"].to<JsonObject>();
     nfc["count"]      = CONFIGV2.nfc.count;
-    nfc["pin"]        = CONFIGV2.nfc.pin;
     nfc["brightness"] = CONFIGV2.nfc.brightness;
     nfc["timeout"]    = CONFIGV2.nfc.timeout;
     setColorArray(nfc, "colorSuccess", CONFIGV2.nfc.colorSuccess);
@@ -569,27 +552,27 @@ bool saveConfigV2() {
     // =========================
     // Button
     // =========================
-    JsonObject button = doc["button"].to<JsonObject>();
-    button["pin"]        = CONFIGV2.button.pin;
-    button["pullup"]     = CONFIGV2.button.pullup;
-    button["debounceMs"] = CONFIGV2.button.debounceMs;
-    button["longMs"]     = CONFIGV2.button.longMs;
-    button["doubleMs"]   = CONFIGV2.button.doubleGapMs;
-    button["holdMs"]     = CONFIGV2.button.holdRepeatMs;
+    JsonObject button       = doc["button"].to<JsonObject>();
+    button["enabled"]       = CONFIGV2.button.enabled;
+    button["pullup"]        = CONFIGV2.button.pullup;
+    button["debounceMs"]    = CONFIGV2.button.debounceMs;
+    button["longMs"]        = CONFIGV2.button.longMs;
+    button["doubleMs"]      = CONFIGV2.button.doubleGapMs;
+    button["holdMs"]        = CONFIGV2.button.holdRepeatMs;
 
     // =========================
     // Buzzer
     // =========================
-    JsonObject buzzer = doc["buzzer"].to<JsonObject>();
-    buzzer["pin"]         = CONFIGV2.buzzer.pin;
-    buzzer["activeHigh"]  = CONFIGV2.buzzer.activeHigh;
-    buzzer["freq"]        = CONFIGV2.buzzer.freqHz;
-    buzzer["singleMs"]    = CONFIGV2.buzzer.singleMs;
-    buzzer["doubleOnMs"]  = CONFIGV2.buzzer.doubleOnMs;
-    buzzer["doubleGapMs"] = CONFIGV2.buzzer.doubleGapMs;
-    buzzer["errorOnMs"]   = CONFIGV2.buzzer.errorOnMs;
-    buzzer["errorGapMs"]  = CONFIGV2.buzzer.errorGapMs;
-    buzzer["errorCount"]  = CONFIGV2.buzzer.errorCount;
+    JsonObject buzzer       = doc["buzzer"].to<JsonObject>();
+    buzzer["enabled"]       = CONFIGV2.buzzer.enabled;
+    buzzer["activeHigh"]    = CONFIGV2.buzzer.activeHigh;
+    buzzer["freq"]          = CONFIGV2.buzzer.freqHz;
+    buzzer["singleMs"]      = CONFIGV2.buzzer.singleMs;
+    buzzer["doubleOnMs"]    = CONFIGV2.buzzer.doubleOnMs;
+    buzzer["doubleGapMs"]   = CONFIGV2.buzzer.doubleGapMs;
+    buzzer["errorOnMs"]     = CONFIGV2.buzzer.errorOnMs;
+    buzzer["errorGapMs"]    = CONFIGV2.buzzer.errorGapMs;
+    buzzer["errorCount"]    = CONFIGV2.buzzer.errorCount;
 
     // =========================
     // MQTT
@@ -661,7 +644,6 @@ bool importConfigJsonV2(JsonObject src) {
     if (src["led"].is<JsonObject>()) {
         JsonObject led = src["led"];
         CONFIGV2.led.count      = led["count"]      | CONFIGV2.led.count;
-        CONFIGV2.led.pin        = led["pin"]        | CONFIGV2.led.pin;
         CONFIGV2.led.brightness = led["brightness"] | CONFIGV2.led.brightness;
         CONFIGV2.led.timeout    = led["timeout"]    | CONFIGV2.led.timeout;
 
@@ -689,7 +671,6 @@ bool importConfigJsonV2(JsonObject src) {
         if(CONFIGV2.system.debugMode) {
             Serial.println(F("LED configuration imported:"));
             Serial.print(F("  LED count: "));       Serial.println(CONFIGV2.led.count);
-            Serial.print(F("  LED pin: "));         Serial.println(CONFIGV2.led.pin);
             Serial.print(F("  LED brightness: "));  Serial.println(CONFIGV2.led.brightness);
             Serial.print(F("  LED timeout: "));     Serial.println(CONFIGV2.led.timeout);
             Serial.print(F("  LED color: 0x"));     Serial.println(CONFIGV2.led.color, HEX);
@@ -704,7 +685,6 @@ bool importConfigJsonV2(JsonObject src) {
     if (src["nfc"].is<JsonObject>()) {
         JsonObject nfc = src["nfc"];
         CONFIGV2.nfc.count      = nfc["count"]      | CONFIGV2.nfc.count;
-        CONFIGV2.nfc.pin        = nfc["pin"]        | CONFIGV2.nfc.pin;
         CONFIGV2.nfc.brightness = nfc["brightness"] | CONFIGV2.nfc.brightness;
         CONFIGV2.nfc.timeout    = nfc["timeout"]    | CONFIGV2.nfc.timeout;
 
@@ -736,7 +716,6 @@ bool importConfigJsonV2(JsonObject src) {
         if(CONFIGV2.system.debugMode) {
             Serial.println(F("NFC configuration imported:"));
             Serial.print(F("  NFC count: "));       Serial.println(CONFIGV2.nfc.count);
-            Serial.print(F("  NFC pin: "));         Serial.println(CONFIGV2.nfc.pin);
             Serial.print(F("  NFC brightness: "));  Serial.println(CONFIGV2.nfc.brightness);
             Serial.print(F("  NFC timeout: "));     Serial.println(CONFIGV2.nfc.timeout);
             Serial.print(F("  NFC success color: 0x"));   Serial.println(CONFIGV2.nfc.colorSuccess, HEX);
@@ -752,7 +731,7 @@ bool importConfigJsonV2(JsonObject src) {
     // =========================
     if (src["button"].is<JsonObject>()) {
         JsonObject button = src["button"];
-        CONFIGV2.button.pin             = button["pin"]        | CONFIGV2.button.pin;
+        CONFIGV2.button.enabled         = button["enabled"]     | CONFIGV2.button.enabled;
         CONFIGV2.button.pullup          = button["pullup"]     | CONFIGV2.button.pullup;
         CONFIGV2.button.debounceMs      = button["debounceMs"] | CONFIGV2.button.debounceMs;
         CONFIGV2.button.longMs          = button["longMs"]     | CONFIGV2.button.longMs;
@@ -761,7 +740,7 @@ bool importConfigJsonV2(JsonObject src) {
 
         if(CONFIGV2.system.debugMode) {
             Serial.println(F("Button configuration imported:"));
-            Serial.print(F("  Button pin: "));        Serial.println(CONFIGV2.button.pin);
+            Serial.print(F("  Button enabled: "));     Serial.println(CONFIGV2.button.enabled ? F("true") : F("false"));
             Serial.print(F("  Button pullup: "));     Serial.println(CONFIGV2.button.pullup ? F("true") : F("false"));
             Serial.print(F("  Button debounceMs: ")); Serial.println(CONFIGV2.button.debounceMs);
             Serial.print(F("  Button longMs: "));     Serial.println(CONFIGV2.button.longMs);
@@ -775,7 +754,7 @@ bool importConfigJsonV2(JsonObject src) {
     // =========================
     if (src["buzzer"].is<JsonObject>()) {
         JsonObject buzzer = src["buzzer"];
-        CONFIGV2.buzzer.pin         = buzzer["pin"]        | CONFIGV2.buzzer.pin;
+        CONFIGV2.buzzer.enabled     = buzzer["enabled"]    | CONFIGV2.buzzer.enabled;
         CONFIGV2.buzzer.activeHigh  = buzzer["activeHigh"] | CONFIGV2.buzzer.activeHigh;
         CONFIGV2.buzzer.freqHz      = buzzer["freq"]       | CONFIGV2.buzzer.freqHz;
         CONFIGV2.buzzer.singleMs    = buzzer["singleMs"]   | CONFIGV2.buzzer.singleMs;
@@ -787,7 +766,7 @@ bool importConfigJsonV2(JsonObject src) {
 
         if(CONFIGV2.system.debugMode) {
             Serial.println(F("Buzzer configuration imported:"));
-            Serial.print(F("  Buzzer pin: "));         Serial.println(CONFIGV2.buzzer.pin);
+            Serial.print(F("  Buzzer enabled: "));     Serial.println(CONFIGV2.buzzer.enabled ? F("true") : F("false"));
             Serial.print(F("  Buzzer activeHigh: "));  Serial.println(CONFIGV2.buzzer.activeHigh ? F("true") : F("false"));
             Serial.print(F("  Buzzer freqHz: "));      Serial.println(CONFIGV2.buzzer.freqHz);
             Serial.print(F("  Buzzer singleMs: "));    Serial.println(CONFIGV2.buzzer.singleMs);

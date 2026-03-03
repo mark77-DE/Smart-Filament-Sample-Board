@@ -2,11 +2,11 @@
   "help": {
     "led": {
       "title": "LED Settings",
-      "content": "<p>Here you can configure the LEDs for the sample.</p><ul><li>Number of LEDs: Number of WS2812b LEDs, corresponding to the number of planned samples</li><li>Brightness: The brightness for the sample LEDs (0–100%)</li><li>LED Pin: The pin where the LEDs for the samples are connected</li><li>LED Color: The color that lights up above the detected sample</li><li>LED Color on Error: The color displayed when the NFC tag is unknown</li><li>Pulsing LED Color: The color that pulses in standby mode</li><li>Timeout: How many milliseconds the LED should light up on the sample</li></ul>"
+      "content": "<p>Here you can configure the LEDs for the sample.</p><ul><li>Number of LEDs: Number of WS2812b LEDs, corresponding to the number of planned samples</li><li>Brightness: The brightness for the sample LEDs (0–100%)</li><li>LED Color: The color that lights up above the detected sample</li><li>LED Color on Error: The color displayed when the NFC tag is unknown</li><li>Pulsing LED Color: The color that pulses in standby mode</li><li>Timeout: How many milliseconds the LED should light up on the sample</li></ul>"
     },
     "nfcled": {
       "title": "NFC LED Settings",
-      "content": "<p>Here you can configure the NFC LEDs, which light up the NFC symbol (default 12).</p><ul><li>Number of LEDs: Number of WS2812b LEDs</li><li>Brightness: The brightness for the NFC LEDs (0–100%)</li><li>LED Pin: The pin where the NFC LEDs are connected</li><li>LED Color (NFC detected): The color displayed when an NFC tag is detected</li><li>LED Color (NFC Error): The color displayed when the NFC tag is unknown</li><li>LED Timeout (ms): How long the LEDs light up when an NFC tag is detected</li><li>Pulsing LED Color (Standby): The color that pulses in standby mode</li><li>Blinking: Whether the LEDs should blink on NFC interaction</li><li>Blink Count: Number of blink cycles</li><li>Blink Interval (ms): Interval between blink cycles</li></ul>"
+      "content": "<p>Here you can configure the NFC LEDs, which light up the NFC symbol (default 12).</p><ul><li>Number of LEDs: Number of WS2812b LEDs</li><li>Brightness: The brightness for the NFC LEDs (0–100%)</li><li>LED Color (NFC detected): The color displayed when an NFC tag is detected</li><li>LED Color (NFC Error): The color displayed when the NFC tag is unknown</li><li>LED Timeout (ms): How long the LEDs light up when an NFC tag is detected</li><li>Pulsing LED Color (Standby): The color that pulses in standby mode</li><li>Blinking: Whether the LEDs should blink on NFC interaction</li><li>Blink Count: Number of blink cycles</li><li>Blink Interval (ms): Interval between blink cycles</li></ul>"
     },
     "mqtt": {
       "title": "MQTT Settings",
@@ -14,11 +14,11 @@
     },
     "button": {
       "title": "Pushbutton Settings",
-      "content": "<p>Configure the pushbutton including debounce and multi-click detection.</p><ul><li>Pin: The pin where the pushbutton is connected</li><li>Pull-Up active: enable internal pull-up (active-low)</li><li>Debounce (ms): Time in milliseconds to wait for a stable input</li><li>Long Press (ms): Time in milliseconds the button must be pressed to count as a long press</li><li>Double Press Gap (ms): Time in milliseconds between two clicks to detect a double press</li><li>Hold Repeat (ms): Interval in milliseconds for repeating action while the button is held</li></ul>"
+      "content": "<p>Configure the pushbutton including debounce and multi-click detection.</p><ul><li>Pull-Up active: enable internal pull-up (active-low)</li><li>Debounce (ms): Time in milliseconds to wait for a stable input</li><li>Long Press (ms): Time in milliseconds the button must be pressed to count as a long press</li><li>Double Press Gap (ms): Time in milliseconds between two clicks to detect a double press</li><li>Hold Repeat (ms): Interval in milliseconds for repeating action while the button is held</li></ul>"
     },
     "buzzer": {
       "title": "Buzzer Settings",
-      "content": "<p>Configure the piezo buzzer, e.g., volume and pitch.</p><ul><li>Pin: The pin where the buzzer is connected</li><li>Active-High Output: Whether the output is active-high (true) or active-low (false)</li><li>Frequency (Hz): The frequency of the buzzer in Hertz</li><li>Single Beep On (ms): Duration of a single beep</li><li>Double Beep On (ms): Duration of a double beep</li><li>Double Beep Gap (ms): Interval in milliseconds between the two beeps of a double beep</li><li>Error Beep On (ms): Duration of an error beep</li><li>Error Beep Gap (ms): Interval in milliseconds between error beeps</li><li>Error Beep Count: Number of beeps on error</li></ul>"
+      "content": "<p>Configure the piezo buzzer, e.g., volume and pitch.</p><ul><li>Active-High Output: Whether the output is active-high (true) or active-low (false)</li><li>Frequency (Hz): The frequency of the buzzer in Hertz</li><li>Single Beep On (ms): Duration of a single beep</li><li>Double Beep On (ms): Duration of a double beep</li><li>Double Beep Gap (ms): Interval in milliseconds between the two beeps of a double beep</li><li>Error Beep On (ms): Duration of an error beep</li><li>Error Beep Gap (ms): Interval in milliseconds between error beeps</li><li>Error Beep Count: Number of beeps on error</li></ul>"
     },
     "dashboard": {
       "title": "Dashboard Settings",
@@ -39,6 +39,10 @@
     "info": {
       "title": "Info Settings",
       "content": "<p>Displays information about the device, e.g., version, memory usage, and hardware details.</p>"
+    },
+    "pinout": {
+      "title": "Pinout",
+      "content": "<p>Here the pin assignments are displayed.</p>"
     }
   },
   "i18n": {
@@ -160,7 +164,6 @@
     "txt_flash_size": "Flash Size:",
     "txt_nfc_available": "NFC Available:",
     "txt_variant": "Chip Variant:",
-    "txt_board_variant_mismatch": "Warning: Configuration does not match board variant!\n\nCheck pins!\n\n",
     "txt_animation_after_boot": "Animation after boot:",
     "txt_storage": "storage",
     "txt_filter_free": "keyword"
