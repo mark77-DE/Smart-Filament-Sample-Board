@@ -7,12 +7,21 @@ const activeTimers = {};     // UID -> TimeoutID (UI Highlight)
 const lastScanTimes = {};    // UID -> timestamp (Debounce für HighlightUID)
 const DEBOUNCE_MS = 2000;    // 2 Sekunden Entprellzeit für highlightUID (NFC/WS Events)
 
-let CONFIG = null;
+let CONFIGV2 = null;
 const DEFAULT_LED_TIMEOUT_MS = 5000; // Fallback, falls config_v2.json fehlt
 
 let socket = null;
 let reconnectTimer = null;
 const RECONNECT_DELAY = 2000; // 2 Sekunden
+
+let wsLastHeartbeat = 0;
+let wsWatchdogTimer = null;
+
+let reconnectDelay = 1000;
+const RECONNECT_MAX = 10000;
+
+const WS_TIMEOUT_MS = 5000;
+const WS_CHECK_INTERVAL = 1000;
 
 let wsStatus = false;
 const wsStatusElement = document.getElementById("wsStatus");
@@ -33,7 +42,7 @@ let activeFilters = {
 // ---------------- WebSocket ----------------
 function updateWSStatus(connected) {
   if (!wsStatusElement) return;
-  wsStatusElement.textContent = connected ? "verbunden" : "getrennt";
+  wsStatusElement.textContent = connected ? t("websocket_connected") : t("websocket_disconnected");
   wsStatusElement.classList.toggle("ws-connected", connected);
   wsStatusElement.classList.toggle("ws-disconnected", !connected);
   wsStatus = connected;
@@ -51,6 +60,7 @@ function getWebLedTimeoutMs() {
 }
 
 function connectWS() {
+
   if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) {
     return;
   }
@@ -58,48 +68,108 @@ function connectWS() {
   socket = new WebSocket(`ws://${location.host}/ws`);
 
   socket.onopen = () => {
+
     if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+
+    reconnectDelay = 1000;
     updateWSStatus(true);
 
-    // falls gerade ein pending da ist (z.B. Reconnect), nochmal versuchen
     if (pending) scheduleAckRetry(0);
-  };
+};
 
   socket.onclose = () => {
-    updateWSStatus(false);
-    clearAckTimers(); // wichtig: ACK-Timer stoppen
-    if (sendCoalesceTimer) { clearTimeout(sendCoalesceTimer); sendCoalesceTimer = null; }
 
-    reconnectTimer = setTimeout(connectWS, RECONNECT_DELAY);
+    updateWSStatus(false);
+
+    clearAckTimers();
+
+    if (sendCoalesceTimer) {
+      clearTimeout(sendCoalesceTimer);
+      sendCoalesceTimer = null;
+    }
+
+    if (wsWatchdogTimer) {
+      clearInterval(wsWatchdogTimer);
+      wsWatchdogTimer = null;
+    }
+
+    scheduleReconnect();
   };
 
   socket.onerror = () => {
     try { socket.close(); } catch {}
   };
 
-  // >>> HIER ist der Block, den du meinst:
   socket.onmessage = (event) => {
     try {
+
       const msg = JSON.parse(event.data);
 
-      // ACK für Klick
+      // ACK
       if (msg.action === "ack" && pending && msg.seq === pending.seq) {
         pending = null;
         clearAckTimers();
         return;
       }
 
-      // normale UID-Events (NFC + WebIF Broadcast)
+      // -------- Heartbeat --------
+      if (msg.action === "heartbeat") {
+
+        wsLastHeartbeat = Date.now();
+
+        if (!wsWatchdogTimer) {
+            startWSWatchdog();   // erst jetzt!
+        }
+
+        updateWSStatus(true);
+        updateRssiIcon(msg.wifi_rssi);
+
+        if (CONFIGV2?.system?.debugMode) {
+          console.log("Heartbeat:", msg);
+        }
+
+    return;
+}
+
+      // UID
       if (msg && msg.uid) {
-        highlightUID(msg.uid); // NICHT bypassDebounce, weil das meist NFC/WS ist
+        highlightUID(msg.uid);
       }
 
     } catch (e) {}
   };
 }
 
+function startWSWatchdog() {
 
+  if (wsWatchdogTimer) {
+    clearInterval(wsWatchdogTimer);
+  }
 
+  wsWatchdogTimer = setInterval(() => {
+
+    const delta = Date.now() - wsLastHeartbeat;
+
+    if (delta > WS_TIMEOUT_MS) {
+      console.warn("Heartbeat timeout");
+      try { socket.close(); } catch {}
+    }
+
+  }, WS_CHECK_INTERVAL);
+}
+
+function scheduleReconnect() {
+
+  if (reconnectTimer) return;
+
+  reconnectTimer = setTimeout(() => {
+    reconnectTimer = null;
+    connectWS();
+
+    reconnectDelay = Math.min(reconnectDelay * 2, RECONNECT_MAX);
+
+  }, reconnectDelay);
+}
 
 // ---------------- ACK/Retry für "highlightLED" ----------------
 let clickSeq = 0;
@@ -613,6 +683,37 @@ document.getElementById("detailOverlay").addEventListener("click", (e) => {
     closeDetails();
   }
 });
+
+
+
+
+function updateRssiIcon(rssi) {
+    const bars = document.querySelectorAll("#rssiIcon .bar");
+
+    // Alle Balken zurücksetzen
+    bars.forEach(bar => bar.setAttribute("fill", "gray"));
+
+    let color;
+
+    if (rssi > -50) {       // starkes Signal
+        color = "green";
+    } else if (rssi > -75) { // mittel
+        color = "orange";
+    } else if (rssi > -90) { // schwach
+        color = "red";
+    } else {                 // sehr schwach
+        numBars = 0;
+    }
+
+    bars.forEach(bar => {
+        bar.classList.remove("red","orange","green");
+        bar.classList.add(color); // color = "red"|"orange"|"green"
+    });
+
+   
+}
+
+
 
 async function init() {
     await loadFilamentTiles();

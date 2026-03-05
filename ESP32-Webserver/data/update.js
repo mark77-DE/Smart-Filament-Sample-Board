@@ -4,12 +4,12 @@ const fsInput = document.getElementById("fsFile");
 
 fwInput.addEventListener("change", () => {
     document.getElementById("fwFileName").textContent =
-        fwInput.files.length ? fwInput.files[0].name : "no file selected";
+        fwInput.files.length ? fwInput.files[0].name : t("txt_no_file_selected");
 });
 
 fsInput.addEventListener("change", () => {
     document.getElementById("fsFileName").textContent =
-        fsInput.files.length ? fsInput.files[0].name : "no file selected";
+        fsInput.files.length ? fsInput.files[0].name : t("txt_no_file_selected");
 });
 
 
@@ -44,17 +44,17 @@ document.getElementById("exportAllBtn").addEventListener("click", async () => {
 
 async function uploadFS() {
   const fileInput = document.getElementById('fsFile');
-  if (!fileInput.files.length) return alert("Please choose file");
+  if (!fileInput.files.length) return alert(t("txt_select_file"));
 
   const file = fileInput.files[0];
 
   // einfache Flüchtigkeitsprüfung
   if (!file.name.endsWith("littlefs.bin")) {
-    return alert("FS file needs to start with 'littlefs' and end with '.bin'!");
+    return alert(t("txt_filesystem_invalid"));
   }
 
   const status = document.getElementById('status');
-  status.textContent = "Uploading FS...";
+  status.textContent = t("txt_uploading_fs");
 
   try {
     const response = await fetch("/api/uploadFS", {
@@ -63,30 +63,30 @@ async function uploadFS() {
     });
 
     if (response.ok) {
-      status.textContent = "FS upload success! Rebooting";
+      status.textContent = t("txt_update_success");
     } else {
-      status.textContent = "FS upload failed: " + response.statusText;
+      status.textContent = t("txt_update_failed") + ": " + response.statusText;
     }
   } catch (err) {
-    status.textContent = "FS upload error: " + err;
+    status.textContent = t("txt_update_failed") + ": " + err;
   }
 }
 
 
 async function uploadFirmware() {
   const fileInput = document.getElementById('firmwareFile');
-  if (!fileInput.files.length) return alert("Please choose file");
+  if (!fileInput.files.length) return alert(t("txt_select_file"));
 
   const file = fileInput.files[0];
 
   // einfache Flüchtigkeitsprüfung
   if (!file.name.endsWith("firmware.bin")) {
-    return alert("Firmware file needs to start with 'firmware' and end with '.bin'!");
+    return alert(t("txt_firmware_invalid"));
   }
 
 
   const status = document.getElementById('status');
-  status.textContent = "Uploading...";
+  status.textContent = t("txt_uploading_fw");
 
   try {
     const response = await fetch("/api/otaUpdate", {
@@ -95,30 +95,13 @@ async function uploadFirmware() {
     });
 
     if (response.ok) {
-      status.textContent = "Upload success! ESP rebooting...";
+      status.textContent = t("txt_update_success");
     } else {
-      status.textContent = "Upload error: " + response.statusText;
+      status.textContent = t("txt_update_failed") + ": " + response.statusText;
     }
   } catch (err) {
-    status.textContent = "Upload Error: " + err;
+    status.textContent = t("txt_update_failed") + ": " + err;
   }
 }
 
 
-
-
-function getVersion() {
-  fetch("/api/version")
-    .then(r => r.json())
-    .then(data => {
-      document.getElementById("fwVersion").textContent = "FW-Version: " + data.firmware;
-      document.getElementById("gitHash").textContent = "Git hash: " + data.git_hash;
-      document.getElementById("build_date").textContent = "Build date: " + data.build_date;
-    })
-    .catch(err => console.error("Version fetch failed:", err));
-}
-
-
-
-
-getVersion();

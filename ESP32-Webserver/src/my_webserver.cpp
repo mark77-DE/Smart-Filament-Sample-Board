@@ -23,6 +23,9 @@ File fsFile; // global oder in cpp außerhalb des Lambdas
 
 extern void webifArmIdleTimeout(uint32_t ms);
 
+unsigned long lastHeartbeatMs = 0;
+const unsigned long HEARTBEAT_INTERVAL_MS = 1000; // 1 Sekunde
+
 
 //Vorwärtsdeklaration
 extern void renderRebootCountdown(unsigned long nowMs);
@@ -263,15 +266,6 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
     server.serveStatic("/update.js", LittleFS, "/update.js")
         .setCacheControl("no-cache");
 
-    // ALT: Direkte Handler für statische Files entfernt (durch serveStatic ersetzt)
-    // server.on("/", HTTP_GET, ...);
-    // server.on("/style.css", HTTP_GET, ...);
-    // server.on("/script.js", HTTP_GET, ...);
-    // server.on("/settings.css", HTTP_GET, ...);
-    // server.on("/settings.js", HTTP_GET, ...);
-    // server.on("/settings", HTTP_GET, ...);
-    // server.on("/logo.png", HTTP_GET, ...);
-    // server.on("/favicon.ico", HTTP_GET, ...);
 
     server.on("/api/version", HTTP_GET, [](AsyncWebServerRequest *request) {
 
@@ -304,14 +298,14 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
         doc["wifi_gateway"]             = WiFi.gatewayIP().toString();
         doc["wifi_subnet"]              = WiFi.subnetMask().toString();
         doc["wifi_ssid"]                = WiFi.SSID();
-        doc["wifi_rssi"]                = WiFi.RSSI();
+        
         doc["wifi_bssid"]               = WiFi.BSSIDstr();
         doc["wifi_channel"]             = WiFi.channel();
         doc["wifi_dns1"]                = WiFi.dnsIP(0).toString();
         doc["wifi_dns2"]                = WiFi.dnsIP(1).toString();
         doc["uptime_ms"]                = millis();
         doc["heap_size"]                = ESP.getHeapSize();
-        doc["free_heap"]                = ESP.getFreeHeap();
+        
         doc["sketch_size"]              = ESP.getSketchSize();
         doc["free_sketch"]              = ESP.getFreeSketchSpace();
         
@@ -922,3 +916,20 @@ server.on("/api/uploadFS", HTTP_POST,
 
 
 
+void sendHeartbeat(AsyncWebSocket &ws) {
+    unsigned long now = millis();
+    if (now - lastHeartbeatMs < HEARTBEAT_INTERVAL_MS) return;
+    lastHeartbeatMs = now;
+
+    JsonDocument doc;
+    doc["action"] = "heartbeat";
+    doc["uptime_ms"] = millis();
+    doc["heap_free"] = ESP.getFreeHeap();
+    doc["wifi_rssi"] = WiFi.RSSI();
+    doc["rebootPending"] = rebootPending;
+
+    String out;
+    serializeJson(doc, out);
+
+    ws.textAll(out); // an alle WebSocket-Clients senden
+}

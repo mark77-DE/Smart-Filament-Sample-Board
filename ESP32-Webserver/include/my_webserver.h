@@ -22,7 +22,7 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws);
 void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
                AwsEventType type, void *arg, uint8_t *data, size_t len);
 
-
+void sendHeartbeat(AsyncWebSocket &ws);
 
 struct SysInfo {
     const char* chipName;
@@ -32,6 +32,7 @@ struct SysInfo {
     const char* fwVersion;
     const char* buildDate;
 };    
+
 
 
 

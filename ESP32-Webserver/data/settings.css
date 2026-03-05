@@ -116,11 +116,6 @@ input:checked+.slider::after {
     font-weight: bold;
 }
 
-#addForm select {
-    width: 130px;
-    box-sizing: border-box;
-}
-
 #addForm input
 {
     width: 100%;
@@ -176,19 +171,20 @@ button,
 .upload-btn,
 .primaryBtn {
     width: 110px;
-    padding: 8px 10px;
+    padding: 8px 12px;
     margin: 0;
     border: none;
     border-radius: 4px;
     cursor: pointer;
     font-size: 0.9em;
+    display: inline-block;
 }
 
 .primaryBtn,
 #saveConfig {
     background-color: #007bff;
     color: white;
-    width: 110px;
+    /*! width: 110px; */
 }
 
 .primaryBtn:hover,
@@ -1178,4 +1174,83 @@ body.daymode select {
 body.daymode input.invalid,
 input.invalid {
     border: 2px solid red;
+}
+
+
+
+.exportHint {
+    grid-column: span 2;
+    border: 2px solid #FF0000;
+    padding: 10px 14px;
+    margin-bottom: 8px;
+    font-size: 0.9em;
+    text-align: center;
+}
+
+.alert {
+    font-weight: 600;
+    color: #ff6b6b;
+}
+
+#uploadForm {
+    width: 100%;
+    display: inline-block;
+}
+
+
+
+#fwUpdateSection,
+#fsUpdateSection,
+#statusSection {
+    grid-column: span 2;
+    margin: 0px 24px;
+    padding: 5px;
+    
+    border-radius: 8px;
+   
+}
+
+#statusSection {
+    height: 55px;
+}
+
+body.daymode #fwUpdateSection,
+body.daymode #fsUpdateSection,
+body.daymode #statusSection {
+    
+    color: black;
+    
+}
+
+
+input[type="file"] {
+    display: none;
+}
+
+.fileName {
+    font-size: 0.85em;
+    color: #90a4ae;
+    font-style: italic;
+    min-width: 180px;
+}
+
+label.primaryBtn {
+    width: 87px;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+#updateSettings .ieTitle {
+    grid-column: span 2;
+}
+
+#rssiIcon .bar { fill: gray; transition: fill 0.3s ease; }
+#rssiIcon .bar.red { fill: red; }
+#rssiIcon .bar.orange { fill: orange; }
+#rssiIcon .bar.green { fill: green; }
+body.daymode #rssiIcon .bar.green { fill: #00dd00; }
+
+
+#newTags {
+    width: 200px;
 }

@@ -24,7 +24,7 @@ async function loadHelpAndLang(lang='en') {
 function applyTranslations(root = document) {
   root.querySelectorAll("[data-i18n]").forEach(el => {
     const key = el.dataset.i18n;
-    if(i18nData[key]) el.textContent = i18nData[key];
+    if(i18nData[key]) el.innerHTML = i18nData[key];
   });
 }
 

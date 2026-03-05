@@ -43,6 +43,10 @@
       "pinout": {
           "title": "Pinout",
           "content": "<p>Hier werden die Pinbelegungen angezeigt.</p>"
+      },
+      "update": {
+          "title": "Update",
+          "content": "<p>Hier können Firmware-Updates durchgeführt werden.</p><ul><li>Wähle eine gültige .bin Datei aus, die mit diesem Gerät kompatibel ist.</li><li>Klicke auf 'Update starten', um den Update-Prozess zu beginnen.</li><li>Das Gerät wird automatisch neu starten, wenn das Update abgeschlossen ist.</li></ul>"
       }
   },
   "i18n": {
@@ -166,10 +170,17 @@
     "txt_variant": "Chip Variante:",
     "txt_animation_after_boot": "Animation nach dem Booten:",
     "txt_storage": "Lagerort",
-    "txt_filter_free": "Suchtext"
-    
-    
-
+    "txt_filter_free": "Suchtext",
+    "txt_warning_firmware": "Vor <span class='alert'>Firmware</span> Updates bitte die Konfiguration exportieren, da Daten <span class='alert'>verloren gehen können</span>.",
+    "txt_warning_filesystem": "Vor <span class='alert'>Filesystem</span> Updates bitte die Konfiguration exportieren, da Daten <span class='alert'>verloren gehen</span>.",
+    "txt_no_file_selected": "Keine Datei ausgewählt",
+    "txt_select_file": "Datei auswählen",
+    "txt_firmware_invalid": "Firmware Datei muss mit 'firmware.bin' enden!",
+    "txt_filesystem_invalid": "FS Datei muss mit 'littlefs.bin' enden!",
+    "txt_update_success": "Update erfolgreich! Gerät startet in 3 Sekunden neu.",
+    "txt_update_failed": "Update fehlgeschlagen!",
+    "txt_uploading_fw": "Firmware wird hochgeladen...",
+    "txt_uploading_fs": "Filesystem wird hochgeladen..."
 
   }
 

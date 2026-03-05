@@ -344,6 +344,7 @@ void setup() {
   Serial.println();
   Serial.println("Setup starting...");
   Serial.println();
+
   
   loadConfigV2();
   applyConfigV2();
@@ -399,11 +400,7 @@ void setup() {
     }
   }
 
-  // 5) WebSocket + Webserver starten (WebIF nun sofort erreichbar)
-  // FIX: doppelte WS-Registrierung vermeiden – nur im Webserver-Modul hinzufügen
-  // server.addHandler(&ws); // <-- ENTFERNT, Registrierung erfolgt in initWebServer()
-  initWebServer(server, ws);
-  WiFi.setSleep(false);
+  
 
   //init MQTT
   if(CONFIGV2.mqttConfig.enabled) {
@@ -461,6 +458,13 @@ void setup() {
     // 8) Idle-Animation vorbereiten
     DisplayAnim::startIdleTextFirst(millis());
   
+    // 5) WebSocket + Webserver starten (WebIF nun sofort erreichbar)
+  // FIX: doppelte WS-Registrierung vermeiden – nur im Webserver-Modul hinzufügen
+  // server.addHandler(&ws); // <-- ENTFERNT, Registrierung erfolgt in initWebServer()
+  initWebServer(server, ws);
+  WiFi.setSleep(false);
+
+   Serial.println("Setup done.");
 
 
 
@@ -590,7 +594,13 @@ void loop() {
   prevIdle = idleNow;
 
   // ---------------------------------------------------------------------------
-  // 7) (Optional) yield()
+  // 7) WebSocket hearbeat
+  // ---------------------------------------------------------------------------
+  sendHeartbeat(ws);
+  
+
+  // ---------------------------------------------------------------------------
+  // 8) (Optional) yield()
   // ---------------------------------------------------------------------------
   yield();
 

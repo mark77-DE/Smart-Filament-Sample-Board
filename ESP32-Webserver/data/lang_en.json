@@ -43,6 +43,10 @@
     "pinout": {
       "title": "Pinout",
       "content": "<p>Here the pin assignments are displayed.</p>"
+    },
+    "update": {
+      "title": "Update",
+      "content": "<p>Here you can perform firmware updates.</p><ul><li>Select a valid .bin file that is compatible with this device.</li><li>Click 'Start Update' to begin the update process.</li><li>The device will automatically reboot when the update is complete.</li></ul>"
     }
   },
   "i18n": {
@@ -166,7 +170,17 @@
     "txt_variant": "Chip Variant:",
     "txt_animation_after_boot": "Animation after boot:",
     "txt_storage": "storage",
-    "txt_filter_free": "keyword"
+    "txt_filter_free": "keyword",
+    "txt_warning_firmware": "Before doing <span class='alert'>firmware</span> updates, please export config, because data <span class='alert'>might</span> be lost.",
+    "txt_warning_filesystem": "Before doing <span class='alert'>filesystem</span> updates, please export config, because data <span class='alert'>will</span> be lost.",
+    "txt_select_file": "Select file",
+    "txt_no_file_selected": "No file selected",
+    "txt_firmware_invalid": "Firmware file needs to end with 'firmware.bin'!",
+    "txt_filesystem_invalid": "FS file needs to end with 'littlefs.bin'!",
+    "txt_update_success": "Update successful! Device will reboot in 3 seconds.",
+    "txt_update_failed": "Update failed!",
+    "txt_uploading_fw": "Uploading Firmware...",
+    "txt_uploading_fs": "Uploading Filesystem..."
 
 
 

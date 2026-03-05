@@ -131,19 +131,6 @@ button {
     display: none;
 }
 
-.ws-connected {
-    color: green;
-    font-weight: bold;
-    display: none;
-}
-
-.ws-disconnected {
-    color: red;
-    font-weight: bold;
-}
-
-
-
 
 #filamentGrid {
     grid-template-columns: repeat(10, 1fr); /* Desktop */
@@ -207,12 +194,6 @@ body.daymode #unknown {
 body.daymode .ws-connected {
     color: #27ae60;
 }
-
-body.daymode .ws-disconnected {
-    color: #c0392b;
-}
-
-
 
 
 
@@ -403,4 +384,32 @@ body.daymode #filters {
 body.daymode #filterFree {
     background: #ffffff;
     color: #000000;
+}
+
+#rssiIcon .bar { fill: gray; transition: fill 0.3s ease; }
+#rssiIcon .bar.red { fill: red; }
+#rssiIcon .bar.orange { fill: orange; }
+#rssiIcon .bar.green { fill: green; }
+body.daymode #rssiIcon .bar.green { fill: #00dd00; }
+
+
+
+.ws-connected {
+    display: none;  
+}
+
+.ws-disconnected {
+    color: #ffffff;
+    text-align: center;
+    font-weight: bold;
+    background-color: red;
+    width: 80px;
+    padding: 8px 12px;
+    margin: 0;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
+    display: inline-block;
+    
 }

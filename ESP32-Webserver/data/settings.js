@@ -104,7 +104,7 @@ const importBtn = document.getElementById("importBtn");
 const toggleBtn = document.getElementById("toggleSettings");
 const section = document.getElementById("sectionSettings");
 
-const uidInput = document.querySelector('input[name="uid"]');
+
 
 const hostnameInput = document.getElementById("hostname");
 
@@ -131,7 +131,20 @@ let CONFIGV2 = null;
 let lastHighlightedRow = null;
 let BOARD_VARIANT = "unknown"; // wird in config.js überschrieben, dient aber hier schon als Fallback / Referenz
 
+let wsLastHeartbeat = 0;
+let wsWatchdogTimer = null;
 
+const WS_TIMEOUT_MS = 5000;   // z.B. 5 Sekunden
+const WS_CHECK_INTERVAL = 1000; // jede Sekunde prüfen
+
+let socket = null;
+let reconnectTimer = null;
+let reconnectDelay = 1000;        // Start 1s
+const RECONNECT_MAX = 10000;      // Max 10s
+
+
+const scannedTags = new Set();
+const newTagsSelect = document.getElementById("newTags");
 
 
 document.querySelectorAll(".infoTitle[data-toggle]").forEach(title => {
@@ -141,19 +154,63 @@ document.querySelectorAll(".infoTitle[data-toggle]").forEach(title => {
 });
 
 // -------------------- WebSocket --------------------
-const socket = new WebSocket(`ws://${location.host}/ws`);
 
-socket.onopen = () => updateWSStatus(true);
-socket.onclose = () => {
-    updateWSStatus(false);
-    document.body.innerHTML = `
-        <h2><span data-i18n="txt_esp_disconnected">ESP disconnected...</span></h2>
-        <p><span data-i18n="txt_page_reload">Page will reload in 2 seconds.</span></p>
-    `;
-    setTimeout(() => location.reload(), 2000);
-};
-socket.onerror = () => updateWSStatus(false);
-socket.onmessage = handleWSMessage;
+function connectWebSocket() {
+
+    if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) {
+        return;
+    }
+
+    const protocol = location.protocol === "https:" ? "wss://" : "ws://";
+    socket = new WebSocket(protocol + location.host + "/ws");
+
+    socket.onopen = () => {
+
+        console.log("WS connected");
+
+        reconnectDelay = 1000;
+        wsLastHeartbeat = 0;          // noch KEIN Heartbeat gesehen
+        updateWSStatus(true);
+
+        stopWSWatchdog();             // Sicherheit
+    };
+
+    socket.onmessage = handleWSMessage;
+
+    socket.onclose = () => {
+
+        console.warn("WS closed");
+
+        updateWSStatus(false);
+        stopWSWatchdog();
+
+        scheduleReconnect();
+    };
+
+    socket.onerror = () => {
+        try { socket.close(); } catch {}
+    };
+}
+
+
+function scheduleReconnect() {
+
+    if (reconnectTimer) return;
+
+    console.log("Reconnect in", reconnectDelay, "ms");
+
+    reconnectTimer = setTimeout(() => {
+        reconnectTimer = null;
+        connectWebSocket();
+
+        // Delay erhöhen (bis max)
+        reconnectDelay = Math.min(reconnectDelay * 2, RECONNECT_MAX);
+
+    }, reconnectDelay);
+}
+
+
+
 
 
 // -------------------- Farb-Utils --------------------
@@ -193,7 +250,7 @@ function updateImportUI() {
 function updateWSStatus(connected) {
 
     // Key je nach Status
-    const key = connected ? 'websocket_connected' : 'websocket_disconnected';
+    const key = connected ? t("websocket_connected") : t("websocket_disconnected");
 
     wsStatus.textContent = i18nData[key] || (connected ? "WebSocket: connected" : "WebSocket: disconnected");
     wsStatus.classList.toggle("ws-connected", connected);
@@ -229,6 +286,27 @@ async function handleWSMessage(ev) {
         return;
     }
 
+    // ----------------- Heartbeat prüfen -----------------
+    if (data.action === "heartbeat") {
+
+    wsLastHeartbeat = Date.now();
+
+    if (!wsWatchdogTimer) {
+        startWSWatchdog(); // erst nach erstem Heartbeat
+    }
+
+    updateWSStatus(true);
+    updateRssiDisplay(data.wifi_rssi);
+    infoFreeHeap.textContent = data.heap_free + " bytes";
+
+    if (CONFIGV2?.system?.debugMode) {
+        console.log("Heartbeat:", data);
+    }
+
+    return;
+}
+
+    // ----------------- UID Logik -----------------
     if (!data.uid) {
         return;
     }
@@ -259,12 +337,23 @@ async function handleWSMessage(ev) {
     });
 
     if (!highlighted) {
-        document.querySelector('#addForm input[name="uid"]').value = data.uid;
-        document.querySelector('#addForm input[name="vendor"]').focus();
 
-        if (lastHighlightedRow) lastHighlightedRow.classList.remove("highlight");
-        lastHighlightedRow = null;
+    if (!scannedTags.has(data.uid)) {
+
+        scannedTags.add(data.uid);
+
+        const option = document.createElement("option");
+        option.value = data.uid;
+        option.textContent = data.uid;
+
+        newTagsSelect.appendChild(option);
+        newTagsSelect.value = data.uid;
+
     }
+
+}
+
+    
 }
 
 
@@ -334,25 +423,85 @@ document.getElementById("rebootBtn").addEventListener("click", async () => {
 
 // -------------------- Add Form --------------------
 addForm.addEventListener("submit", async e => {
+
     e.preventDefault();
-    const fd = new FormData(addForm);
-    const entry = {
-        uid: fd.get("uid").trim(),
-        vendor: fd.get("vendor").trim(),
-        type: fd.get("type"),
-        color: fd.get("color").trim(),
-        ledIndex: Number(fd.get("ledIndex")),
-        info1: fd.get("info1").trim(),
-        info2: fd.get("info2").trim(),
-        storage: fd.get("storage").trim()
-    };
-    const db = await (await fetch("/filaments.json")).json();
-    const used = db.find(e => Number(e.ledIndex) === entry.ledIndex);
-    if (used) { alert(`LED ${entry.ledIndex + 1} bereits verwendet von UID ${used.uid}`); return; }
-    const res = await fetch("/api/add", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(entry) });
-    if (res.ok) { alert(t("txt_add_sample_success")); addForm.reset(); await loadFilaments(); renderTable(); updateAddFormSamples(); }
-    else alert(t("txt_add_sample_failed"));
+
+    const uid = newTagsSelect.value;
+
+    if (!uid) {
+        alert("Kein Tag ausgewählt");
+        return;
+    }
+
+    const entry = getFormEntry(uid);
+    if (!entry) return;
+
+    const ok = await saveEntry(entry);
+    if (!ok) return;
+
+    removeTag(uid);
+
+    alert(t("txt_add_sample_success"));
+
+    addForm.reset();
+
+    await loadFilaments();
+    renderTable();
+    updateAddFormSamples();
 });
+
+function getFormEntry(uid) {
+    const fd = new FormData(addForm);
+
+    return {
+        uid: uid,
+        vendor: sanitizeInput(fd.get("vendor").trim()),
+        type: fd.get("type"), // falls Typ immer eine Auswahl ist, keine Sanitize nötig
+        color: sanitizeInput(fd.get("color").trim()),
+        ledIndex: Number(fd.get("ledIndex")),
+        info1: sanitizeInput(fd.get("info1").trim()),
+        info2: sanitizeInput(fd.get("info2").trim()),
+        storage: sanitizeInput(fd.get("storage").trim())
+    };
+}
+
+async function saveEntry(entry) {
+
+    const db = await (await fetch("/filaments.json")).json();
+
+    const used = db.find(e => Number(e.ledIndex) === entry.ledIndex);
+
+    if (used) {
+        alert(`LED ${entry.ledIndex + 1} bereits verwendet von UID ${used.uid}`);
+        return false;
+    }
+
+    const res = await fetch("/api/add", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(entry)
+    });
+
+    if (!res.ok) {
+        alert(t("txt_add_sample_failed"));
+        return false;
+    }
+
+    return true;
+}
+
+
+function removeTag(uid) {
+
+    scannedTags.delete(uid);
+
+    [...newTagsSelect.options].forEach(o => {
+        if (o.value === uid) o.remove();
+    });
+
+}
+
+
 
 
 // -------------------- Table / LED --------------------
@@ -379,12 +528,16 @@ data.forEach((e, idx) => {
                 <span class="number">#${number++}</span>
                 <span class="uid" data-max="20" contenteditable="${EDIT_MODE}" data-field="uid" data-idx="${idx}">${e.uid}</span>
                 <span class="vendor" data-max="30" contenteditable="${EDIT_MODE}" data-field="vendor" data-idx="${idx}">${e.vendor}</span>
+                
+                <span class="color" data-max="30" contenteditable="${EDIT_MODE}" data-field="color" data-idx="${idx}">${e.color}</span>
+            
+            </div>
+            <div class="rowSelectable">
                 <span class="type">
                     <select data-field="type" data-idx="${idx}" ${EDIT_MODE ? "" : "disabled"}>
                         ${getTypeOptions(e.type)}
                     </select>
                 </span>
-                <span class="color" data-max="30" contenteditable="${EDIT_MODE}" data-field="color" data-idx="${idx}">${e.color}</span>
                 <span class="led">
                     ${buildLedDropdown(Number(e.ledIndex), usedLEDs, !EDIT_MODE)}
                 </span>
@@ -613,7 +766,7 @@ function activateButtons() {
         const entry = { idx };
         row.querySelectorAll("[data-field]").forEach(el => {
             const field = el.dataset.field;
-            entry[field] = el.tagName === "SELECT" ? el.value : el.innerText.trim();
+            entry[field] = el.tagName === "SELECT" ? el.value : sanitizeInput(el.innerText.trim());
         });
         const res = await fetch("/api/update", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(entry) });
         if (res.ok) { alert(t("txt_save_sample_success")); await loadFilaments(); renderTable(); updateAddFormSamples(); } else alert(t("txt_save_sample_failed"));
@@ -927,13 +1080,7 @@ function isValidNFCUID(uid) {
 }
 
 
-uidInput.addEventListener('input', () => {
-    if (!isValidNFCUID(uidInput.value)) {
-        uidInput.classList.add('invalid');
-    } else {
-        uidInput.classList.remove('invalid');
-    }
-});
+
 
 
 dbDiv.addEventListener('input', e => {
@@ -1083,6 +1230,34 @@ function updateRssiDisplay(rssi) {
     const rssiSpan = document.getElementById("infoWifiRssi");
     rssiSpan.textContent = rssi + " dBm";
     rssiSpan.style.color = rssiToColor(rssi);
+
+    updateRssiIcon(rssi);
+}
+
+function updateRssiIcon(rssi) {
+    const bars = document.querySelectorAll("#rssiIcon .bar");
+
+    // Alle Balken zurücksetzen
+    bars.forEach(bar => bar.setAttribute("fill", "gray"));
+
+    let color;
+
+    if (rssi > -50) {       // starkes Signal
+        color = "green";
+    } else if (rssi > -75) { // mittel
+        color = "orange";
+    } else if (rssi > -90) { // schwach
+        color = "red";
+    } else {                 // sehr schwach
+        numBars = 0;
+    }
+
+    bars.forEach(bar => {
+        bar.classList.remove("red","orange","green");
+        bar.classList.add(color); // color = "red"|"orange"|"green"
+    });
+
+   
 }
 
 
@@ -1109,7 +1284,7 @@ async function getVersion() {
             infoHostname.textContent = data.hostname;
 
             infoHeapSize.textContent = data.heap_size + " bytes";
-            infoFreeHeap.textContent = data.free_heap + " bytes";
+            
             infoSketchSize.textContent = data.sketch_size + " bytes";
             infoFreeSketch.textContent = data.free_sketch + " bytes";
             infoSpiffsSize.textContent = data.spiffs_size + " bytes";
@@ -1129,7 +1304,7 @@ async function getVersion() {
             infoNfcFwVer.textContent = data.nfc_fwVerMajor + "." + data.nfc_fwVerMinor;
             infoNfcChipId.textContent = data.nfc_chipID;
 
-            updateRssiDisplay(data.wifi_rssi);
+            
 
         })
         .catch(err => console.error("Version fetch failed:", err));
@@ -1223,7 +1398,23 @@ buttonEnabledInput.addEventListener("change", function () {
 });
 
 
+newTagsSelect.addEventListener("change", () => {
 
+    const uid = newTagsSelect.value;
+    if (!uid) return;
+
+    document.querySelector('#addForm input[name="vendor"]').focus();
+
+});
+
+
+newTagsSelect.addEventListener("focus", () => {
+    newTagsSelect.size = Math.min(newTagsSelect.options.length, 6);
+});
+
+newTagsSelect.addEventListener("blur", () => {
+    newTagsSelect.size = 1;
+});
 
 
 async function loadFilaments() {
@@ -1238,7 +1429,9 @@ async function loadFilaments() {
 }
 
 
-
+function sanitizeInput(str) {
+    return str.replace(/<[^>]*>/g, ''); // entfernt alles zwischen < >
+}
 
 
 // Alle contenteditable mit data-max
@@ -1283,11 +1476,40 @@ function updateCharsLeftInput(el) {
 }
 
 
+function startWSWatchdog() {
 
+    if (wsWatchdogTimer) return; // nicht doppelt starten
 
+    wsWatchdogTimer = setInterval(() => {
+
+        if (!wsLastHeartbeat) return; // noch kein Heartbeat gesehen
+
+        const delta = Date.now() - wsLastHeartbeat;
+
+        if (delta > WS_TIMEOUT_MS) {
+
+            console.warn("Heartbeat timeout:", delta, "ms");
+
+            stopWSWatchdog();
+
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                socket.close(); // → triggert sauberen Reconnect
+            }
+        }
+
+    }, WS_CHECK_INTERVAL);
+}
+
+function stopWSWatchdog() {
+    if (wsWatchdogTimer) {
+        clearInterval(wsWatchdogTimer);
+        wsWatchdogTimer = null;
+    }
+}
 // -------------------- Init --------------------
 async function init() {
 
+    connectWebSocket();
     
     await loadConfig_V2();
     await loadFilaments();
