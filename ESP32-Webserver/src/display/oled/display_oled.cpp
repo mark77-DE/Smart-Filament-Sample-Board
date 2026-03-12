@@ -1,5 +1,11 @@
-#include "display.h"
-#include "display_config.h"
+#ifndef DISPLAY_TYPE
+#define DISPLAY_TYPE DISPLAY_TYPE_OLED
+#endif
+
+#if DISPLAY_TYPE == DISPLAY_TYPE_SH1106 || DISPLAY_TYPE == DISPLAY_TYPE_SSD1306
+
+#include "display/display.h"
+#include "display/display_config.h"
 #include <Arduino.h>
 #include "globals.h"
 #include "version_info.h"
@@ -398,3 +404,11 @@ void MYDISPLAY::clear() {
     _display->display();
   }
 }
+
+
+
+
+
+
+
+#endif

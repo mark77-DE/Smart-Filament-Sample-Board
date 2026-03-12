@@ -11,8 +11,8 @@
 #include "reboot_handler.h"
 #include "nfc.h"
 #include "gpio_hardware.h"
-#include "display.h"
-#include "display_anim.h"
+#include "display/display.h"
+#include "display/display_anim.h"
 #include "esp_image_format.h"
 #include "config.h"
 #include "pins.h"
@@ -338,9 +338,9 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
         doc["LED_PIN"]             = LED_PIN;
         doc["NFC_LED_PIN"]              = NFC_LED_PIN;
 
-        doc["SCK_PIN"]                = PN532_SCK;
-        doc["MISO_PIN"]               = PN532_MISO;
-        doc["MOSI_PIN"]               = PN532_MOSI;
+        doc["SCK_PIN"]                = SPI_SCK;
+        doc["MISO_PIN"]               = SPI_MISO;
+        doc["MOSI_PIN"]               = SPI_MOSI;
         doc["SS_PIN"]                 = PN532_CS;
 
         doc["BTN_PIN"]                  = BTN_PIN;

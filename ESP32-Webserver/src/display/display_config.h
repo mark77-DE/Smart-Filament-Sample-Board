@@ -1,10 +1,20 @@
 #pragma once
 
 #include <Adafruit_GFX.h>
-#include <Adafruit_SH110X.h>
-#include <Adafruit_SSD1306.h>
 #include <Fonts/FreeMono7pt7b.h>
 #include <Fonts/FreeSans9pt7b.h>
+
+#ifndef DISPLAY_TYPE_SH1106
+#define DISPLAY_TYPE_SH1106 1
+#endif
+
+#ifndef DISPLAY_TYPE_SSD1306
+#define DISPLAY_TYPE_SSD1306 2
+#endif
+
+#ifndef DISPLAY_TYPE_GC9A01
+#define DISPLAY_TYPE_GC9A01 3
+#endif
 
 
 //Standby Text
@@ -45,13 +55,28 @@
 // -----------------------------
 // Display-Typ wählen
 // -----------------------------
-// Entweder hier hart einstellen, oder über die platformio.ini per build_flag
-#define DISPLAY_TYPE_SH1106 1
-#define DISPLAY_TYPE_SSD1306 2
+
 
 #ifndef DISPLAY_TYPE
   // Default, falls nichts per build_flag gesetzt wird:
   #define DISPLAY_TYPE DISPLAY_TYPE_SH1106
+#endif
+
+
+#if DISPLAY_TYPE == DISPLAY_TYPE_SH1106
+  #include <Adafruit_SH110X.h>
+  using DisplayType = Adafruit_SH1106G;
+
+#elif DISPLAY_TYPE == DISPLAY_TYPE_SSD1306
+  #include <Adafruit_SSD1306.h>
+  using DisplayType = Adafruit_SSD1306;
+
+#elif DISPLAY_TYPE == DISPLAY_TYPE_GC9A01
+  #include <Adafruit_GC9A01A.h>
+  using DisplayType = Adafruit_GC9A01A;
+
+#else
+  #error "Ungültiger DISPLAY_TYPE! Bitte DISPLAY_TYPE_SH1106, SSD1306 oder GC9A01 verwenden."
 #endif
 
 // -----------------------------
@@ -75,6 +100,14 @@
   static constexpr uint8_t OLED_ADDR  = 0x3C;
   static constexpr uint16_t DISPLAY_COLOR = SSD1306_WHITE;
 
+#elif DISPLAY_TYPE == DISPLAY_TYPE_GC9A01
+  using DisplayType = Adafruit_GC9A01A;
+  static constexpr int SCREEN_WIDTH   = 240;
+  static constexpr int SCREEN_HEIGHT  = 240;
+  static constexpr int OLED_RESET_PIN = -1; // Wird nicht verwendet
+  static constexpr uint8_t OLED_ADDR  = 0x00; // I2C wird nicht verwendet
+  static constexpr uint16_t DISPLAY_COLOR = GC9A01A_WHITE;
+
 #else
   #error "Ungültiger DISPLAY_TYPE! Bitte DISPLAY_TYPE_SH1106 oder DISPLAY_TYPE_SSD1306 verwenden."
 #endif
@@ -89,5 +122,9 @@ inline bool initDisplay(DisplayType &disp) {
 #elif DISPLAY_TYPE == DISPLAY_TYPE_SSD1306
     // SSD1306: begin(vccstate, addr)
     return disp.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR);
+#elif DISPLAY_TYPE == DISPLAY_TYPE_GC9A01
+    // GC9A01: begin()
+    disp.begin();
+    return true;
 #endif
 }

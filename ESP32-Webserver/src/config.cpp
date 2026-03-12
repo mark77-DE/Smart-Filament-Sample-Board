@@ -1,7 +1,6 @@
 #include "config.h"
 #include <LittleFS.h>
 #include <ArduinoJson.h>
-#include "display_anim.h"
 #include "ledctrl_filament.h"
 #include "ledctrl_nfc.h"
 #include "gpio_hardware.h"   // für gpiohw_init()

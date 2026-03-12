@@ -1,12 +1,12 @@
 // ----------------- PN532 SPI -----------------
-#ifndef PN532_SCK
-#define PN532_SCK 18
+#ifndef SPI_SCK
+#define SPI_SCK 18
 #endif
-#ifndef PN532_MISO
-#define PN532_MISO 19
+#ifndef SPI_MISO
+#define SPI_MISO 19
 #endif
-#ifndef PN532_MOSI
-#define PN532_MOSI 23
+#ifndef SPI_MOSI
+#define SPI_MOSI 23
 #endif
 #ifndef PN532_CS
 #define PN532_CS 26

@@ -1,7 +1,7 @@
 // mqtt_manager.cpp
 #include "globals.h"
 #include "mqtt_manager.h"
-#include "display_anim.h"
+#include "display/display_anim.h"
 #include "ledctrl_filament.h"
 #include "ledctrl_nfc.h"
 #include "filehandling.h"

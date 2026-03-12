@@ -9,11 +9,12 @@
 #include "filament_db.h"
 #include "ledctrl_filament.h"
 #include "ledctrl_nfc.h"
-#include "display.h"
-#include "display_config.h"
+#include "display/display.h"
+#include "display/display_config.h"
+#include "display/display_anim.h"
 #include "my_webserver.h"
 #include "globals.h"
-#include "display_anim.h"
+
 #include "nfc.h"
 #include "filehandling.h"
 #include "gpio_hardware.h"
@@ -86,7 +87,7 @@ DisplayType display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET_PIN);
 
 // ----------------- PN532 SPI Settings -----------------
 
-Adafruit_PN532 nfc(PN532_SCK, PN532_MISO, PN532_MOSI, PN532_CS);
+Adafruit_PN532 nfc(PN532_CS);
 
 // ----------------- LED & Display Timing -----------------
 int targetLed = -1;
@@ -351,6 +352,8 @@ void setup() {
   
   LEDCTRL_FILAMENT::allOff();
   LEDCTRL_NFC::allOff();
+
+  SPI.begin(SPI_SCK, SPI_MISO, SPI_MOSI);
 
   // 2) I2C + DISPLAY FRÜH initialisieren (alles, was malen will, braucht das)
   Wire.begin(SDA_PIN, SCL_PIN);
