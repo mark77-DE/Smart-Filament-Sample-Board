@@ -142,11 +142,17 @@ void resetGuard() {
 // - lastTagTime    : Zeitpunkt der letzten Präsenz (für äußere Timeouts)
 // - tagPresentOut  : gibt den (gegraceten) Präsenzstatus an den Aufrufer zurück
 // ============================================================================
+static uint32_t lastPoll = 0;
 void tick(unsigned long now,
           bool& isActive,
           unsigned long& lastTagTime,
           bool& tagPresentOut)
 {
+
+  
+if (now - lastPoll < 50) return;
+lastPoll = now;
+
   if (!_nfc) { tagPresentOut = false; return; }
 
   // --------------------------------------------------------------------------

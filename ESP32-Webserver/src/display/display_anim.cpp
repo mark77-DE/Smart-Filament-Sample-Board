@@ -1,5 +1,8 @@
-#include "display_anim.h"
 #include "display_config.h"
+
+#if DISPLAY_TYPE == DISPLAY_TYPE_SH1106 || DISPLAY_TYPE == DISPLAY_TYPE_SSD1306
+
+#include "display_anim.h"
 #include "display.h"
 #include "gpio_hardware.h"
 
@@ -116,9 +119,9 @@ static void drawFrameCropped(DisplayType &display, uint16_t frameIdx) {
     if (x < 0) x = 0;
     if (y < 0) y = 0;
 
-    display.clearDisplay();
+    displayClear();
     display.drawBitmap(x, y, bmp, FRAME_WIDTH, drawH, DISPLAY_COLOR);
-    display.display();
+    displayFlush();
 }
 
 
@@ -152,8 +155,8 @@ static void resetTextAnimation(unsigned long now) {
 // ------------------------------------------------------------
 static void drawIdleText(DisplayType &display, uint8_t count, bool showCursor) {
     if (count == 0) {
-        display.clearDisplay();
-        display.display();
+        displayClear();
+        displayFlush();
         return;
     }
 
@@ -174,7 +177,7 @@ static void drawIdleText(DisplayType &display, uint8_t count, bool showCursor) {
     int16_t x1, y1;
     uint16_t w, h;
 
-    display.clearDisplay();
+    displayClear();
     display.setTextWrap(false);
     display.setTextColor(DISPLAY_COLOR);
 
@@ -188,7 +191,7 @@ static void drawIdleText(DisplayType &display, uint8_t count, bool showCursor) {
 
     display.setCursor(x, y);
     display.print(tmp);
-    display.display();
+    displayFlush();
 }
 
 
@@ -262,7 +265,7 @@ static void drawCursor(DisplayType &display, bool visible) {
         display.print("_");
     }
 
-    display.display();
+    displayFlush();
 }
 
 
@@ -482,11 +485,11 @@ void playThreeLineTypewriter(
     computeThreeLineLayout(display, yTop1, yTop2, yTop3);
 
     auto drawAll = [&](size_t c1, size_t c2, size_t c3) {
-        display.clearDisplay();
+        displayClear();
         if (c1) drawCenteredSubstringAtTop(display, L1, c1, yTop1);
         if (c2) drawCenteredSubstringAtTop(display, L2, c2, yTop2);
         if (c3) drawCenteredSubstringAtTop(display, L3, c3, yTop3);
-        display.display();
+        displayFlush();
     };
 
     // 1) Tippen Zeile 1
@@ -536,8 +539,8 @@ void playThreeLineTypewriter(
     }
 
     // Ende: Display bleibt leer (oder du lässt hier bewusst das letzte Bild stehen)
-    display.clearDisplay();
-    display.display();
+    displayClear();
+    displayFlush();
 }
 
 
@@ -566,3 +569,4 @@ void playThreeLineTypewriter(
 } // namespace DisplayAnim
 
 
+#endif

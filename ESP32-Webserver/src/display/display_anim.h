@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Arduino.h>
-#include "display.h"
+#include "display/display.h"
 
 // Kleine State-Machine für die Idle-Animation (Spinner + "SCAN TAG")
 namespace DisplayAnim {

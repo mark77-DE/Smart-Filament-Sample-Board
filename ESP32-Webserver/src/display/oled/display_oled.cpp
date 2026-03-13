@@ -1,23 +1,52 @@
+//display_oled.cpp
+
+#include "display_config.h"
+
 #ifndef DISPLAY_TYPE
-#define DISPLAY_TYPE DISPLAY_TYPE_OLED
+#define DISPLAY_TYPE DISPLAY_TYPE_SH1106
 #endif
 
 #if DISPLAY_TYPE == DISPLAY_TYPE_SH1106 || DISPLAY_TYPE == DISPLAY_TYPE_SSD1306
 
 #include "display/display.h"
-#include "display/display_config.h"
+
 #include <Arduino.h>
 #include "globals.h"
 #include "version_info.h"
 #include "config.h"
 
-DisplayType* MYDISPLAY::_display = nullptr;
-
-// feste Höhe der Adafruit-GFX Standardfont (5x7 Bitmap-Font)
 static const int STD_FONT_HEIGHT = 7;
 
-void MYDISPLAY::init(DisplayType* disp) {
-  _display = disp;
+DisplayType display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET_PIN);
+
+
+void displayInit()
+{
+    Wire.begin(SDA_PIN, SCL_PIN);
+
+    if (!initDisplay(display)) {
+        Serial.println("Display init failed");
+        return;
+    }
+
+    display.clearDisplay();
+
+    MYDISPLAY::init(&display);
+}
+
+
+
+
+
+
+void displayClear()
+{
+    display.clearDisplay();
+}
+
+void displayFlush()
+{
+    display.display();
 }
 
 // ------------------------------------------------------------

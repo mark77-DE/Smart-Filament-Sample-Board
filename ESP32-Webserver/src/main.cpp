@@ -83,7 +83,7 @@ AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
 
 // ----------------- OLED ---------------
-DisplayType display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET_PIN);
+
 
 // ----------------- PN532 SPI Settings -----------------
 
@@ -356,12 +356,7 @@ void setup() {
   SPI.begin(SPI_SCK, SPI_MISO, SPI_MOSI);
 
   // 2) I2C + DISPLAY FRÜH initialisieren (alles, was malen will, braucht das)
-  Wire.begin(SDA_PIN, SCL_PIN);
-  if (!initDisplay(display)) {
-    Serial.println("OLED init failed!");
-    while (1) { delay(100); }
-  }
-  MYDISPLAY::init(&display);
+  displayInit();
 
   // 3) WLAN verbinden
   //    Gewünschtes Verhalten:
