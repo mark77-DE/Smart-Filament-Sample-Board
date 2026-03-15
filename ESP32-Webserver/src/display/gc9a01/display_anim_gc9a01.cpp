@@ -1,36 +1,32 @@
-#include "display_config.h"
+#include "display/display_config.h"
+
 
 #if DISPLAY_TYPE == DISPLAY_TYPE_GC9A01
-#include "display_anim.h"
-#include "display.h"
+
+#include "display/gc9a01/display_gc9a01.h"  // LGFX bekannt
+#include "display/display.h"
+#include "display/display_anim.h"
+
 #include <Arduino.h>
 #include <math.h>
+#include <LovyanGFX.hpp>
+#include <cstdint>  // für uint8_t, uint16_t, uint32_t
 
-// ---------------------------------
-// Spinner Frames (alt, kompatibel)
-// ---------------------------------
-static const char spinnerFrames[] = {'|', '/', '-', '\\'};
-static const uint8_t spinnerFrameCount = sizeof(spinnerFrames) / sizeof(spinnerFrames[0]);
 
-// ---------------------------------
-// Idle State
-// ---------------------------------
+
+
 namespace DisplayAnim {
 
 struct IdleState {
     bool active = false;
     bool textFirst = false;
-
-    // Alte Spinner-Daten
     unsigned long lastSpinnerUpdate = 0;
     uint8_t currentSpinnerFrame = 0;
     uint32_t spinnerIntervalMs = 150;
     String idleText = IDLE_TEXT_STRING;
-
-    // Neue Spule & Farbe
-    float rotation = 0;        // Drehwinkel Spule
-    float textRotation = 0;    // Drehwinkel Text
-    float hue = 0;             // Farbe Spule
+    float rotation = 0;
+    float textRotation = 0;
+    float hue = 0;
 };
 
 static IdleState state;
@@ -88,6 +84,7 @@ void stop() {
 // -------------------------
 static uint32_t lastFrame = 0;
 
+// Tick Idle
 void tickIdle(LGFX &display, unsigned long now) {
     if (!state.active) return;
 
@@ -96,7 +93,6 @@ void tickIdle(LGFX &display, unsigned long now) {
     int cy = display.height()/2;
     int radius = 60;
 
-    // Beispiel: LovyanGFX schnelle Kreise
     for(int r=0; r<6; r++){
         float ringRadius = radius - r*8;
         for(float a=0; a<2*PI; a+=0.05){
@@ -110,11 +106,9 @@ void tickIdle(LGFX &display, unsigned long now) {
     state.hue += 0.01f;
 }
 
-// -------------------------------------------------------
-// Drei-Zeilen-Typewriter Animation (blocking mit yield)
-// -------------------------------------------------------
+// Typewriter Animation
 void playThreeLineTypewriter(
-    DisplayType& display,
+    LGFX& display,
     const String& line1,
     const String& line2,
     const String& line3,
@@ -182,4 +176,5 @@ void playThreeLineTypewriter(
 }
 
 } // namespace DisplayAnim
+
 #endif

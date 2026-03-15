@@ -2,69 +2,35 @@
 
 #if DISPLAY_TYPE == DISPLAY_TYPE_GC9A01
 
+#include "display/gc9a01/display_gc9a01.h"  // LGFX bekannt
 #include "display/display.h"
-
 #include <LovyanGFX.hpp>
 #include <SPI.h>
 
 DisplayType display;
 
-// LGFX Klasse für GC9A01 Display
-class LGFX : public lgfx::LGFX_Device
-{
-    lgfx::Panel_GC9A01 _panel;
-    lgfx::Bus_SPI      _bus;
-
-public:
-    LGFX() {
-        auto bus_cfg = _bus.config();
-        bus_cfg.spi_host = SPI3_HOST;
-        bus_cfg.freq_write = 80000000;
-        bus_cfg.freq_read  = 16000000;
-        bus_cfg.pin_sclk = SPI_SCK;
-        bus_cfg.pin_mosi = SPI_MOSI;
-        bus_cfg.pin_miso = -1;
-        _bus.config(bus_cfg);
-
-        auto panel_cfg = _panel.config();
-        panel_cfg.pin_cs   = TFT_CS;
-        panel_cfg.pin_rst  = TFT_RST;
-        panel_cfg.pin_busy = -1;
-        panel_cfg.panel_width  = 240;
-        panel_cfg.panel_height = 240;
-        panel_cfg.readable    = true;
-        panel_cfg.invert      = false;
-        panel_cfg.rgb_order   = true;
-        _panel.config(panel_cfg);
-
-        _panel.setBus(&_bus);
-        setPanel(&_panel);
-    }
-};
-
-// Globale Display-Instanz (keine static Konflikte)
-LGFX display;
-
-// -----------------------------
-// Wrapper-Funktionen
-// -----------------------------
 void displayInit() {
     display.init();
     display.setBrightness(255);
+    display.setRotation(0);
+
     display.fillScreen(TFT_BLACK);
+    
+    display.setTextColor(TFT_WHITE, TFT_BLACK);
+    display.setTextSize(1);
+
     MYDISPLAY::init(&display);
+
+    display.fillScreen(TFT_BLACK);
+    display.setTextDatum(MC_DATUM);
+    display.setTextColor(TFT_WHITE);
+    display.setTextSize(2);
+    display.drawString("DISPLAY OK", display.width()/2, display.height()/2);
 }
 
-void displayClear() {
-    display.fillScreen(0);
-}
-
-void displayFlush() {
-    // TFT braucht kein flush
-}
-
-void displayLoop() {
-}
+void displayClear() { display.fillScreen(0); }
+void displayFlush() { /* TFT braucht kein flush */ }
+void displayLoop() {}
 
 void displayShowIP(const String &ip) {
     display.fillScreen(TFT_BLACK);
@@ -88,10 +54,21 @@ void MYDISPLAY::clear() {
 
 void MYDISPLAY::showThreeLinesCentered(const String& line1, const String& line2, const String& line3) {
     if (!_display) return;
-    _display->fillScreen(0);
-    _display->setCursor(0,0);
+
+    _display->fillScreen(TFT_BLACK);
+
+    _display->setTextColor(TFT_WHITE, TFT_BLACK);
+    _display->setTextSize(2);
+
+    int y = 60;
+
+    _display->setCursor(10, y);
     _display->println(line1);
+
+    _display->setCursor(10, y + 40);
     _display->println(line2);
+
+    _display->setCursor(10, y + 80);
     _display->println(line3);
 }
 
@@ -106,15 +83,30 @@ void MYDISPLAY::showFourLinesCentered(const String& line1, const String& line2, 
 
 void MYDISPLAY::showCentered(const String& msg) {
     if (!_display) return;
-    _display->fillScreen(0);
-    _display->println(msg);
+
+    _display->fillScreen(TFT_BLACK);
+
+    _display->setTextColor(TFT_WHITE, TFT_BLACK);
+    _display->setTextSize(2);
+
+    _display->drawCenterString(msg.c_str(), 120, 120);
 }
 
 void MYDISPLAY::showBootVersion(const char* version, const char* dateShort) {
     if (!_display) return;
-    _display->fillScreen(0);
-    _display->println(version);
-    _display->println(dateShort);
+
+    _display->fillScreen(TFT_BLACK);
+
+    _display->setTextColor(TFT_WHITE, TFT_BLACK);
+    _display->setTextSize(2);
+
+    _display->drawCenterString(version, 120, 90);
+    _display->drawCenterString(dateShort, 120, 130);
 }
+
+// -----------------------------
+// WICHTIG: Definition des statischen Members
+// -----------------------------
+DisplayType* MYDISPLAY::_display = nullptr;
 
 #endif

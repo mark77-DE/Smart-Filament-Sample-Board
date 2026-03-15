@@ -12,6 +12,7 @@
 #include "display/display.h"
 #include "display/display_config.h"
 #include "display/display_anim.h"
+#include "display/gc9a01/display_gc9a01.h"
 #include "my_webserver.h"
 #include "globals.h"
 
@@ -25,6 +26,8 @@
 #include "esp_ota_ops.h"
 #include "config.h"
 #include "mqtt_manager.h"
+
+
 
 
 
@@ -357,6 +360,10 @@ void setup() {
 
   // 2) I2C + DISPLAY FRÜH initialisieren (alles, was malen will, braucht das)
   displayInit();
+  display.fillScreen(TFT_BLACK);
+  display.setTextColor(TFT_WHITE);
+  display.drawString("DISPLAY OK", 40, 120);
+  delay(3000); 
 
   // 3) WLAN verbinden
   //    Gewünschtes Verhalten:

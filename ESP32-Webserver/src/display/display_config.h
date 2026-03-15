@@ -60,8 +60,10 @@
   static constexpr uint16_t DISPLAY_COLOR = SSD1306_WHITE;
 
 #elif DISPLAY_TYPE == DISPLAY_TYPE_GC9A01
+  #include "display/gc9a01/display_gc9a01.h"  // LGFX bekannt
   #include <LovyanGFX.hpp>
-  using DisplayType = lgfx::LGFX_Device;  // <<< das fehlte
+
+  using DisplayType = LGFX;  
   extern DisplayType display;              // LGFX-Objekt, global
 
   static constexpr int SCREEN_WIDTH   = 240;

@@ -6,13 +6,6 @@
 #include "globals.h"
 #include "version_info.h"
 
-// Globale Display-Instanz je nach Display-Type
-#if DISPLAY_TYPE == DISPLAY_TYPE_GC9A01
-#include <LovyanGFX.hpp>
-class LGFX;  // LGFX wird in display_gc9a01.cpp definiert
-#else
-extern DisplayType display;
-#endif
 
 void displayInit();
 void displayClear();
@@ -78,5 +71,5 @@ public:
     static void clear();
 
 private:
-    DisplayType* MYDISPLAY::_display = nullptr;
+    static DisplayType* _display;
 };
