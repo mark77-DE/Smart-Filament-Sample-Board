@@ -2,9 +2,9 @@
 
 
 
-#if DISPLAY_TYPE == DISPLAY_TYPE_GC9A01
+#if DISPLAY_TYPE == DISPLAY_TYPE_ST7789
 
-#include "display/gc9a01/display_gc9a01.h"  // LGFX bekannt
+#include "display/st7789/display_st7789.h"  // LGFX bekannt
 #include "display/display.h"
 #include "display/display_anim.h"
 
@@ -12,7 +12,7 @@
 #include <math.h>
 #include <LovyanGFX.hpp>
 #include <cstdint>  // für uint8_t, uint16_t, uint32_t
-#include "display/gc9a01/logoBitmap.h"
+#include "display/st7789/logoBitmap.h"
 
 
 

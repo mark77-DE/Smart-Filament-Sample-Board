@@ -1,8 +1,8 @@
 #include "display/display_config.h"
 
-#if DISPLAY_TYPE == DISPLAY_TYPE_GC9A01
+#if DISPLAY_TYPE == DISPLAY_TYPE_ST7789
 
-#include "display/gc9a01/display_gc9a01.h"  // LGFX bekannt
+#include "display/st7789/display_st7789.h"  // LGFX bekannt
 #include "display/display.h"
 #include <LovyanGFX.hpp>
 #include <SPI.h>

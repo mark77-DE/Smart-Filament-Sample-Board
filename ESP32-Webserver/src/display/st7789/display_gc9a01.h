@@ -2,7 +2,7 @@
 
 #include "display/display_config.h"
 
-#if DISPLAY_TYPE == DISPLAY_TYPE_GC9A01
+#if DISPLAY_TYPE == DISPLAY_TYPE_ST7789
 
 
 #include <LovyanGFX.hpp>

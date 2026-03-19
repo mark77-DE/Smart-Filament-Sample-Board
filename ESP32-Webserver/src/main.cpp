@@ -12,7 +12,7 @@
 #include "display/display.h"
 #include "display/display_config.h"
 #include "display/display_anim.h"
-#include "display/gc9a01/display_gc9a01.h"
+#include "display/st7789/display_st7789.h"
 #include "my_webserver.h"
 #include "globals.h"
 

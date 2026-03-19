@@ -12,8 +12,8 @@
 #define DISPLAY_TYPE_SSD1306 2
 #endif
 
-#ifndef DISPLAY_TYPE_GC9A01
-#define DISPLAY_TYPE_GC9A01 3
+#ifndef DISPLAY_TYPE_ST7789
+#define DISPLAY_TYPE_ST7789 3
 #endif
 
 // -----------------------------
@@ -59,8 +59,8 @@
   static constexpr uint8_t OLED_ADDR  = 0x3C;
   static constexpr uint16_t DISPLAY_COLOR = SSD1306_WHITE;
 
-#elif DISPLAY_TYPE == DISPLAY_TYPE_GC9A01
-  #include "display/gc9a01/display_gc9a01.h"  // LGFX bekannt
+#elif DISPLAY_TYPE == DISPLAY_TYPE_ST7789
+  #include "display/st7789/display_st7789.h"  // LGFX bekannt
   #include <LovyanGFX.hpp>
 
   using DisplayType = LGFX;  
@@ -70,7 +70,7 @@
   static constexpr int SCREEN_HEIGHT  = 320;
 
 #else
-  #error "Ungültiger DISPLAY_TYPE! Bitte DISPLAY_TYPE_SH1106, SSD1306 oder GC9A01 verwenden."
+  #error "Ungültiger DISPLAY_TYPE! Bitte DISPLAY_TYPE_SH1106, SSD1306 oder ST7789 verwenden."
 #endif
 
 // -----------------------------
@@ -81,7 +81,7 @@ inline bool initDisplay(DisplayType &disp) {
     return disp.begin(OLED_ADDR, true);
 #elif DISPLAY_TYPE == DISPLAY_TYPE_SSD1306
     return disp.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR);
-#elif DISPLAY_TYPE == DISPLAY_TYPE_GC9A01
+#elif DISPLAY_TYPE == DISPLAY_TYPE_ST7789
     disp.init(); // LovyanGFX init
     return true;
 #endif
