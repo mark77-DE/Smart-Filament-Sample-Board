@@ -1,6 +1,6 @@
 //display_oled.cpp
 
-#include "display_config.h"
+#include "display/display_config.h"
 
 #ifndef DISPLAY_TYPE
 #define DISPLAY_TYPE DISPLAY_TYPE_SH1106
@@ -278,7 +278,7 @@ void MYDISPLAY::show(const FilamentEntry& entry) {
 // ------------------------------------------------------------
 // Eine zentrierte Zeile (deine Original-Funktion, unverändert)
 // ------------------------------------------------------------
-void MYDISPLAY::showCentered(const String& msg) {
+void MYDISPLAY::showCentered(const String& msg, const int FOREGROUND_COLOR, const int BACKGROUND_COLOR) {
   if (!_display) return;
 
   _display->clearDisplay();
@@ -425,6 +425,13 @@ void MYDISPLAY::showBootVersion(const char* version, const char* dateShort) {
 }
 
 
+void MYDISPLAY::showErrorCentered(const String& msg, const int FOREGROUND_COLOR, const int BACKGROUND_COLOR) {
+
+
+  showCentered(msg, FOREGROUND_COLOR, BACKGROUND_COLOR);
+
+
+}
 
 
 void MYDISPLAY::clear() {

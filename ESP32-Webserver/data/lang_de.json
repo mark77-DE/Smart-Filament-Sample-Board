@@ -180,7 +180,8 @@
     "txt_update_success": "Update erfolgreich! Gerät startet in 3 Sekunden neu.",
     "txt_update_failed": "Update fehlgeschlagen!",
     "txt_uploading_fw": "Firmware wird hochgeladen...",
-    "txt_uploading_fs": "Filesystem wird hochgeladen..."
+    "txt_uploading_fs": "Filesystem wird hochgeladen...",
+    "txt_unknown": "Unbekannt"
 
   }
 

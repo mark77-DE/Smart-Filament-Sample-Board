@@ -26,6 +26,9 @@
 #include "esp_ota_ops.h"
 #include "config.h"
 #include "mqtt_manager.h"
+#include "i18n/i18n.h"
+#include <HTTPClient.h>
+#include <WiFiClientSecure.h>
 
 
 
@@ -41,6 +44,60 @@ constexpr uint32_t FIRMWARE_HOLD_MS = 5000;
 SysInfo g_sysInfo;
 
 NFCInfo g_nfcInfo = {0,0,0,false};
+
+bool checkForUpdate(const String& currentVersion, const char* url, String &latestVersion) {
+    if (WiFi.status() != WL_CONNECTED) return false;
+
+    WiFiClientSecure client;
+    client.setInsecure(); // 🔴 wichtig (sonst Zertifikatproblem)
+
+    HTTPClient http;
+    http.begin(client, url);
+
+    int httpCode = http.GET();
+
+    Serial.printf("HTTP Code: %d\n", httpCode);
+
+    if (httpCode != 200) {
+        http.end();
+        return false;
+    }
+
+    latestVersion = http.getString();
+    latestVersion.trim();
+
+    Serial.println("Latest Version RAW: [" + latestVersion + "]");
+
+    http.end();
+
+    Serial.println("Current: " + String(FIRMWARE_VERSION));
+    Serial.println("Latest : " + latestVersion);
+
+    return latestVersion.length() > 0;
+}
+
+int compareVersion(const String& v1, const String& v2) {
+    int a1, b1, c1;
+    int a2, b2, c2;
+
+    sscanf(v1.c_str(), "%d.%d.%d", &a1, &b1, &c1);
+    sscanf(v2.c_str(), "%d.%d.%d", &a2, &b2, &c2);
+
+    if (a2 > a1) return 1;
+    if (a2 < a1) return -1;
+
+    if (b2 > b1) return 1;
+    if (b2 < b1) return -1;
+
+    if (c2 > c1) return 1;
+    if (c2 < c1) return -1;
+
+    return 0;
+}
+
+bool isUpdateAvailable(const String& current, const String& latest) {
+    return compareVersion(current, latest) < 0;
+}
 
 
 
@@ -90,7 +147,7 @@ AsyncWebSocket ws("/ws");
 
 // ----------------- PN532 SPI Settings -----------------
 
-Adafruit_PN532 nfc(PN532_CS);
+Adafruit_PN532 nfc(SPI_SCK, SPI_MISO, SPI_MOSI, PN532_CS);
 
 // ----------------- LED & Display Timing -----------------
 int targetLed = -1;
@@ -147,7 +204,7 @@ static void onWiFiManagerConfigPortalStarted(WiFiManager* wm) {
   MYDISPLAY::showThreeLinesCentered(
     F("WLAN-SETUP AP"),
     F("SSID: NFC-Setup-AP"),
-    apIp.toString()
+    apIp.toString(), TFT_ORANGE
   );
 }
 
@@ -282,7 +339,8 @@ void handleUID(const String &uid, UidSource source) {
         }
 
         // Display-Hinweis
-        MYDISPLAY::showCentered("UNBEKANNT");
+        MYDISPLAY::showErrorCentered(I18N::get("txt_unknown"), TFT_RED);
+      
 
         if (isNfc) {
             // Rotes Fehlerfeedback am NFC-Ring
@@ -352,18 +410,14 @@ void setup() {
   
   loadConfigV2();
   applyConfigV2();
+  I18N::begin(CONFIGV2.system.defaultLanguage);
   
   LEDCTRL_FILAMENT::allOff();
   LEDCTRL_NFC::allOff();
 
-  SPI.begin(SPI_SCK, SPI_MISO, SPI_MOSI);
-
   // 2) I2C + DISPLAY FRÜH initialisieren (alles, was malen will, braucht das)
   displayInit();
-  display.fillScreen(TFT_BLACK);
-  display.setTextColor(TFT_WHITE);
-  display.drawString("DISPLAY OK", 40, 120);
-  delay(3000); 
+ 
 
   // 3) WLAN verbinden
   //    Gewünschtes Verhalten:
@@ -397,7 +451,7 @@ void setup() {
 
   // 4) IP kurz zeigen (nicht hart blockieren)
   {
-    MYDISPLAY::showCentered(WiFi.localIP().toString());
+    MYDISPLAY::showCentered(WiFi.localIP().toString(), TFT_GREEN);
     const uint32_t until = millis() + 1200UL;
     while ((int32_t)(until - millis()) > 0) {
       gpiohw_tick(millis());  // Button/Buzzer am Leben halten
@@ -424,17 +478,37 @@ void setup() {
 
   // 6) FIRMWARE-BOOTSCREEN x s ANZEIGEN (WebIF ist bereits online)
   {
+    String latest;
+    const char* url = "https://raw.githubusercontent.com/mark77-DE/Smart-Filament-Sample-Board-Public/refs/heads/main/version_public.txt";
+    bool gotVersion = checkForUpdate(FIRMWARE_VERSION, url, latest);
+
+bool updateAvailable = false;
+
+if (gotVersion) {
+    updateAvailable = isUpdateAvailable(FIRMWARE_VERSION, latest);
+}
+
+if (updateAvailable) {
+    MYDISPLAY::showThreeLinesCentered(
+        F("UPDATE AVAILABLE!"),
+        FIRMWARE_VERSION,
+        latest.c_str(), TFT_ORANGE
+    );
+} else {
     MYDISPLAY::showBootVersion(FIRMWARE_VERSION, BUILD_DATE_SHORT);
-    const uint32_t until = millis() + FIRMWARE_HOLD_MS; 
+}
+
+const uint32_t until = millis() + FIRMWARE_HOLD_MS; 
     while ((int32_t)(until - millis()) > 0) {
       // Währenddessen nichts blockieren:
       gpiohw_tick(millis());
       ws.cleanupClients();   // optional; AsyncWebServer schafft das auch alleine
       yield();
     }
-  }
+}
 
   // Nach dem Firmware-Bootscreen (10 s), WLAN+Webserver sind schon da
+  displayClear();
   DisplayAnim::playThreeLineTypewriter(display, F("Spot my"), F("Filament by"), F("Mark & Kolja"),
                                       SPLASH_CHAR_MS, SPLASH_LINE_MS, SPLASH_HOLD_MS);
 

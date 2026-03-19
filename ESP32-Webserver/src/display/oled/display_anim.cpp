@@ -1,9 +1,9 @@
-#include "display_config.h"
+#include "display/display_config.h"
 
 #if DISPLAY_TYPE == DISPLAY_TYPE_SH1106 || DISPLAY_TYPE == DISPLAY_TYPE_SSD1306
 
-#include "display_anim.h"
-#include "display.h"
+#include "display/display_anim.h"
+#include "display/display.h"
 #include "gpio_hardware.h"
 
 

@@ -7,6 +7,7 @@
 #include "version_info.h"
 
 
+
 void displayInit();
 void displayClear();
 void displayFlush();
@@ -31,7 +32,7 @@ public:
      * @brief Zeigt eine einzelne zentrierte Zeile.
      * @param msg Text
      */
-    static void showCentered(const String& msg);
+    static void showCentered(const String& msg, const int FOREGROUND_COLOR = TFT_WHITE, const int BACKGROUND_COLOR = TFT_BLACK);
 
     /**
      * @brief Zeigt zwei zentrierte Zeilen (bestehende API beibehalten).
@@ -47,7 +48,7 @@ public:
      * @param line2 Zweite Zeile (Mitte)
      * @param line3 Dritte Zeile (unten)
      */
-    static void showThreeLinesCentered(const String& line1, const String& line2, const String& line3);
+    static void showThreeLinesCentered(const String& line1, const String& line2, const String& line3, int foregroundColor = TFT_WHITE, int backgroundColor = TFT_BLACK);
 
     /**
      * @brief Zeigt vier zentrierte Zeilen.
@@ -69,6 +70,15 @@ public:
      * @brief Bildschirm löschen (z.B. vor Idle-Animation).
      */
     static void clear();
+
+
+    /**
+     * @brief Zeigt eine Fehlermeldung zentriert an (z.B. bei unbekanntem Tag).
+     * @param msg Fehlermeldungstext
+     * @param FOREGROUND_COLOR Textfarbe
+     * @param BACKGROUND_COLOR Hintergrundfarbe
+     */
+    static void showErrorCentered(const String& msg, const int FOREGROUND_COLOR = TFT_RED, const int BACKGROUND_COLOR = TFT_BLACK);
 
 private:
     static DisplayType* _display;

@@ -1,6 +1,7 @@
 #include "display/display_config.h"
 
 
+
 #if DISPLAY_TYPE == DISPLAY_TYPE_GC9A01
 
 #include "display/gc9a01/display_gc9a01.h"  // LGFX bekannt
@@ -11,7 +12,7 @@
 #include <math.h>
 #include <LovyanGFX.hpp>
 #include <cstdint>  // für uint8_t, uint16_t, uint32_t
-
+#include "display/gc9a01/logoBitmap.h"
 
 
 
@@ -20,14 +21,14 @@ namespace DisplayAnim {
 struct IdleState {
     bool active = false;
     bool textFirst = false;
-    unsigned long lastSpinnerUpdate = 0;
-    uint8_t currentSpinnerFrame = 0;
-    uint32_t spinnerIntervalMs = 150;
-    String idleText = IDLE_TEXT_STRING;
-    float rotation = 0;
-    float textRotation = 0;
-    float hue = 0;
+    String idleText = IDLE_TEXT_STRING;  // Default
+    bool imageDrawn = false;       // NEU: Bild nur einmal zeichnen
+    bool textDrawn = false;
+    size_t highlightIndex = 0;
+    unsigned long lastAnimTime = 0;
 };
+
+
 
 static IdleState state;
 
@@ -58,21 +59,13 @@ uint16_t hsvTo565(float h, float s=1.0, float v=1.0) {
 void startIdle(unsigned long now) {
     state.active = true;
     state.textFirst = false;
-    state.lastSpinnerUpdate = now;
-    state.currentSpinnerFrame = 0;
-    state.rotation = 0;
-    state.textRotation = 0;
-    state.hue = 0;
+    state.imageDrawn = false; 
 }
 
 void startIdleTextFirst(unsigned long now) {
     state.active = true;
     state.textFirst = true;
-    state.lastSpinnerUpdate = now;
-    state.currentSpinnerFrame = 0;
-    state.rotation = 0;
-    state.textRotation = 0;
-    state.hue = 0;
+    state.imageDrawn = false; 
 }
 
 void stop() {
@@ -84,26 +77,81 @@ void stop() {
 // -------------------------
 static uint32_t lastFrame = 0;
 
+// -------------------------
 // Tick Idle
+// -------------------------
 void tickIdle(LGFX &display, unsigned long now) {
     if (!state.active) return;
 
-    display.fillScreen(TFT_BLACK);
-    int cx = display.width()/2;
-    int cy = display.height()/2;
-    int radius = 60;
+    // -------------------
+    // Bild einmalig zeichnen
+    // -------------------
+    if (!state.imageDrawn) {
+        int logoWidth = 320;
+        int logoHeight = 125;
+        int x = (display.width() - logoWidth) / 2;
+        int y = 0;
 
-    for(int r=0; r<6; r++){
-        float ringRadius = radius - r*8;
-        for(float a=0; a<2*PI; a+=0.05){
-            int x = cx + int(cos(a + state.rotation) * ringRadius);
-            int y = cy + int(sin(a + state.rotation) * ringRadius);
-            display.drawPixel(x, y, display.color565(255 * fabs(sin(state.hue)), 255 * fabs(cos(state.hue)), 128));
-        }
+        display.fillScreen(TFT_WHITE);
+        display.pushImage(x, y, logoWidth, logoHeight, logoBitmap);
+
+        state.imageDrawn = true;
+        state.highlightIndex = 0;
+        state.lastAnimTime = now;
     }
 
-    state.rotation += 0.05f;
-    state.hue += 0.01f;
+    // -------------------
+    // Text-Position
+    // -------------------
+    const int logoHeight = 125;
+    const int textY = logoHeight + 15;
+
+    display.setTextSize(3);
+    display.setTextDatum(TL_DATUM); // 🔴 WICHTIG: Top-Left!
+
+    // Gesamtbreite berechnen (für Zentrierung)
+    int totalWidth = display.textWidth(state.idleText);
+    int startX = (display.width() - totalWidth) / 2;
+
+    // -------------------
+    // Animation
+    // -------------------
+    const uint32_t animDelay = 150;
+    if (now - state.lastAnimTime >= animDelay) {
+        state.lastAnimTime = now;
+
+        // Farbe wählen (R -> G -> B)
+        uint16_t color;
+        switch (state.highlightIndex % 3) {
+            case 0: color = TFT_RED; break;
+            case 1: color = TFT_GREEN; break;
+            case 2: color = TFT_BLUE; break;
+        }
+
+        // Text aufteilen
+        String prefix = state.idleText.substring(0, state.highlightIndex);
+        String currentChar = state.idleText.substring(state.highlightIndex, state.highlightIndex + 1);
+        String suffix = state.idleText.substring(state.highlightIndex + 1);
+
+        int prefixWidth = display.textWidth(prefix);
+        int charWidth   = display.textWidth(currentChar);
+
+        // 🔹 1. Alles sauber neu zeichnen (kein Löschen nötig!)
+        display.setTextColor(TFT_BLACK, TFT_WHITE);
+        display.drawString(prefix, startX, textY);
+
+        display.setTextColor(color, TFT_WHITE);
+        display.drawString(currentChar, startX + prefixWidth, textY);
+
+        display.setTextColor(TFT_BLACK, TFT_WHITE);
+        display.drawString(suffix, startX + prefixWidth + charWidth, textY);
+
+        // Index weiter
+        state.highlightIndex++;
+        if (state.highlightIndex >= state.idleText.length()) {
+            state.highlightIndex = 0;
+        }
+    }
 }
 
 // Typewriter Animation
@@ -120,32 +168,71 @@ void playThreeLineTypewriter(
     uint32_t eraseLinePauseMs
 ) {
     const String lines[3] = {line1, line2, line3};
+    const int totalLines = 3;
+    const int lineHeight = 26;
+    const int centerY = (display.height() - totalLines * lineHeight) / 2;
 
-    for (int i = 0; i < 3; i++) {
-        display.setCursor(0, i * 10);
-        display.print(""); // Start leer
-        
+    display.setTextColor(TFT_WHITE, TFT_BLACK); // Textfarbe und Hintergrund
+    display.setTextDatum(TL_DATUM);            // Links oben als Referenz
+
+    int lineX[totalLines]; // X-Positionen merken
+
+    // =====================
+    // Typwriter-Effekt einblenden
+    // =====================
+    for (int i = 0; i < totalLines; i++) {
+        int y = centerY + i * lineHeight;
+
         for (uint16_t c = 0; c < lines[i].length(); c++) {
-            display.setCursor(0, i * 10);
-            display.print(lines[i].substring(0, c + 1));
+            String displayText = lines[i].substring(0, c + 1);
+            int textWidth = display.textWidth(displayText.c_str());
+            int x = (display.width() - textWidth) / 2;
+
+            lineX[i] = x;
+
+            display.fillRect(0, y, display.width(), lineHeight, TFT_BLACK);
+            display.setCursor(x, y);
+            display.print(displayText);
+
             delay(charDelayMs);
             yield();
         }
         delay(linePauseMs);
     }
+
     delay(endHoldMs);
 
+    // =====================
+    // Scroll nach oben bis komplett weg
+    // =====================
     if (eraseBackwards) {
-        for (int i = 2; i >= 0; i--) {
-            for (int c = lines[i].length(); c > 0; c--) {
-                display.setCursor(0, i * 10);
-                display.print(lines[i].substring(0, c - 1) + " ");
-                delay(eraseCharDelayMs);
-                yield();
-            }
-            delay(eraseLinePauseMs);
+    for (int i = totalLines - 1; i >= 0; i--) {
+        int y = centerY + i * lineHeight;
+
+        // von voller Länge runterzählen
+        for (int c = lines[i].length(); c >= 0; c--) {
+            String displayText = lines[i].substring(0, c);
+
+            int textWidth = display.textWidth(displayText.c_str());
+            int x = (display.width() - textWidth) / 2;
+
+            // Zeile sauber löschen
+            display.fillRect(0, y, display.width(), lineHeight, TFT_BLACK);
+
+            // gekürzten Text neu zeichnen
+            display.setCursor(x, y);
+            display.print(displayText);
+
+            delay(eraseCharDelayMs);
+            yield();
         }
+
+        delay(eraseLinePauseMs);
     }
+
+    // final sicher schwarz
+    display.fillRect(0, 0, display.width(), display.height(), TFT_BLACK);
+}
 }
 
 // PROGMEM-Overload

@@ -66,8 +66,8 @@
   using DisplayType = LGFX;  
   extern DisplayType display;              // LGFX-Objekt, global
 
-  static constexpr int SCREEN_WIDTH   = 240;
-  static constexpr int SCREEN_HEIGHT  = 240;
+  static constexpr int SCREEN_WIDTH   = 170;
+  static constexpr int SCREEN_HEIGHT  = 320;
 
 #else
   #error "Ungültiger DISPLAY_TYPE! Bitte DISPLAY_TYPE_SH1106, SSD1306 oder GC9A01 verwenden."

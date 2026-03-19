@@ -9,7 +9,7 @@
 
 
 class LGFX : public lgfx::LGFX_Device {
-    lgfx::Panel_GC9A01 _panel;
+    lgfx::Panel_ST7789 _panel;
     lgfx::Bus_SPI _bus;
 
 public:
@@ -29,8 +29,10 @@ public:
         panel_cfg.pin_cs    = TFT_CS;
         panel_cfg.pin_rst   = TFT_RST;
         panel_cfg.pin_busy  = -1;
-        panel_cfg.panel_width  = 240;
-        panel_cfg.panel_height = 240;
+        panel_cfg.panel_width = 170;
+        panel_cfg.panel_height = 320;
+        panel_cfg.offset_x = 35;
+        panel_cfg.offset_y = 0;
         panel_cfg.readable = false;
         panel_cfg.invert   = true;
         panel_cfg.rgb_order = false;
