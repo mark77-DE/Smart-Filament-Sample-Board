@@ -14,6 +14,8 @@
 #include <cstdint>  // für uint8_t, uint16_t, uint32_t
 #include "display/st7789/logoBitmap.h"
 
+#include "update_manager.h"
+
 
 
 namespace DisplayAnim {
@@ -78,7 +80,7 @@ void stop() {
 static uint32_t lastFrame = 0;
 
 // -------------------------
-// Tick Idle
+// Tick Idle + Update Hinweis
 // -------------------------
 void tickIdle(LGFX &display, unsigned long now) {
     if (!state.active) return;
@@ -101,26 +103,21 @@ void tickIdle(LGFX &display, unsigned long now) {
     }
 
     // -------------------
-    // Text-Position
+    // Haupt-Text-Animation
     // -------------------
     const int logoHeight = 125;
     const int textY = logoHeight + 15;
 
     display.setTextSize(3);
-    display.setTextDatum(TL_DATUM); // 🔴 WICHTIG: Top-Left!
+    display.setTextDatum(TL_DATUM); // Top-Left
 
-    // Gesamtbreite berechnen (für Zentrierung)
     int totalWidth = display.textWidth(state.idleText);
     int startX = (display.width() - totalWidth) / 2;
 
-    // -------------------
-    // Animation
-    // -------------------
     const uint32_t animDelay = 150;
     if (now - state.lastAnimTime >= animDelay) {
         state.lastAnimTime = now;
 
-        // Farbe wählen (R -> G -> B)
         uint16_t color;
         switch (state.highlightIndex % 3) {
             case 0: color = TFT_RED; break;
@@ -128,7 +125,6 @@ void tickIdle(LGFX &display, unsigned long now) {
             case 2: color = TFT_BLUE; break;
         }
 
-        // Text aufteilen
         String prefix = state.idleText.substring(0, state.highlightIndex);
         String currentChar = state.idleText.substring(state.highlightIndex, state.highlightIndex + 1);
         String suffix = state.idleText.substring(state.highlightIndex + 1);
@@ -136,7 +132,6 @@ void tickIdle(LGFX &display, unsigned long now) {
         int prefixWidth = display.textWidth(prefix);
         int charWidth   = display.textWidth(currentChar);
 
-        // 🔹 1. Alles sauber neu zeichnen (kein Löschen nötig!)
         display.setTextColor(TFT_BLACK, TFT_WHITE);
         display.drawString(prefix, startX, textY);
 
@@ -146,11 +141,25 @@ void tickIdle(LGFX &display, unsigned long now) {
         display.setTextColor(TFT_BLACK, TFT_WHITE);
         display.drawString(suffix, startX + prefixWidth + charWidth, textY);
 
-        // Index weiter
         state.highlightIndex++;
         if (state.highlightIndex >= state.idleText.length()) {
             state.highlightIndex = 0;
         }
+    }
+
+    // -------------------
+    // Update-Hinweis unten rechts
+    // -------------------
+    const UpdateInfo &info = getUpdateInfo();  // globale Struktur abfragen
+    if (info.updateAvailable) {
+        const String updateText = "UPDATE";
+        display.setTextSize(2);
+        display.setTextColor(TFT_RED, TFT_YELLOW); // rot auf gelb
+
+        int x = display.width() - display.textWidth(updateText) - 5; // 5px Padding rechts
+        int y = display.height() - 26;                                // 10px vom unteren Rand
+
+        display.drawString(updateText, x, y);
     }
 }
 

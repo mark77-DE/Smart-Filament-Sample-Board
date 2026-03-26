@@ -29,75 +29,23 @@
 #include "i18n/i18n.h"
 #include <HTTPClient.h>
 #include <WiFiClientSecure.h>
+#include "update_manager.h"
 
 
 
 
 
+constexpr uint32_t SPLASH_CHAR_MS = 35;       //timing for typewriter effect at boot (ms per char)
+constexpr uint32_t SPLASH_LINE_MS = 200;      //extra delay after each line at boot (ms)
+constexpr uint32_t SPLASH_HOLD_MS = 2000;     //how long the full splash is shown at boot (after typewriter effect, before animation starts)
 
-constexpr uint32_t SPLASH_CHAR_MS = 35;
-constexpr uint32_t SPLASH_LINE_MS = 200;
-constexpr uint32_t SPLASH_HOLD_MS = 2000;
-
-constexpr uint32_t FIRMWARE_HOLD_MS = 5000;
+constexpr uint32_t FIRMWARE_HOLD_MS = 2000;   //how long fw version is shown at boot (before animation starts)
 
 SysInfo g_sysInfo;
 
 NFCInfo g_nfcInfo = {0,0,0,false};
 
-bool checkForUpdate(const String& currentVersion, const char* url, String &latestVersion) {
-    if (WiFi.status() != WL_CONNECTED) return false;
 
-    WiFiClientSecure client;
-    client.setInsecure(); // 🔴 wichtig (sonst Zertifikatproblem)
-
-    HTTPClient http;
-    http.begin(client, url);
-
-    int httpCode = http.GET();
-
-    Serial.printf("HTTP Code: %d\n", httpCode);
-
-    if (httpCode != 200) {
-        http.end();
-        return false;
-    }
-
-    latestVersion = http.getString();
-    latestVersion.trim();
-
-    Serial.println("Latest Version RAW: [" + latestVersion + "]");
-
-    http.end();
-
-    Serial.println("Current: " + String(FIRMWARE_VERSION));
-    Serial.println("Latest : " + latestVersion);
-
-    return latestVersion.length() > 0;
-}
-
-int compareVersion(const String& v1, const String& v2) {
-    int a1, b1, c1;
-    int a2, b2, c2;
-
-    sscanf(v1.c_str(), "%d.%d.%d", &a1, &b1, &c1);
-    sscanf(v2.c_str(), "%d.%d.%d", &a2, &b2, &c2);
-
-    if (a2 > a1) return 1;
-    if (a2 < a1) return -1;
-
-    if (b2 > b1) return 1;
-    if (b2 < b1) return -1;
-
-    if (c2 > c1) return 1;
-    if (c2 < c1) return -1;
-
-    return 0;
-}
-
-bool isUpdateAvailable(const String& current, const String& latest) {
-    return compareVersion(current, latest) < 0;
-}
 
 
 
@@ -156,14 +104,14 @@ unsigned long lastTagTime = 0;
 unsigned long now = 0;
 bool isActive = false;
 
-// ----------------- Globale Variablen -----------------
-String activeUID = "";       // aktuell aktive UID
+// ----------------- global variables -----------------
+String activeUID = "";       // active UID
 
 volatile bool g_applyConfigPending = false;
 volatile bool g_reloadFilamentsPending = false;
 
 
-//globale WebIF-Timer-Variablen + Setter
+//globale WebIF-Timer-variables + Setter
 
 static bool     s_webifIdleArmed = false;
 static uint32_t s_webifIdleUntil = 0;
@@ -203,7 +151,7 @@ static void onWiFiManagerConfigPortalStarted(WiFiManager* wm) {
   // Anzeige NICHT blockieren: autoConnect() läuft weiter; Display bleibt bis zur nächsten Anzeigeänderung so stehen.
   MYDISPLAY::showThreeLinesCentered(
     F("WLAN-SETUP AP"),
-    F("SSID: NFC-Setup-AP"),
+    F("SSID: SpotMyFilament"),  //SpotMyFilament AP
     apIp.toString(), TFT_ORANGE
   );
 }
@@ -415,7 +363,7 @@ void setup() {
   LEDCTRL_FILAMENT::allOff();
   LEDCTRL_NFC::allOff();
 
-  // 2) I2C + DISPLAY FRÜH initialisieren (alles, was malen will, braucht das)
+  // 2) initialize I2C + DISPLAY
   displayInit();
  
 
@@ -438,7 +386,7 @@ void setup() {
   MYDISPLAY::showCentered("WLAN...");
   
 
-  if (!wifiManager.autoConnect("SpotMyFilament AP")) {
+  if (!wifiManager.autoConnect("SpotMyFilament")) {
     ESP.restart();
   }
 
@@ -476,35 +424,23 @@ void setup() {
   }
   
 
-  // 6) FIRMWARE-BOOTSCREEN x s ANZEIGEN (WebIF ist bereits online)
-  {
-    String latest;
-    const char* url = "https://raw.githubusercontent.com/mark77-DE/Smart-Filament-Sample-Board-Public/refs/heads/main/version_public.txt";
-    bool gotVersion = checkForUpdate(FIRMWARE_VERSION, url, latest);
+  // Upadte Check
 
-bool updateAvailable = false;
+{
 
-if (gotVersion) {
-    updateAvailable = isUpdateAvailable(FIRMWARE_VERSION, latest);
-}
+  updateInit();
+  updateLoop(); // initial einmal
 
-if (updateAvailable) {
-    MYDISPLAY::showThreeLinesCentered(
-        F("UPDATE AVAILABLE!"),
-        FIRMWARE_VERSION,
-        latest.c_str(), TFT_ORANGE
-    );
-} else {
-    MYDISPLAY::showBootVersion(FIRMWARE_VERSION, BUILD_DATE_SHORT);
-}
+  
+  MYDISPLAY::showBootVersion(FIRMWARE_VERSION, BUILD_DATE_SHORT);
+  
 
-const uint32_t until = millis() + FIRMWARE_HOLD_MS; 
-    while ((int32_t)(until - millis()) > 0) {
-      // Währenddessen nichts blockieren:
-      gpiohw_tick(millis());
-      ws.cleanupClients();   // optional; AsyncWebServer schafft das auch alleine
-      yield();
-    }
+  const uint32_t until = millis() + FIRMWARE_HOLD_MS;
+  while ((int32_t)(until - millis()) > 0) {
+    gpiohw_tick(millis());
+    ws.cleanupClients();
+    yield();
+  }
 }
 
   // Nach dem Firmware-Bootscreen (10 s), WLAN+Webserver sind schon da
@@ -526,7 +462,7 @@ const uint32_t until = millis() + FIRMWARE_HOLD_MS;
     g_nfcInfo.fwVerMajor = (version >> 24) & 0xFF;
     g_nfcInfo.fwVerMinor = (version >> 16) & 0xFF;
     g_nfcInfo.chipID     = version & 0xFFFF, HEX;
-    Serial.print("PN532 FW "); Serial.print((version>>24)&0xFF);
+    Serial.print("[NFC] PN532 FW "); Serial.print((version>>24)&0xFF);
     Serial.print('.');        Serial.print((version>>16)&0xFF);
     Serial.print(" chip=0x"); Serial.println(version & 0xFFFF, HEX);
   }
@@ -543,8 +479,13 @@ const uint32_t until = millis() + FIRMWARE_HOLD_MS;
   initWebServer(server, ws);
   WiFi.setSleep(false);
 
-   Serial.println("Setup done.");
-
+  Serial.println("*********************");
+  Serial.println("*                   *");
+  Serial.println("*  Setup complete!  *");
+  Serial.println("*                   *");
+  Serial.println("*********************");
+  Serial.println();
+  Serial.println();
 
 
 
@@ -676,10 +617,19 @@ void loop() {
   // 7) WebSocket hearbeat
   // ---------------------------------------------------------------------------
   sendHeartbeat(ws);
+
+  // ---------------------------------------------------------------------------
+  // 8) Update Check
+  // ---------------------------------------------------------------------------
+  updateLoop();
+  if (updateHasChanged()) {
+    publishUpdateStatus();
+    clearUpdateChanged();
+  }
   
 
   // ---------------------------------------------------------------------------
-  // 8) (Optional) yield()
+  // 9) (Optional) yield()
   // ---------------------------------------------------------------------------
   yield();
 

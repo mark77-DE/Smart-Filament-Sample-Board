@@ -47,6 +47,8 @@ namespace DisplayAnim {
         uint32_t eraseLinePauseMs
     );
 
+    
+
 
 }
 

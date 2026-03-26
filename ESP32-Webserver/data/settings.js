@@ -104,6 +104,11 @@ const importBtn = document.getElementById("importBtn");
 const toggleBtn = document.getElementById("toggleSettings");
 const section = document.getElementById("sectionSettings");
 
+const updateCheckIntervalInput = document.getElementById("updateCheckInterval");
+const updateIntervalHuman = document.getElementById("updateIntervalHuman");
+
+const infoCpuTempInfo = document.getElementById("infoCpuTemp");
+
 
 
 const hostnameInput = document.getElementById("hostname");
@@ -249,7 +254,7 @@ function updateImportUI() {
 
 function updateWSStatus(connected) {
 
-    // Key je nach Status
+    // key based on status
     const key = connected ? t("websocket_connected") : t("websocket_disconnected");
 
     wsStatus.textContent = i18nData[key] || (connected ? "WebSocket: connected" : "WebSocket: disconnected");
@@ -297,6 +302,7 @@ async function handleWSMessage(ev) {
 
     updateWSStatus(true);
     updateRssiDisplay(data.wifi_rssi);
+    infoCpuTempInfo.textContent = data.cpu_temp_c.toFixed(1) + " °C";
     infoFreeHeap.textContent = data.heap_free + " bytes";
 
     if (CONFIGV2?.system?.debugMode) {
@@ -519,7 +525,7 @@ function renderTable() {
     let number = 1;
     let html = '<div id="table">';
 
-data.forEach((e, idx) => {
+    data.forEach((e, idx) => {
     html += `
         <div class="itemBlock">
 
@@ -579,12 +585,12 @@ data.forEach((e, idx) => {
 
         </div>
     `;
-});
+    });
 
     html += '</div>';
     dbDiv.innerHTML = html;
 
-    const tableDiv = document.getElementById("table");  // jetzt existiert es
+    const tableDiv = document.getElementById("table");  // now exists
     tableDiv.addEventListener("change", (event) => {
         const target = event.target;
         if (target.matches("select[data-field='ledIndex']")) {
@@ -598,7 +604,7 @@ data.forEach((e, idx) => {
             if (e.target.innerText.length > MAX_LENGTH) {
                 e.target.innerText = e.target.innerText.slice(0, MAX_LENGTH);
 
-                // Cursor ans Ende setzen, sonst springt er nach vorne
+                // move cursor to end, otherwise it jumps to start
                 const range = document.createRange();
                 const sel = window.getSelection();
                 range.selectNodeContents(e.target);
@@ -610,9 +616,9 @@ data.forEach((e, idx) => {
     });
 
     activateButtons();
-    applyEditMode(); // Buttons / selects im Edit-Modus korrekt setzen
+    applyEditMode(); // set buttons/selects correctly in edit mode
 
-    // ---- UI aus CONFIG füllen ----
+    // ---- fill UI from CONFIG ----
     const sys = CONFIGV2.system || {};
     const led = CONFIGV2.led || {};
     const nfc = CONFIGV2.nfc || {};
@@ -622,11 +628,12 @@ data.forEach((e, idx) => {
 
     debugToggle.checked = !!(sys.debugMode);
     
-    loadHelpAndLang(CONFIGV2.system.defaultLanguage); // Standard-Sprache
+    loadHelpAndLang(CONFIGV2.system.defaultLanguage); // default language
     selectLanguageSelect.value = CONFIGV2.system.defaultLanguage;
     setupLangSwitcher('langSelect');
     // Help-Icons einfügen
     injectHelpIcons();
+    
 
     
     
@@ -706,7 +713,11 @@ data.forEach((e, idx) => {
     
     document.body.classList.toggle("daymode", daynightToggle.checked);
 
-    // Nach dem Setzen: Sperrlogik ausführen
+
+    // --- System ---
+    if (updateCheckIntervalInput) updateCheckIntervalInput.value = sys.updateCheckInterval ?? 60;
+    updateIntervalDisplay();
+    
     
 
     // initial update
@@ -719,11 +730,11 @@ document.querySelectorAll('span[contenteditable][data-max]').forEach(el => {
     el.addEventListener('input', () => {
         const max = parseInt(el.dataset.max || "60");
 
-        // überschüssige Zeichen abschneiden
+        // trim excess characters
         if (el.textContent.length > max) {
             el.textContent = el.textContent.slice(0, max);
 
-            // Cursor ans Ende setzen
+            // move cursor to end
             const range = document.createRange();
             const sel = window.getSelection();
             range.selectNodeContents(el);
@@ -758,10 +769,10 @@ function buildLedDropdown(currentLED, usedLEDs, disabled = false) {
 }
 
 
-// -------------------- Buttons für Save/Delete --------------------
+// -------------------- Buttons for Save/Delete --------------------
 function activateButtons() {
     document.querySelectorAll(".saveBtn").forEach(btn => btn.addEventListener("click", async () => {
-        //if (!confirm("Eintrag sichern?")) return;
+        //if (!confirm("Save entry?")) return;
         const idx = Number(btn.dataset.idx); const row = btn.closest(".itemBlock");
         const entry = { idx };
         row.querySelectorAll("[data-field]").forEach(el => {
@@ -866,6 +877,9 @@ async function saveConfigHandler() {
     // --- Hostsettings ---
     const hostname = hostnameInput ? hostnameInput.value.trim() : "hostname";
 
+    // --- System ---
+    const updateCheckInterval = updateCheckIntervalInput ? Number(updateCheckIntervalInput.value) : 30;
+
     try {
         await fetch("/api/updateConfig", {
             method: "POST",
@@ -877,7 +891,8 @@ async function saveConfigHandler() {
                     webLEDTimeout,
                     animationAfterBoot,
                     hostname: hostname || "filament-board",
-                    defaultLanguage
+                    defaultLanguage,
+                    updateCheckInterval
                 },
                 led: {
                     count: ledCount,
@@ -1220,9 +1235,9 @@ function formatUptime(ms) {
 
 
 function rssiToColor(rssi) {
-    if (rssi >= -60) return "green";      // stark
-    else if (rssi >= -75) return "yellow"; // mittel
-    else return "red";                     // schwach
+    if (rssi >= -60) return "green";      // strong
+    else if (rssi >= -75) return "yellow"; // medium
+    else return "red";                     // weak
 }
 
 // Funktion zum Aktualisieren der Anzeige
@@ -1353,12 +1368,12 @@ document.querySelectorAll(".navItem").forEach(btn => {
 function highlightLedIndex(ledIndex) {
 
     if (!socket || socket.readyState !== WebSocket.OPEN) {
-        console.warn("WebSocket nicht verbunden");
+        console.warn("WebSocket not connected");
         return;
     }
 
     if (typeof ledIndex !== "number" || ledIndex < 0) {
-        console.warn("Ungültiger LED Index:", ledIndex);
+        console.warn("Invalid LED Index:", ledIndex);
         return;
     }
 
@@ -1506,6 +1521,42 @@ function stopWSWatchdog() {
         wsWatchdogTimer = null;
     }
 }
+
+
+function formatMinutesHuman(minutes) {
+    minutes = Number(minutes);
+    if (isNaN(minutes) || minutes <= 0) return "";
+
+    const days  = Math.floor(minutes / 1440);
+    const hours = Math.floor((minutes % 1440) / 60);
+    const mins  = minutes % 60;
+
+    let parts = [];
+
+    if (days > 0) {
+        parts.push(`${days} ${days === 1 ? t("txt_day") : t("txt_day_plural")}`);
+    }
+
+    if (hours > 0) {
+        parts.push(`${hours} ${hours === 1 ? t("txt_hour") : t("txt_hour_plural")}`);
+    }
+
+    if (mins > 0) {
+        parts.push(`${mins} ${mins === 1 ? t("txt_minute") : t("txt_minute_plural")}`);
+    }
+
+    return parts.join(" ");
+}
+
+function updateIntervalDisplay() {
+    updateIntervalHuman.textContent = formatMinutesHuman(updateCheckIntervalInput.value);
+}
+
+// Events
+updateCheckIntervalInput.addEventListener("input", updateIntervalDisplay);
+updateCheckIntervalInput.addEventListener("change", updateIntervalDisplay);
+
+
 // -------------------- Init --------------------
 async function init() {
 
@@ -1524,6 +1575,8 @@ async function init() {
 
     await getVersion();
     await getPinout();
+
+    updateIntervalDisplay();
     
 
     document.querySelectorAll('#addForm input[data-max]').forEach(el => updateCharsLeft(el));

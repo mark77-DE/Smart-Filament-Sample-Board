@@ -1,4 +1,3 @@
-// mqtt_manager.cpp
 #include "globals.h"
 #include "mqtt_manager.h"
 #include "display/display_anim.h"
@@ -8,140 +7,171 @@
 #include "config.h"
 #include "ha_discovery.h"
 #include "filament_db.h"
+#include "version_info.h"
+#include "update_manager.h"
 
 WiFiClient espClient;
 PubSubClient mqttClient(espClient);
 
-static void mqttCallback(char* topic, byte* payload, unsigned int length) {
-    // Payload als String
-    payload[length] = '\0';
-    String msg = (char*)payload;
+// --------------------------------------------------
+// OTA Dummy
+// --------------------------------------------------
+void startOTAUpdate() {
+    Serial.println("[OTA] Update requested -> NOT IMPLEMENTED YET");
+}
 
-    // Topic als String
+// --------------------------------------------------
+// MQTT Callback
+// --------------------------------------------------
+static void mqttCallback(char* topic, byte* payload, unsigned int length) {
+
+    String msg;
+    msg.reserve(length);
+    for (unsigned int i = 0; i < length; i++) {
+        msg += (char)payload[i];
+    }
+
     String t = topic;
 
-    // --- Debug Ausgabe ---
     if (CONFIGV2.system.debugMode) {
-        Serial.print("MQTT message received: ");
-        Serial.println(msg);
-        Serial.print("Topic: ");
-        Serial.println(t);
+        Serial.println("MQTT message received:");
+        Serial.println("  Topic: " + t);
+        Serial.println("  Payload: " + msg);
         Serial.println();
     }
 
-    // --- Animation ---
-    if (t.endsWith("/animation/set")) {
-    if (msg == "ON") {
-        DisplayAnim::startIdle(millis());
-        LEDCTRL_FILAMENT::standBy(false);
-        LEDCTRL_NFC::standBy(false);
-        publishAnimationStatus(true);
+    String base = CONFIGV2.mqttConfig.baseTopic;
+
+    // ---------------- Animation ----------------
+    if (t == base + "/animation/set") {
+        if (msg == "ON") {
+            DisplayAnim::startIdle(millis());
+            LEDCTRL_FILAMENT::standBy(false);
+            LEDCTRL_NFC::standBy(false);
+            publishAnimationStatus(true);
+        }
+        else if (msg == "OFF") {
+            DisplayAnim::stop();
+            MYDISPLAY::clear();
+            LEDCTRL_FILAMENT::standBy(true);
+            LEDCTRL_NFC::standBy(true);
+            publishAnimationStatus(false);
+        }
     }
-    else if (msg == "OFF") {
-        DisplayAnim::stop();
-        MYDISPLAY::clear();
-        LEDCTRL_FILAMENT::standBy(true);
-        LEDCTRL_NFC::standBy(true);
-        publishAnimationStatus(false);
+
+    // ---------------- OTA Trigger ----------------
+    if (t == base + "/device/update/install") {
+        if (msg == "INSTALL") {
+            startOTAUpdate();
+        }
     }
 }
 
-    
-}
-
-
+// --------------------------------------------------
 void mqttInit() {
     if (!CONFIGV2.mqttConfig.enabled) return;
 
-    mqttClient.setServer(CONFIGV2.mqttConfig.server.c_str(), CONFIGV2.mqttConfig.port);
+    mqttClient.setServer(
+        CONFIGV2.mqttConfig.server.c_str(),
+        CONFIGV2.mqttConfig.port
+    );
+
     mqttClient.setCallback(mqttCallback);
-    mqttClient.setKeepAlive(30);       // Sekunden
+    mqttClient.setKeepAlive(30);
     mqttClient.setSocketTimeout(10);
 
-
     if(CONFIGV2.system.debugMode) {
-        Serial.print("MQTT initialized with server: ");
-        Serial.print(CONFIGV2.mqttConfig.server);
-        Serial.print(":");
-        Serial.println(CONFIGV2.mqttConfig.port);
-    }   
+        Serial.println("MQTT initialized:");
+        Serial.println("  Server: " + CONFIGV2.mqttConfig.server);
+        Serial.println("  Port: " + String(CONFIGV2.mqttConfig.port));
+    }
 }
 
-static void mqttReconnect() {
-    if (mqttClient.connected()) return;
+// --------------------------------------------------
+static void publishDeviceDiagnostics() {
 
-    if(CONFIGV2.system.debugMode) {
-        Serial.print(F("HA-Discovery enabled: ")); Serial.println(CONFIGV2.mqttConfig.haDiscovery ? F("true") : F("false"));
-    }
+    String base = CONFIGV2.mqttConfig.baseTopic;
+
+    mqttClient.publish(
+        (base + "/device/ip").c_str(),
+        WiFi.localIP().toString().c_str(),
+        true
+    );
+
+    mqttClient.publish(
+        (base + "/device/fw").c_str(),
+        FIRMWARE_VERSION,
+        true
+    );
+
+    String build = String(FIRMWARE_VERSION) + " | " + GIT_HASH + " | " + BUILD_DATE;
+
+    mqttClient.publish(
+        (base + "/device/build").c_str(),
+        build.c_str(),
+        true
+    );
+
+    // OTA aktuell immer OFF
+    mqttClient.publish(
+        (base + "/device/update").c_str(),
+        "OFF",
+        true
+    );
+}
+
+// --------------------------------------------------
+static void mqttReconnect() {
+
+    if (mqttClient.connected()) return;
 
     String base = CONFIGV2.mqttConfig.baseTopic;
     String lwTopic = base + "/status";
-
-    
 
     if (mqttClient.connect(
         CONFIGV2.mqttConfig.clientId.c_str(),
         CONFIGV2.mqttConfig.user.c_str(),
         CONFIGV2.mqttConfig.password.c_str(),
         lwTopic.c_str(), 0, true, "offline"
-        )) {
+    )) {
 
-            
+        mqttClient.publish(lwTopic.c_str(), "online", true);
 
+        // Animation Status sync
+        publishAnimationStatus(!LEDCTRL_FILAMENT::_standby);
 
-           
-            mqttClient.publish(lwTopic.c_str(), "online", true);
+        // Subscribe
+        mqttClient.subscribe((base + "/animation/set").c_str());
+        mqttClient.subscribe((base + "/device/update/install").c_str());
 
-
-            if(LEDCTRL_FILAMENT::_standby) {
-                publishAnimationStatus(false); // Standby = Animation OFF
-            } else {
-                publishAnimationStatus(true);  // Normalbetrieb = Animation ON
-            }
-
-        
-        
-
-            mqttClient.subscribe((base + "/animation/set").c_str());
-        
-
-            if(CONFIGV2.system.debugMode) {
-                Serial.println("MQTT connected and subscribed to topics:");
-                Serial.println("  " + base + "/animation/set");
-            
-            }
-
-            if(CONFIGV2.system.debugMode) {
-                Serial.println("Publishing initial LED status...");
-            }
-            // ---- Home Assistant Discovery (optional) ----
-            if (CONFIGV2.mqttConfig.haDiscovery) {
-                publishHADiscovery(
-                    mqttClient,
-                    CONFIGV2.mqttConfig.haDiscoveryPrefix
-                );
-
-                if(CONFIGV2.system.debugMode) { 
-                    Serial.println("HA Discovery published");
-                    Serial.println();
-                }
-            }
-        } else {
-            if(CONFIGV2.system.debugMode) {
-                Serial.print("MQTT connection failed, rc=");
-                Serial.print(mqttClient.state());
-                Serial.println(" try again in 5 seconds");
-                Serial.println();
-            }
+        if(CONFIGV2.system.debugMode) {
+            Serial.println("MQTT connected");
         }
+
+        // HA Discovery
+        if (CONFIGV2.mqttConfig.haDiscovery) {
+            publishHADiscovery(
+                mqttClient,
+                CONFIGV2.mqttConfig.haDiscoveryPrefix
+            );
+        }
+
+        // Diagnosewerte senden
+        publishDeviceDiagnostics();
+
+        //Update yes/no
+        publishUpdateStatus();
+
+    } else {
+        if(CONFIGV2.system.debugMode) {
+            Serial.print("MQTT connect failed, rc=");
+            Serial.println(mqttClient.state());
+        }
+    }
 }
 
-
+// --------------------------------------------------
 void mqttLoop() {
-
-    if (!mqttClient.connected()) {
-        Serial.println("MQTT disconnected, attempting reconnect...");
-    }
 
     if (!CONFIGV2.mqttConfig.enabled) return;
 
@@ -149,7 +179,7 @@ void mqttLoop() {
 
     if (!mqttClient.connected()) {
         uint32_t now = millis();
-        if (now - lastReconnectAttempt > 5000) {   // 5 Sekunden
+        if (now - lastReconnectAttempt > 5000) {
             lastReconnectAttempt = now;
             mqttReconnect();
         }
@@ -159,26 +189,24 @@ void mqttLoop() {
     mqttClient.loop();
 }
 
+// --------------------------------------------------
 bool mqttIsConnected() {
     return mqttClient.connected();
 }
 
-
-
+// --------------------------------------------------
 void publishAnimationStatus(bool on) {
+
     String base = CONFIGV2.mqttConfig.baseTopic;
-    const char* msg = on ? "ON" : "OFF";
 
     mqttClient.publish(
         (base + "/animation/state").c_str(),
-        msg,
-        true   // retain!
+        on ? "ON" : "OFF",
+        true
     );
 }
 
-
-
-
+// --------------------------------------------------
 void publishFilamentState(const FilamentEntry& entry) {
 
     if (!mqttClient.connected()) return;
@@ -191,12 +219,34 @@ void publishFilamentState(const FilamentEntry& entry) {
     payload += "\"type\":\"" + entry.type + "\",";
     payload += "\"color\":\"" + entry.color + "\",";
     payload += "\"storage\":\"" + entry.storage + "\",";
-    payload += "\"led_index\":" + String(entry.ledIndex + 1) + "";  // +1, damit es in HA bei 1 beginnt
+    payload += "\"led_index\":" + String(entry.ledIndex + 1);
     payload += "}";
 
     mqttClient.publish(
         (base + "/filament/state").c_str(),
         payload.c_str(),
-        true   // retain sinnvoll!
+        true
+    );
+}
+
+void publishUpdateStatus() {
+
+    if (!mqttClient.connected()) return;
+
+    const UpdateInfo& info = getUpdateInfo();
+    String base = CONFIGV2.mqttConfig.baseTopic;
+
+    // ON/OFF für HA Update Entity
+    mqttClient.publish(
+        (base + "/device/update").c_str(),
+        info.updateAvailable ? "ON" : "OFF",
+        true
+    );
+
+    // Zusatzinfos (optional)
+    mqttClient.publish(
+        (base + "/device/update/latest").c_str(),
+        info.latestVersion.c_str(),
+        true
     );
 }

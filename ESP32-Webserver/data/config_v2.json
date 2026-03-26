@@ -6,7 +6,8 @@
         "webLEDTimeout": 3000,
         "animationAfterBoot": true,
         "hostname": "filament-board-dev",
-        "defaultLanguage": "en"
+        "defaultLanguage": "en",
+        "updateCheckInterval": 3
         },
     "led": {
         "count": 8,

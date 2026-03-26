@@ -16,6 +16,8 @@
 #include "esp_image_format.h"
 #include "config.h"
 #include "pins.h"
+#include "esp_system.h"
+#include "update_manager.h"
 
 
 
@@ -335,13 +337,13 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
         doc["SCL_PIN"]                  = SCL_PIN;
         doc["SDA_PIN"]                  = SDA_PIN;
         
-        doc["LED_PIN"]             = LED_PIN;
+        doc["LED_PIN"]                  = LED_PIN;
         doc["NFC_LED_PIN"]              = NFC_LED_PIN;
 
-        doc["SCK_PIN"]                = SPI_SCK;
-        doc["MISO_PIN"]               = SPI_MISO;
-        doc["MOSI_PIN"]               = SPI_MOSI;
-        doc["SS_PIN"]                 = PN532_CS;
+        doc["SCK_PIN"]                  = SPI_SCK;
+        doc["MISO_PIN"]                 = SPI_MISO;
+        doc["MOSI_PIN"]                 = SPI_MOSI;
+        doc["SS_PIN"]                   = PN532_CS;
 
         doc["BTN_PIN"]                  = BTN_PIN;
         doc["BUZ_PIN"]                  = BUZ_PIN;
@@ -922,14 +924,25 @@ void sendHeartbeat(AsyncWebSocket &ws) {
     lastHeartbeatMs = now;
 
     JsonDocument doc;
-    doc["action"] = "heartbeat";
-    doc["uptime_ms"] = millis();
-    doc["heap_free"] = ESP.getFreeHeap();
-    doc["wifi_rssi"] = WiFi.RSSI();
-    doc["rebootPending"] = rebootPending;
+    doc["action"]       = "heartbeat";
+    doc["uptime_ms"]    = millis();
+    doc["heap_free"]    = ESP.getFreeHeap();
+    doc["wifi_rssi"]    = WiFi.RSSI();
+    doc["cpu_temp_c"]   = temperatureRead();
+
+    // Update-Info
+    UpdateInfo &update = getUpdateInfo();
+
+    if(update.updateAvailable) {
+        doc["updateAvailable"]  = update.updateAvailable;
+        doc["currentVersion"]   = update.currentVersion;
+        doc["latestVersion"]    = update.latestVersion;
+        doc["lastCheck"]        = update.lastCheck;
+    } else {
+        doc["updateAvailable"] = false;
+    }
 
     String out;
     serializeJson(doc, out);
-
-    ws.textAll(out); // an alle WebSocket-Clients senden
+    ws.textAll(out); // an alle Clients senden
 }

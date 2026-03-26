@@ -2,7 +2,8 @@
 #include <ArduinoJson.h>
 #include <LittleFS.h>
 
-DynamicJsonDocument langDoc(16384);
+StaticJsonDocument<16384> langDoc;
+
 String I18N::_currentLang = "de";
 
 void I18N::begin(const String& lang) {
