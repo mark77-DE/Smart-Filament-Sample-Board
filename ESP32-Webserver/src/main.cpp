@@ -95,7 +95,7 @@ AsyncWebSocket ws("/ws");
 
 // ----------------- PN532 SPI Settings -----------------
 
-Adafruit_PN532 nfc(SPI_SCK, SPI_MISO, SPI_MOSI, PN532_CS);
+Adafruit_PN532 nfc(PN532_CS);
 
 // ----------------- LED & Display Timing -----------------
 int targetLed = -1;
@@ -364,6 +364,7 @@ void setup() {
   LEDCTRL_NFC::allOff();
 
   // 2) initialize I2C + DISPLAY
+  //SPI.begin(SPI_SCK, SPI_MISO, SPI_MOSI);
   displayInit();
  
 

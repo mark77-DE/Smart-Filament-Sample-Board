@@ -1,11 +1,22 @@
 #pragma once
 
 #include "display/display_config.h"
+#include "pins.h"
 
 #if DISPLAY_TYPE == DISPLAY_TYPE_ST7789
-
-
 #include <LovyanGFX.hpp>
+
+#ifndef TFT_SCK  
+    #define TFT_SCK SPI_SCK
+#endif
+
+#ifndef TFT_MOSI
+    #define TFT_MOSI SPI_MOSI
+#endif
+
+#ifndef TFT_MISO
+    #define TFT_MISO SPI_MISO
+#endif
 
 
 class LGFX : public lgfx::LGFX_Device {
@@ -15,7 +26,11 @@ class LGFX : public lgfx::LGFX_Device {
 public:
     LGFX() {
         auto bus_cfg = _bus.config();
+    #if defined(CONFIG_IDF_TARGET_ESP32S3)
         bus_cfg.spi_host = SPI2_HOST;
+    #else
+    bus_cfg.spi_host = VSPI_HOST;
+    #endif
         bus_cfg.freq_write = 40000000;
         bus_cfg.freq_read  = 16000000;
         bus_cfg.spi_mode = 0;
@@ -36,7 +51,11 @@ public:
         panel_cfg.readable = false;
         panel_cfg.invert   = true;
         panel_cfg.rgb_order = false;
+      #if defined(CONFIG_IDF_TARGET_ESP32S3)
         panel_cfg.bus_shared = false;
+      #else
+        panel_cfg.bus_shared = true;
+      #endif  
         _panel.config(panel_cfg);
 
         _panel.setBus(&_bus);
