@@ -24,6 +24,7 @@ class LGFX : public lgfx::LGFX_Device {
     lgfx::Bus_SPI _bus;
 
 public:
+
     LGFX() {
         auto bus_cfg = _bus.config();
     #if defined(CONFIG_IDF_TARGET_ESP32S3)

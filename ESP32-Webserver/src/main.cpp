@@ -94,8 +94,12 @@ AsyncWebSocket ws("/ws");
 
 
 // ----------------- PN532 SPI Settings -----------------
-
-Adafruit_PN532 nfc(PN532_CS);
+//Adafruit_PN532(uint8_t clk, uint8_t miso, uint8_t mosi, uint8_t ss);
+#if DISPLAY_TYPE == DISPLAY_TYPE_ST7789
+  Adafruit_PN532 nfc(NFC_SCK, NFC_MISO, NFC_MOSI,  PN532_CS);
+#else
+  Adafruit_PN532 nfc(PN532_CS);
+#endif
 
 // ----------------- LED & Display Timing -----------------
 int targetLed = -1;
@@ -243,6 +247,13 @@ void handleUID(const String &uid, UidSource source) {
     JsonDocument doc;
     doc["uid"] = uid;
 
+    if(CONFIGV2.system.debugMode) {
+        Serial.print("handleUID: UID=");
+        Serial.print(uid);
+        Serial.print(" Source=");
+        Serial.println((source == UidSource::NFC) ? "NFC" : "WebIF");
+    }
+
     const bool isNfc = (source == UidSource::NFC);
 
     if (FilamentDB::findByUID(uid, entry)) {
@@ -366,7 +377,8 @@ void setup() {
   // 2) initialize I2C + DISPLAY
   //SPI.begin(SPI_SCK, SPI_MISO, SPI_MOSI);
   displayInit();
- 
+
+  
 
   // 3) WLAN verbinden
   //    Gewünschtes Verhalten:

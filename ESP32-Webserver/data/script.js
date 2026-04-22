@@ -38,6 +38,11 @@ let activeFilters = {
   type: ""
 };
 
+let activeSort = {
+  key: "",
+  dir: "asc" // asc | desc
+};
+
 
 // ---------------- WebSocket ----------------
 function updateWSStatus(connected) {
@@ -445,7 +450,9 @@ function applyFilters() {
 }
 
 function updateGrid() {
-  renderFilamentGrid(applyFilters());
+  const filtered = applyFilters();
+  const sorted = sortFilaments(filtered);
+  renderFilamentGrid(sorted);
 }
 
 function populateFilter(selectId, key) {
@@ -684,6 +691,56 @@ function showUpdateNotification(msg) {
   updateDiv.style.color = 'orange';
 
 }
+
+
+function sortFilaments(list) {
+  if (!activeSort.key) return list;
+
+  return [...list].sort((a, b) => {
+    const valA = (a[activeSort.key] || "").toString();
+    const valB = (b[activeSort.key] || "").toString();
+
+    const result = valA.localeCompare(valB, undefined, {
+      numeric: true,
+      sensitivity: "base"
+    });
+
+    return activeSort.dir === "asc" ? result : -result;
+  });
+}
+
+function updateSortIndicators() {
+  document.querySelectorAll(".sortable").forEach(label => {
+    const indicator = label.querySelector(".sortIndicator");
+    const key = label.dataset.key;
+
+    if (key === activeSort.key) {
+      indicator.textContent = activeSort.dir === "asc" ? " ↑" : " ↓";
+      label.classList.add("activeSort");
+    } else {
+      indicator.textContent = "";
+      label.classList.remove("activeSort");
+    }
+  });
+}
+
+document.querySelectorAll(".sortable").forEach(label => {
+  label.addEventListener("click", () => {
+    const key = label.dataset.key;
+
+    if (activeSort.key === key) {
+      // Richtung toggeln
+      activeSort.dir = activeSort.dir === "asc" ? "desc" : "asc";
+    } else {
+      // neues Feld
+      activeSort.key = key;
+      activeSort.dir = "asc";
+    }
+
+    updateSortIndicators();
+    updateGrid();
+  });
+});
 
 
 

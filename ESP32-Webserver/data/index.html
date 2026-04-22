@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="de">
 
+
+
 <head>
   <meta charset="UTF-8">
   <title>Spot My Filament - Dashboard</title>
@@ -50,31 +52,53 @@
     
 
   <div id="filters">
-    <div class="filterElement"><label class="filterLabel" for="filterVendor" data-i18n="txt_manufactors"></label>
-    <select id="filterVendor">
-      <option value="">all manufactor</option>
-    </select>
-  </div>
 
-    <div class="filterElement"><label class="filterLabel" for="filterColor" data-i18n="txt_colors"></label>
-    <select id="filterColor">
-      <option value="">all colors</option>
-    </select>
-  </div>
+    <div class="filterElement">
+      <label class="filterLabel sortable" for="filterVendor" data-key="vendor">
+        <span data-i18n="txt_manufactors">Manufacturers</span>
+        <span class="sortIndicator"></span>
+      </label>
+      <select id="filterVendor">
+        <option value="">all manufactor</option>
+      </select>
+    </div>
 
-    <div class="filterElement"><label class="filterLabel" for="filterType" data-i18n="txt_materials"></label>
-    <select id="filterType">
-      <option value="">all types</option>
-    </select>
-  </div>
+    <div class="filterElement">
+      <label class="filterLabel sortable" for="filterColor" data-key="color">
+        <span data-i18n="txt_colors">Colors</span>
+        <span class="sortIndicator"></span>
+      </label>
+      <select id="filterColor">
+        <option value="">all colors</option>
+      </select>
+    </div>
 
-    <div class="filterElement"><label class="filterLabel" for="filterStorage" data-i18n="txt_storage"></label>
-    <select id="filterStorage">
-      <option value="">all places</option>
-    </select>
-  </div>
+    <div class="filterElement">
+      <label class="filterLabel sortable" for="filterType" data-key="type">
+        <span data-i18n="txt_materials">Materials</span>
+        <span class="sortIndicator"></span>
+      </label>
+      <select id="filterType">
+        <option value="">all types</option>
+      </select>
+    </div>
 
-    <div class="filterElement"><label class="filterLabel" for="filterTree" data-i18n="txt_filter_free"></label><input type="text" id="filterFree"></div>
+    <div class="filterElement">
+      <label class="filterLabel sortable" for="filterStorage" data-key="storage">
+        <span data-i18n="txt_storage">Storage</span>
+        <span class="sortIndicator"></span>
+      </label>
+      <select id="filterStorage">
+        <option value="">all places</option>
+      </select>
+    </div>
+
+    <div class="filterElement">
+      <label class="filterLabel" for="filterTree" data-i18n="txt_filter_free"></label>
+      <input type="text" id="filterFree">
+    </div>
+
+  
 
   </div>
 

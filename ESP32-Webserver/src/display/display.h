@@ -80,6 +80,8 @@ public:
      */
     static void showErrorCentered(const String& msg, const int FOREGROUND_COLOR = TFT_RED, const int BACKGROUND_COLOR = TFT_BLACK);
 
+    static int getMaxTextSize(const String& text, int maxWidth, int maxSize);
+
 private:
     static DisplayType* _display;
 };

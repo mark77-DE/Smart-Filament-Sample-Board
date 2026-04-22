@@ -1084,7 +1084,7 @@ body.daymode .rowInfo {
 
 .rowMain {
     display: grid;
-    grid-template-columns: 40px 200px 160px 120px 120px 120px;
+    grid-template-columns: 40px 200px 200px 400px;
     align-items: center;
     gap: 10px;
     margin-bottom: 8px;
