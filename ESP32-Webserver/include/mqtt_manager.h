@@ -13,3 +13,4 @@ void publishAnimationStatus(bool on);
 
 void publishFilamentState(const FilamentEntry& entry);
 
+void publishUpdateStatus();

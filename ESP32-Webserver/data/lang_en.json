@@ -180,7 +180,9 @@
     "txt_update_success": "Update successful! Device will reboot in 3 seconds.",
     "txt_update_failed": "Update failed!",
     "txt_uploading_fw": "Uploading Firmware...",
-    "txt_uploading_fs": "Uploading Filesystem..."
+    "txt_uploading_fs": "Uploading Filesystem...",
+    "txt_unknown": "Unknown",
+    "txt_update_check_interval": "Update check interval (minutes):"
 
 
 

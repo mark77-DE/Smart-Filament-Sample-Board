@@ -9,11 +9,13 @@
 #include "filament_db.h"
 #include "ledctrl_filament.h"
 #include "ledctrl_nfc.h"
-#include "display.h"
-#include "display_config.h"
+#include "display/display.h"
+#include "display/display_config.h"
+#include "display/display_anim.h"
+#include "display/st7789/display_st7789.h"
 #include "my_webserver.h"
 #include "globals.h"
-#include "display_anim.h"
+
 #include "nfc.h"
 #include "filehandling.h"
 #include "gpio_hardware.h"
@@ -24,19 +26,26 @@
 #include "esp_ota_ops.h"
 #include "config.h"
 #include "mqtt_manager.h"
+#include "i18n/i18n.h"
+#include <HTTPClient.h>
+#include <WiFiClientSecure.h>
+#include "update_manager.h"
 
 
 
 
-constexpr uint32_t SPLASH_CHAR_MS = 35;
-constexpr uint32_t SPLASH_LINE_MS = 200;
-constexpr uint32_t SPLASH_HOLD_MS = 2000;
 
-constexpr uint32_t FIRMWARE_HOLD_MS = 5000;
+constexpr uint32_t SPLASH_CHAR_MS = 35;       //timing for typewriter effect at boot (ms per char)
+constexpr uint32_t SPLASH_LINE_MS = 200;      //extra delay after each line at boot (ms)
+constexpr uint32_t SPLASH_HOLD_MS = 2000;     //how long the full splash is shown at boot (after typewriter effect, before animation starts)
+
+constexpr uint32_t FIRMWARE_HOLD_MS = 2000;   //how long fw version is shown at boot (before animation starts)
 
 SysInfo g_sysInfo;
 
 NFCInfo g_nfcInfo = {0,0,0,false};
+
+
 
 
 
@@ -82,11 +91,15 @@ AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
 
 // ----------------- OLED ---------------
-DisplayType display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET_PIN);
+
 
 // ----------------- PN532 SPI Settings -----------------
-
-Adafruit_PN532 nfc(PN532_SCK, PN532_MISO, PN532_MOSI, PN532_CS);
+//Adafruit_PN532(uint8_t clk, uint8_t miso, uint8_t mosi, uint8_t ss);
+#if DISPLAY_TYPE == DISPLAY_TYPE_ST7789
+  Adafruit_PN532 nfc(NFC_SCK, NFC_MISO, NFC_MOSI,  PN532_CS);
+#else
+  Adafruit_PN532 nfc(PN532_CS);
+#endif
 
 // ----------------- LED & Display Timing -----------------
 int targetLed = -1;
@@ -95,14 +108,14 @@ unsigned long lastTagTime = 0;
 unsigned long now = 0;
 bool isActive = false;
 
-// ----------------- Globale Variablen -----------------
-String activeUID = "";       // aktuell aktive UID
+// ----------------- global variables -----------------
+String activeUID = "";       // active UID
 
 volatile bool g_applyConfigPending = false;
 volatile bool g_reloadFilamentsPending = false;
 
 
-//globale WebIF-Timer-Variablen + Setter
+//globale WebIF-Timer-variables + Setter
 
 static bool     s_webifIdleArmed = false;
 static uint32_t s_webifIdleUntil = 0;
@@ -142,8 +155,8 @@ static void onWiFiManagerConfigPortalStarted(WiFiManager* wm) {
   // Anzeige NICHT blockieren: autoConnect() läuft weiter; Display bleibt bis zur nächsten Anzeigeänderung so stehen.
   MYDISPLAY::showThreeLinesCentered(
     F("WLAN-SETUP AP"),
-    F("SSID: NFC-Setup-AP"),
-    apIp.toString()
+    F("SSID: SpotMyFilament"),  //SpotMyFilament AP
+    apIp.toString(), TFT_ORANGE
   );
 }
 
@@ -234,6 +247,13 @@ void handleUID(const String &uid, UidSource source) {
     JsonDocument doc;
     doc["uid"] = uid;
 
+    if(CONFIGV2.system.debugMode) {
+        Serial.print("handleUID: UID=");
+        Serial.print(uid);
+        Serial.print(" Source=");
+        Serial.println((source == UidSource::NFC) ? "NFC" : "WebIF");
+    }
+
     const bool isNfc = (source == UidSource::NFC);
 
     if (FilamentDB::findByUID(uid, entry)) {
@@ -278,7 +298,8 @@ void handleUID(const String &uid, UidSource source) {
         }
 
         // Display-Hinweis
-        MYDISPLAY::showCentered("UNBEKANNT");
+        MYDISPLAY::showErrorCentered(I18N::get("txt_unknown"), TFT_RED);
+      
 
         if (isNfc) {
             // Rotes Fehlerfeedback am NFC-Ring
@@ -348,17 +369,16 @@ void setup() {
   
   loadConfigV2();
   applyConfigV2();
+  I18N::begin(CONFIGV2.system.defaultLanguage);
   
   LEDCTRL_FILAMENT::allOff();
   LEDCTRL_NFC::allOff();
 
-  // 2) I2C + DISPLAY FRÜH initialisieren (alles, was malen will, braucht das)
-  Wire.begin(SDA_PIN, SCL_PIN);
-  if (!initDisplay(display)) {
-    Serial.println("OLED init failed!");
-    while (1) { delay(100); }
-  }
-  MYDISPLAY::init(&display);
+  // 2) initialize I2C + DISPLAY
+  //SPI.begin(SPI_SCK, SPI_MISO, SPI_MOSI);
+  displayInit();
+
+  
 
   // 3) WLAN verbinden
   //    Gewünschtes Verhalten:
@@ -379,7 +399,7 @@ void setup() {
   MYDISPLAY::showCentered("WLAN...");
   
 
-  if (!wifiManager.autoConnect("SpotMyFilament AP")) {
+  if (!wifiManager.autoConnect("SpotMyFilament")) {
     ESP.restart();
   }
 
@@ -392,7 +412,7 @@ void setup() {
 
   // 4) IP kurz zeigen (nicht hart blockieren)
   {
-    MYDISPLAY::showCentered(WiFi.localIP().toString());
+    MYDISPLAY::showCentered(WiFi.localIP().toString(), TFT_GREEN);
     const uint32_t until = millis() + 1200UL;
     while ((int32_t)(until - millis()) > 0) {
       gpiohw_tick(millis());  // Button/Buzzer am Leben halten
@@ -417,19 +437,27 @@ void setup() {
   }
   
 
-  // 6) FIRMWARE-BOOTSCREEN x s ANZEIGEN (WebIF ist bereits online)
-  {
-    MYDISPLAY::showBootVersion(FIRMWARE_VERSION, BUILD_DATE_SHORT);
-    const uint32_t until = millis() + FIRMWARE_HOLD_MS; 
-    while ((int32_t)(until - millis()) > 0) {
-      // Währenddessen nichts blockieren:
-      gpiohw_tick(millis());
-      ws.cleanupClients();   // optional; AsyncWebServer schafft das auch alleine
-      yield();
-    }
+  // Upadte Check
+
+{
+
+  updateInit();
+  updateLoop(); // initial einmal
+
+  
+  MYDISPLAY::showBootVersion(FIRMWARE_VERSION, BUILD_DATE_SHORT);
+  
+
+  const uint32_t until = millis() + FIRMWARE_HOLD_MS;
+  while ((int32_t)(until - millis()) > 0) {
+    gpiohw_tick(millis());
+    ws.cleanupClients();
+    yield();
   }
+}
 
   // Nach dem Firmware-Bootscreen (10 s), WLAN+Webserver sind schon da
+  displayClear();
   DisplayAnim::playThreeLineTypewriter(display, F("Spot my"), F("Filament by"), F("Mark & Kolja"),
                                       SPLASH_CHAR_MS, SPLASH_LINE_MS, SPLASH_HOLD_MS);
 
@@ -447,7 +475,7 @@ void setup() {
     g_nfcInfo.fwVerMajor = (version >> 24) & 0xFF;
     g_nfcInfo.fwVerMinor = (version >> 16) & 0xFF;
     g_nfcInfo.chipID     = version & 0xFFFF, HEX;
-    Serial.print("PN532 FW "); Serial.print((version>>24)&0xFF);
+    Serial.print("[NFC] PN532 FW "); Serial.print((version>>24)&0xFF);
     Serial.print('.');        Serial.print((version>>16)&0xFF);
     Serial.print(" chip=0x"); Serial.println(version & 0xFFFF, HEX);
   }
@@ -464,8 +492,13 @@ void setup() {
   initWebServer(server, ws);
   WiFi.setSleep(false);
 
-   Serial.println("Setup done.");
-
+  Serial.println("*********************");
+  Serial.println("*                   *");
+  Serial.println("*  Setup complete!  *");
+  Serial.println("*                   *");
+  Serial.println("*********************");
+  Serial.println();
+  Serial.println();
 
 
 
@@ -597,10 +630,19 @@ void loop() {
   // 7) WebSocket hearbeat
   // ---------------------------------------------------------------------------
   sendHeartbeat(ws);
+
+  // ---------------------------------------------------------------------------
+  // 8) Update Check
+  // ---------------------------------------------------------------------------
+  updateLoop();
+  if (updateHasChanged()) {
+    publishUpdateStatus();
+    clearUpdateChanged();
+  }
   
 
   // ---------------------------------------------------------------------------
-  // 8) (Optional) yield()
+  // 9) (Optional) yield()
   // ---------------------------------------------------------------------------
   yield();
 

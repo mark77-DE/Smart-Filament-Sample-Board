@@ -172,11 +172,11 @@
                 <button class="navItem" data-target="panel-buzzer" data-i18n="txt_buzzer">Buzzer</button>
                 <button class="navItem" data-target="panel-mqtt">MQTT</button>
                 <button class="navItem" data-target="panel-dashboard">Dashboard</button>
-                <button class="navItem" data-target="panel-importexport">Import/export</button>
                 <button class="navItem" data-target="panel-debug">Debug</button>
                 <button class="navItem" data-target="panel-host">Host</button>
                 <button class="navItem" data-target="panel-info">Info</button>
                 <button class="navItem" data-target="panel-pinout">Pinout</button>
+                <button class="navItem" data-target="panel-importexport">Import/export</button>
                 <button class="navItem" data-target="panel-update">Update</button>
 
 
@@ -675,6 +675,11 @@
                                         <span class="infoLabel" data-i18n="txt_flash_size">Flash Size:</span>
                                         <span class="infoValue" id="infoFlashSize"></span>
                                     </div>
+
+                                    <div class="infoSection">
+                                        <span class="infoLabel" data-i18n="txt_cpu_temp">CPU Temperature:</span>
+                                        <span class="infoValue" id="infoCpuTemp"></span>
+                                    </div>
                                 </div>
                             </div>
 
@@ -754,6 +759,11 @@
                             <div id="statusSection">
                                 <span><pre id="status"></pre></span>
                             </div>
+
+                            <div class="ieTitle">Update Check Interval</div>
+                            <label for="updateCheckInterval" data-i18n="txt_update_check_interval">Update Check Interval (minutes):</label>
+                            <input type="number" id="updateCheckInterval" name="updateCheckInterval" min="3" max="3600" value="3">
+                            <span id="updateIntervalHuman" style="margin-left:10px; font-size:0.9em; opacity:0.7;"></span>
 
 
 

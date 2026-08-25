@@ -1,7 +1,6 @@
 #include "config.h"
 #include <LittleFS.h>
 #include <ArduinoJson.h>
-#include "display_anim.h"
 #include "ledctrl_filament.h"
 #include "ledctrl_nfc.h"
 #include "gpio_hardware.h"   // für gpiohw_init()
@@ -77,6 +76,7 @@ bool loadConfigV2()
     CONFIGV2.system.hostname = sys["hostname"] | "FiSaBo";
     CONFIGV2.system.animationAfterBoot = sys["animationAfterBoot"] | true;
     CONFIGV2.system.defaultLanguage = sys["defaultLanguage"] | "en";
+    CONFIGV2.system.updateCheckInterval = sys["updateCheckInterval"] | 3; // default 3 Minuten
 
     // --- Filament-LED ---
     CONFIGV2.led.count = led["count"] | 8;
@@ -249,6 +249,7 @@ void applyConfigV2() {
     Serial.print(F(" DARKMODE = "));      Serial.println(CONFIGV2.system.darkmode ? F("true") : F("false"));
     Serial.print(F(" ANIMATION_AFTER_BOOT = "));      Serial.println(CONFIGV2.system.animationAfterBoot ? F("true") : F("false"));
     Serial.print(F(" DEFAULT_LANGUAGE = "));      Serial.println(CONFIGV2.system.defaultLanguage);
+    Serial.print(F(" UPDATE_CHECK_INTERVAL = "));      Serial.println(CONFIGV2.system.updateCheckInterval);
 
     Serial.println();
     Serial.println(F("LED Settings:"));
@@ -334,6 +335,7 @@ bool updateConfigFromJsonV2(JsonDocument& doc) {
         CONFIGV2.system.webLEDTimeout = sys["webLEDTimeout"] | CONFIGV2.system.webLEDTimeout;
         CONFIGV2.system.animationAfterBoot = sys["animationAfterBoot"] | CONFIGV2.system.animationAfterBoot;
         CONFIGV2.system.defaultLanguage = sys["defaultLanguage"] | CONFIGV2.system.defaultLanguage;
+        CONFIGV2.system.updateCheckInterval = sys["updateCheckInterval"] | CONFIGV2.system.updateCheckInterval;
 
         Serial.println(F("System configuration updated:"));
         Serial.print(F("Hostname set to: ")); Serial.println(CONFIGV2.system.hostname);
@@ -342,6 +344,7 @@ bool updateConfigFromJsonV2(JsonDocument& doc) {
         Serial.print(F("Debug Mode set to: ")); Serial.println(CONFIGV2.system.debugMode ? F("true") : F("false"));
         Serial.print(F("Animation After Boot set to: ")); Serial.println(CONFIGV2.system.animationAfterBoot ? F("true") : F("false"));
         Serial.print(F("Default Language set to: ")); Serial.println(CONFIGV2.system.defaultLanguage);
+        Serial.print(F("Update Check Interval set to: ")); Serial.println(CONFIGV2.system.updateCheckInterval);
     }
 
     // --- LED ---
@@ -523,6 +526,7 @@ bool saveConfigV2() {
     system["animationAfterBoot"]    = CONFIGV2.system.animationAfterBoot;
     system["hostname"]              = CONFIGV2.system.hostname;
     system["defaultLanguage"]       = CONFIGV2.system.defaultLanguage;
+    system["updateCheckInterval"]   = CONFIGV2.system.updateCheckInterval;
 
     // =========================
     // LED
@@ -626,6 +630,7 @@ bool importConfigJsonV2(JsonObject src) {
         CONFIGV2.system.hostname      = system["hostname"]      | CONFIGV2.system.hostname;
         CONFIGV2.system.animationAfterBoot = system["animationAfterBoot"] | CONFIGV2.system.animationAfterBoot;
         CONFIGV2.system.defaultLanguage = system["defaultLanguage"] | CONFIGV2.system.defaultLanguage;
+        CONFIGV2.system.updateCheckInterval = system["updateCheckInterval"] | CONFIGV2.system.updateCheckInterval;
 
         if(CONFIGV2.system.debugMode) {
             Serial.println(F("System configuration imported:"));
@@ -821,12 +826,6 @@ uint32_t colorFromArrayV2(JsonArrayConst arr) {
            (uint32_t)arr[2];
 }
 
-// void setColorArrayV2(JsonObject& opt, const char* key, uint32_t color) {
-//   JsonArray arr = opt[key].to<JsonArray>();
-//   arr.add((color >> 16) & 0xFF);
-//   arr.add((color >>  8) & 0xFF);
-//   arr.add((color      ) & 0xFF);
-// }
 
 
 // ============================================================================

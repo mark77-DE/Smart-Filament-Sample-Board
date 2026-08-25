@@ -97,6 +97,7 @@ struct systemConfig {
   String        hostname;    ///< Hostname für WLAN
   bool          animationAfterBoot; ///< Startup-Animation nach Booten aktiv
   String        defaultLanguage; ///< Standard-Sprache (z. B. "en" oder "de")
+  uint32_t      updateCheckInterval; ///< Sekunden bis zum Reboot nach Long-Press
 };
 
 /**

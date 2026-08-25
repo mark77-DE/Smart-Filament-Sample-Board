@@ -1,6 +1,7 @@
 #include "globals.h"
 #include "ha_discovery.h"
 #include "config.h"
+#include "version_info.h"
 
 void publishHADiscovery(
     PubSubClient &client,
@@ -9,24 +10,23 @@ void publishHADiscovery(
     String base = CONFIGV2.mqttConfig.baseTopic;
     String node = CONFIGV2.mqttConfig.clientId;
 
-    if (CONFIGV2.system.debugMode)
-    {
-        Serial.println("Publishing Home Assistant Discovery:");
-        Serial.println("  Base topic: " + base);
-        Serial.println("  Discovery prefix: " + discoveryPrefix);
-        Serial.println("  Node ID: " + node);
-        Serial.println();
-    }
-
-    // -------------------- Device Block --------------------
+    // ---------------- Device Block ----------------
     String deviceBlock = "{";
     deviceBlock += "\"identifiers\":[\"" + node + "\"],";
     deviceBlock += "\"name\":\"Spot My Filament\",";
     deviceBlock += "\"manufacturer\":\"DIY\",";
-    deviceBlock += "\"model\":\"ESP32-S3\"";
+    deviceBlock += "\"model\":\"ESP32-S3\",";
+    deviceBlock += "\"sw_version\":\"";
+    deviceBlock += FIRMWARE_VERSION;
+    deviceBlock += " (";
+    deviceBlock += GIT_HASH;
+    deviceBlock += ")\",";
+    deviceBlock += "\"configuration_url\":\"http://";
+    deviceBlock += WiFi.localIP().toString();
+    deviceBlock += "\"";
     deviceBlock += "}";
 
-    // -------------------- Animation Switch --------------------
+    // ---------------- Animation ----------------
     String animationPayload = "{";
     animationPayload += "\"name\":\"Animation\",";
     animationPayload += "\"command_topic\":\"" + base + "/animation/set\",";
@@ -37,47 +37,104 @@ void publishHADiscovery(
     animationPayload += "\"device\":" + deviceBlock;
     animationPayload += "}";
 
-    String topic = discoveryPrefix + "/light/" + node + "/animation/config";
-    bool ok = client.publish(topic.c_str(), animationPayload.c_str(), true);
-    if (CONFIGV2.system.debugMode)
-    {
-        Serial.println("Animation discovery published: " + String(ok ? "SUCCESS" : "FAILED"));
-        Serial.println();
-    }
+    client.publish(
+        (discoveryPrefix + "/light/" + node + "/animation/config").c_str(),
+        animationPayload.c_str(),
+        true
+    );
 
-    // -------------------- Filament Sensors --------------------
-    struct SensorDef
-    {
+    // ---------------- Filament Sensoren ----------------
+    struct SensorDef {
         const char *name;
         const char *key;
         const char *id;
     };
+
     SensorDef sensors[] = {
         {"Filament UID", "uid", "filament_uid"},
         {"Filament Vendor", "vendor", "filament_vendor"},
         {"Filament Type", "type", "filament_type"},
         {"Filament Color", "color", "filament_color"},
         {"Filament Storage", "storage", "filament_storage"},
-        {"Filament LED Index", "led_index", "filament_led_index"}};
+        {"Filament LED Index", "led_index", "filament_led_index"}
+    };
 
-    for (auto s : sensors)
-    {
-        String sensorPayload = "{";
-        sensorPayload += "\"name\":\"" + String(s.name) + "\",";
-        sensorPayload += "\"state_topic\":\"" + base + "/filament/state\",";
-        sensorPayload += "\"value_template\":\"{{ value_json." + String(s.key) + " }}\",";
-        sensorPayload += "\"unique_id\":\"" + node + "_" + String(s.id) + "\",";
-        sensorPayload += "\"device\":" + deviceBlock;
-        sensorPayload += "}";
+    for (auto s : sensors) {
 
-        topic = discoveryPrefix + "/sensor/" + node + "/" + String(s.id) + "/config";
-        ok = client.publish(topic.c_str(), sensorPayload.c_str(), true);
+        String payload = "{";
+        payload += "\"name\":\"" + String(s.name) + "\",";
+        payload += "\"state_topic\":\"" + base + "/filament/state\",";
+        payload += "\"value_template\":\"{{ value_json." + String(s.key) + " }}\",";
+        payload += "\"unique_id\":\"" + node + "_" + String(s.id) + "\",";
+        payload += "\"device\":" + deviceBlock;
+        payload += "}";
 
-        if (CONFIGV2.system.debugMode)
-        {
-            Serial.println(String(s.name) + " discovery published: " + String(ok ? "SUCCESS" : "FAILED"));
-            Serial.println(sensorPayload);
-            Serial.println();
-        }
+        client.publish(
+            (discoveryPrefix + "/sensor/" + node + "/" + String(s.id) + "/config").c_str(),
+            payload.c_str(),
+            true
+        );
     }
+
+    // ---------------- IP Sensor ----------------
+    String ipPayload = "{";
+    ipPayload += "\"name\":\"IP Address\",";
+    ipPayload += "\"state_topic\":\"" + base + "/device/ip\",";
+    ipPayload += "\"unique_id\":\"" + node + "_ip\",";
+    ipPayload += "\"entity_category\":\"diagnostic\",";
+    ipPayload += "\"device\":" + deviceBlock;
+    ipPayload += "}";
+
+    client.publish(
+        (discoveryPrefix + "/sensor/" + node + "/ip/config").c_str(),
+        ipPayload.c_str(),
+        true
+    );
+
+    // ---------------- Firmware Sensor ----------------
+    String fwPayload = "{";
+    fwPayload += "\"name\":\"Firmware Version\",";
+    fwPayload += "\"state_topic\":\"" + base + "/device/fw\",";
+    fwPayload += "\"unique_id\":\"" + node + "_fw\",";
+    fwPayload += "\"entity_category\":\"diagnostic\",";
+    fwPayload += "\"device\":" + deviceBlock;
+    fwPayload += "}";
+
+    client.publish(
+        (discoveryPrefix + "/sensor/" + node + "/fw/config").c_str(),
+        fwPayload.c_str(),
+        true
+    );
+
+    // ---------------- Build Info ----------------
+    String buildPayload = "{";
+    buildPayload += "\"name\":\"Build Info\",";
+    buildPayload += "\"state_topic\":\"" + base + "/device/build\",";
+    buildPayload += "\"unique_id\":\"" + node + "_build\",";
+    buildPayload += "\"entity_category\":\"diagnostic\",";
+    buildPayload += "\"device\":" + deviceBlock;
+    buildPayload += "}";
+
+    client.publish(
+        (discoveryPrefix + "/sensor/" + node + "/build/config").c_str(),
+        buildPayload.c_str(),
+        true
+    );
+
+    // ---------------- Update Entity ----------------
+    String updatePayload = "{";
+    updatePayload += "\"name\":\"Firmware Update\",";
+    updatePayload += "\"state_topic\":\"" + base + "/device/update\",";
+    updatePayload += "\"command_topic\":\"" + base + "/device/update/install\",";
+    updatePayload += "\"payload_install\":\"INSTALL\",";
+    updatePayload += "\"unique_id\":\"" + node + "_update\",";
+    updatePayload += "\"entity_category\":\"diagnostic\",";
+    updatePayload += "\"device\":" + deviceBlock;
+    updatePayload += "}";
+
+    client.publish(
+        (discoveryPrefix + "/update/" + node + "/firmware/config").c_str(),
+        updatePayload.c_str(),
+        true
+    );
 }

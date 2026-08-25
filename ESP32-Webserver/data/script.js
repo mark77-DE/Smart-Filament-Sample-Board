@@ -38,6 +38,11 @@ let activeFilters = {
   type: ""
 };
 
+let activeSort = {
+  key: "",
+  dir: "asc" // asc | desc
+};
+
 
 // ---------------- WebSocket ----------------
 function updateWSStatus(connected) {
@@ -74,8 +79,11 @@ function connectWS() {
     reconnectDelay = 1000;
     updateWSStatus(true);
 
+    wsLastHeartbeat = Date.now();   // wichtig!
+    startWSWatchdog();
+
     if (pending) scheduleAckRetry(0);
-};
+  };
 
   socket.onclose = () => {
 
@@ -124,19 +132,25 @@ function connectWS() {
         updateWSStatus(true);
         updateRssiIcon(msg.wifi_rssi);
 
-        if (CONFIGV2?.system?.debugMode) {
+        if(msg.updateAvailable) {
+          showUpdateNotification(msg);
+        }
+
+        if (CONFIGV2.system.debugMode) {
           console.log("Heartbeat:", msg);
         }
 
-    return;
-}
+      return;
+    }
 
       // UID
       if (msg && msg.uid) {
         highlightUID(msg.uid);
       }
 
-    } catch (e) {}
+    } catch (e) {
+      console.error("WS ERROR:", e, event.data)
+    }
   };
 }
 
@@ -436,7 +450,9 @@ function applyFilters() {
 }
 
 function updateGrid() {
-  renderFilamentGrid(applyFilters());
+  const filtered = applyFilters();
+  const sorted = sortFilaments(filtered);
+  renderFilamentGrid(sorted);
 }
 
 function populateFilter(selectId, key) {
@@ -610,52 +626,6 @@ toggleBtn.addEventListener("click", () => {
     document.body.classList.toggle("daymode");
 });
 
-async function checkFirmwareUpdate() {
-    try {
-        // 1️⃣ ESP-Version
-        const espResp = await fetch('/api/version');
-        const espData = await espResp.json();
-
-        // Alles nach + ignorieren
-        let currentVersion = espData.firmware.split('+')[0];
-        currentVersion = currentVersion.replace(/^v/, ''); // optional v entfernen
-
-        // 2️⃣ GitHub-Version
-        const ghResp = await fetch('https://raw.githubusercontent.com/mark77-DE/Smart-Filament-Sample-Board-Public/refs/heads/main/version_public.txt');
-        let latestVersion = (await ghResp.text()).trim();
-        latestVersion = latestVersion.split('+')[0];
-        latestVersion = latestVersion.replace(/^v/, '');
-
-        // 3️⃣ Versionsvergleich
-        const isUpdate = compareVersions(currentVersion, latestVersion);
-
-        // 4️⃣ Anzeige
-        const updateDiv = document.getElementById('updateStatus');
-        if (isUpdate) {
-            updateDiv.textContent = `⚠️ Update available (test only!): ${latestVersion}`;
-            updateDiv.style.color = 'orange';
-        } else {
-            updateDiv.textContent = `Firmware up to date (${currentVersion})`;
-            updateDiv.style.color = 'green';
-        }
-    } catch (err) {
-        updateDiv.textContent = `Update check failed`;
-        updateDiv.style.color = 'red';
-    }
-}
-
-// Semantischer Versionsvergleich "0.4.0"
-function compareVersions(current, latest) {
-    const c = current.split('.').map(Number);
-    const l = latest.split('.').map(Number);
-
-    for (let i = 0; i < 3; i++) {
-        if (l[i] > c[i]) return true;
-        if (l[i] < c[i]) return false;
-    }
-    return false;
-}
-
 
 function showDetails(f) {
   const overlay = document.getElementById("detailOverlay");
@@ -714,11 +684,70 @@ function updateRssiIcon(rssi) {
 }
 
 
+function showUpdateNotification(msg) {
+  
+  const updateDiv = document.getElementById('updateStatus');
+  updateDiv.textContent = `⚠️ Update available (test only!): ${msg.latestVersion}`;
+  updateDiv.style.color = 'orange';
+
+}
+
+
+function sortFilaments(list) {
+  if (!activeSort.key) return list;
+
+  return [...list].sort((a, b) => {
+    const valA = (a[activeSort.key] || "").toString();
+    const valB = (b[activeSort.key] || "").toString();
+
+    const result = valA.localeCompare(valB, undefined, {
+      numeric: true,
+      sensitivity: "base"
+    });
+
+    return activeSort.dir === "asc" ? result : -result;
+  });
+}
+
+function updateSortIndicators() {
+  document.querySelectorAll(".sortable").forEach(label => {
+    const indicator = label.querySelector(".sortIndicator");
+    const key = label.dataset.key;
+
+    if (key === activeSort.key) {
+      indicator.textContent = activeSort.dir === "asc" ? " ↑" : " ↓";
+      label.classList.add("activeSort");
+    } else {
+      indicator.textContent = "";
+      label.classList.remove("activeSort");
+    }
+  });
+}
+
+document.querySelectorAll(".sortable").forEach(label => {
+  label.addEventListener("click", () => {
+    const key = label.dataset.key;
+
+    if (activeSort.key === key) {
+      // Richtung toggeln
+      activeSort.dir = activeSort.dir === "asc" ? "desc" : "asc";
+    } else {
+      // neues Feld
+      activeSort.key = key;
+      activeSort.dir = "asc";
+    }
+
+    updateSortIndicators();
+    updateGrid();
+  });
+});
+
+
 
 async function init() {
     await loadFilamentTiles();
     // Aufruf nach Laden des Webinterfaces
-    checkFirmwareUpdate();
+    
 
 
 

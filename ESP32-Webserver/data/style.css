@@ -413,3 +413,21 @@ body.daymode #rssiIcon .bar.green { fill: #00dd00; }
     display: inline-block;
     
 }
+
+.sortable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.sortable:hover {
+  text-decoration: underline;
+}
+
+.activeSort {
+  font-weight: bold;
+}
+
+.sortIndicator {
+  margin-left: 4px;
+  font-size: 0.9em;
+}

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Arduino.h>
-#include "display.h"
+#include "display/display.h"
 
 // Kleine State-Machine für die Idle-Animation (Spinner + "SCAN TAG")
 namespace DisplayAnim {
@@ -29,7 +29,7 @@ namespace DisplayAnim {
         uint32_t linePauseMs     = 250,  // Pause zwischen Zeilen (nach Tippen)
         uint32_t endHoldMs       = 800,  // Haltezeit nach kompletter Anzeige
         bool     eraseBackwards  = true, // Rückwärts löschen aktiv?
-        uint32_t eraseCharDelayMs= 40,   // Delay pro Buchstabe (Löschen)
+        uint32_t eraseCharDelayMs= 10,   // Delay pro Buchstabe (Löschen)
         uint32_t eraseLinePauseMs= 180   // Pause zwischen Zeilen (vor Löschen)
     );
 
@@ -46,6 +46,8 @@ namespace DisplayAnim {
         uint32_t eraseCharDelayMs,
         uint32_t eraseLinePauseMs
     );
+
+    
 
 
 }
