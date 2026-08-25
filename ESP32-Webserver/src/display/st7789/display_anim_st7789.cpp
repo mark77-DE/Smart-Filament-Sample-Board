@@ -100,52 +100,69 @@ void tickIdle(LGFX &display, unsigned long now) {
         state.imageDrawn = true;
         state.highlightIndex = 0;
         state.lastAnimTime = now;
-    }
+
+
 
     // -------------------
-    // Haupt-Text-Animation
+    // Statischer Idle-Text
     // -------------------
-    const int logoHeight = 125;
+    
     const int textY = logoHeight + 15;
 
     display.setTextSize(3);
-    display.setTextDatum(TL_DATUM); // Top-Left
+    display.setTextDatum(TL_DATUM);
 
     int totalWidth = display.textWidth(state.idleText);
     int startX = (display.width() - totalWidth) / 2;
 
-    const uint32_t animDelay = 150;
-    if (now - state.lastAnimTime >= animDelay) {
-        state.lastAnimTime = now;
+    display.setTextColor(TFT_BLACK, TFT_WHITE);
+    display.drawString(state.idleText, startX, textY);
+}
 
-        uint16_t color;
-        switch (state.highlightIndex % 3) {
-            case 0: color = TFT_RED; break;
-            case 1: color = TFT_GREEN; break;
-            case 2: color = TFT_BLUE; break;
-        }
+    // // -------------------
+    // // Haupt-Text-Animation
+    // // -------------------
+    // const int logoHeight = 125;
+    // const int textY = logoHeight + 15;
 
-        String prefix = state.idleText.substring(0, state.highlightIndex);
-        String currentChar = state.idleText.substring(state.highlightIndex, state.highlightIndex + 1);
-        String suffix = state.idleText.substring(state.highlightIndex + 1);
+    // display.setTextSize(3);
+    // display.setTextDatum(TL_DATUM); // Top-Left
 
-        int prefixWidth = display.textWidth(prefix);
-        int charWidth   = display.textWidth(currentChar);
+    // int totalWidth = display.textWidth(state.idleText);
+    // int startX = (display.width() - totalWidth) / 2;
 
-        display.setTextColor(TFT_BLACK, TFT_WHITE);
-        display.drawString(prefix, startX, textY);
+    // const uint32_t animDelay = 150;
+    // if (now - state.lastAnimTime >= animDelay) {
+    //     state.lastAnimTime = now;
 
-        display.setTextColor(color, TFT_WHITE);
-        display.drawString(currentChar, startX + prefixWidth, textY);
+    //     uint16_t color;
+    //     switch (state.highlightIndex % 3) {
+    //         case 0: color = TFT_RED; break;
+    //         case 1: color = TFT_GREEN; break;
+    //         case 2: color = TFT_BLUE; break;
+    //     }
 
-        display.setTextColor(TFT_BLACK, TFT_WHITE);
-        display.drawString(suffix, startX + prefixWidth + charWidth, textY);
+    //     String prefix = state.idleText.substring(0, state.highlightIndex);
+    //     String currentChar = state.idleText.substring(state.highlightIndex, state.highlightIndex + 1);
+    //     String suffix = state.idleText.substring(state.highlightIndex + 1);
 
-        state.highlightIndex++;
-        if (state.highlightIndex >= state.idleText.length()) {
-            state.highlightIndex = 0;
-        }
-    }
+    //     int prefixWidth = display.textWidth(prefix);
+    //     int charWidth   = display.textWidth(currentChar);
+
+    //     display.setTextColor(TFT_BLACK, TFT_WHITE);
+    //     display.drawString(prefix, startX, textY);
+
+    //     display.setTextColor(color, TFT_WHITE);
+    //     display.drawString(currentChar, startX + prefixWidth, textY);
+
+    //     display.setTextColor(TFT_BLACK, TFT_WHITE);
+    //     display.drawString(suffix, startX + prefixWidth + charWidth, textY);
+
+    //     state.highlightIndex++;
+    //     if (state.highlightIndex >= state.idleText.length()) {
+    //         state.highlightIndex = 0;
+    //     }
+    // }
 
     // -------------------
     // Update-Hinweis unten rechts
