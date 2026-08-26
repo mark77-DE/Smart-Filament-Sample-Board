@@ -14,6 +14,7 @@
 #include "globals.h"
 #include "version_info.h"
 #include "config.h"
+#include "pins.h"
 
 static const int STD_FONT_HEIGHT = 7;
 
