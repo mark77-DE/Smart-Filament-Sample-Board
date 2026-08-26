@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Filament Sample Board — Firmware Installer</title>
+<script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
+<style>
+  :root{
+    --ink:#eef0f2;
+    --ink-dim:#9aa1ab;
+    --bg:#1b1d21;
+    --bg-raised:#232630;
+    --grid-line:#2c2f38;
+    --spool:#f4d35e;
+    --spool-dim:#8a7a3a;
+    --teal:#2ec4b6;
+    --danger:#e0654f;
+    --mono: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono", Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif;
+  }
+
+  *{box-sizing:border-box;}
+
+  body{
+    margin:0;
+    min-height:100vh;
+    background:
+      linear-gradient(var(--grid-line) 1px, transparent 1px) 0 0/48px 48px,
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px) 0 0/48px 48px,
+      radial-gradient(ellipse at 50% -10%, #2a2d38 0%, var(--bg) 55%);
+    color:var(--ink);
+    font-family:var(--sans);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:64px 20px 40px;
+  }
+
+  .eyebrow{
+    font-family:var(--mono);
+    font-size:12px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--teal);
+    margin-bottom:14px;
+  }
+
+  h1{
+    font-size:clamp(28px, 5vw, 42px);
+    line-height:1.15;
+    margin:0 0 10px;
+    text-align:center;
+    max-width:680px;
+    font-weight:700;
+  }
+
+  .sub{
+    color:var(--ink-dim);
+    font-size:16px;
+    text-align:center;
+    max-width:520px;
+    margin:0 0 40px;
+  }
+
+  .card{
+    background:var(--bg-raised);
+    border:1px solid var(--grid-line);
+    border-radius:14px;
+    padding:36px 32px;
+    width:100%;
+    max-width:440px;
+    text-align:center;
+    position:relative;
+    overflow:hidden;
+  }
+
+  .spool{
+    width:56px;
+    height:56px;
+    margin:0 auto 20px;
+    position:relative;
+  }
+  .spool svg{width:100%;height:100%;display:block;}
+  .spool circle.ring{
+    fill:none;
+    stroke:var(--spool-dim);
+    stroke-width:6;
+  }
+  .spool circle.thread{
+    fill:none;
+    stroke:var(--spool);
+    stroke-width:6;
+    stroke-linecap:round;
+    stroke-dasharray:150;
+    stroke-dashoffset:40;
+    transform-origin:center;
+    animation:spin 6s linear infinite;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce){
+    .spool circle.thread{ animation:none; }
+  }
+
+  .card h2{
+    font-size:18px;
+    margin:0 0 6px;
+  }
+  .card p{
+    color:var(--ink-dim);
+    font-size:14px;
+    margin:0 0 26px;
+    line-height:1.5;
+  }
+
+  esp-web-install-button{
+    display:block;
+  }
+
+  esp-web-install-button::part(button){
+    font-family:var(--sans);
+    font-size:15px;
+    font-weight:600;
+    padding:13px 22px;
+    border-radius:9px;
+    border:none;
+    background:var(--spool);
+    color:#20241f;
+    cursor:pointer;
+  }
+  esp-web-install-button::part(button):hover{
+    background:#f7dd7c;
+  }
+
+  .requirements{
+    margin-top:34px;
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    justify-content:center;
+    max-width:480px;
+  }
+  .chip{
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--ink-dim);
+    border:1px solid var(--grid-line);
+    border-radius:999px;
+    padding:6px 12px;
+  }
+
+  .unsupported{
+    margin-top:20px;
+    font-size:13px;
+    color:var(--danger);
+    display:none;
+  }
+  .unsupported.show{ display:block; }
+
+  footer{
+    margin-top:56px;
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--ink-dim);
+    text-align:center;
+  }
+  footer a{ color:var(--teal); text-decoration:none; }
+  footer a:hover{ text-decoration:underline; }
+
+  .steps{
+    margin-top:44px;
+    max-width:520px;
+    width:100%;
+  }
+  .steps ol{
+    padding-left:20px;
+    color:var(--ink-dim);
+    font-size:14px;
+    line-height:1.9;
+  }
+  .steps li::marker{
+    font-family:var(--mono);
+    color:var(--teal);
+  }
+  .steps strong{ color:var(--ink); }
+</style>
+</head>
+<body>
+
+  <div class="eyebrow">Firmware Installer</div>
+  <h1>Smart Filament Sample Board</h1>
+  <p class="sub">Firmware direkt aus dem Browser aufspielen — kein Arduino IDE, keine Kommandozeile nötig.</p>
+
+  <div class="card">
+    <div class="spool" aria-hidden="true">
+      <svg viewBox="0 0 60 60">
+        <circle class="ring" cx="30" cy="30" r="24"></circle>
+        <circle class="thread" cx="30" cy="30" r="24"></circle>
+      </svg>
+    </div>
+    <h2>Board verbinden &amp; flashen</h2>
+    <p>ESP32 per USB anschließen, dann auf Verbinden klicken.<br>Der Chip-Typ wird automatisch erkannt.</p>
+
+    <esp-web-install-button manifest="manifest.json">
+      <button slot="activate">Verbinden &amp; installieren</button>
+      <span slot="unsupported" class="unsupported show">
+        Dein Browser unterstützt Web Serial nicht. Bitte Chrome, Edge oder Firefox auf dem Desktop verwenden.
+      </span>
+      <span slot="not-allowed" class="unsupported show">
+        Diese Seite muss über HTTPS aufgerufen werden, damit das Flashen funktioniert.
+      </span>
+    </esp-web-install-button>
+  </div>
+
+  <div class="requirements">
+    <span class="chip">Chrome / Edge / Firefox</span>
+    <span class="chip">USB-Kabel mit Datenleitung</span>
+    <span class="chip">Nicht auf iOS</span>
+  </div>
+
+  <div class="steps">
+    <ol>
+      <li><strong>Board per USB anschließen</strong> — ein Datenkabel verwenden, kein reines Ladekabel.</li>
+      <li><strong>Verbinden &amp; installieren</strong> klicken und den seriellen Port in der Browser-Auswahl bestätigen.</li>
+      <li><strong>Warten, bis der Flash-Vorgang abgeschlossen ist</strong> — das Board startet danach automatisch neu.</li>
+      <li><strong>WLAN einrichten</strong> — falls unterstützt, fragt das Board direkt nach dem Flashen nach den Zugangsdaten.</li>
+    </ol>
+  </div>
+
+  <footer>
+    <a href="https://github.com/mark77-DE/Smart-Filament-Sample-Board">Zum Repository</a>
+    &nbsp;·&nbsp;
+    <a href="https://github.com/mark77-DE/Smart-Filament-Sample-Board/tree/main/docs">Dokumentation</a>
+  </footer>
+
+</body>
+</html>

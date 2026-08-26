@@ -8,13 +8,29 @@
 
 
 
+
 void displayInit();
 void displayClear();
 void displayFlush();
 
 /**
  * @brief Display-Hilfsklasse für Filament-Infos und Statusanzeigen.
+ * 
+ * 
  */
+
+#ifndef TFT_BLACK
+#define TFT_BLACK 0x0000
+#endif
+
+#ifndef TFT_WHITE
+#define TFT_WHITE 0xFFFF
+#endif
+
+#ifndef TFT_RED
+#define TFT_RED 0xF800
+#endif
+
 class MYDISPLAY {
 public:
     /**
