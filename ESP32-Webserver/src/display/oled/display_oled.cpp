@@ -16,6 +16,8 @@
 #include "config.h"
 #include "pins.h"
 
+DisplayType* MYDISPLAY::_display = nullptr;
+
 static const int STD_FONT_HEIGHT = 7;
 
 DisplayType display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET_PIN);
@@ -340,7 +342,7 @@ void MYDISPLAY::showCenteredTwoLines(const String& line1, const String& line2) {
 // ------------------------------------------------------------
 // Drei zentrierte Zeilen (neu – für Reboot/Countdown/Prompts)
 // ------------------------------------------------------------
-void MYDISPLAY::showThreeLinesCentered(const String& line1, const String& line2, const String& line3) {
+void MYDISPLAY::showThreeLinesCentered(const String& line1, const String& line2, const String& line3, int foregroundColor, int backgroundColor) {
   if (!_display) return;
 
   _display->clearDisplay();

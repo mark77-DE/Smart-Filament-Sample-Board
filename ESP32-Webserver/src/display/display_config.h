@@ -64,7 +64,7 @@
   #include <LovyanGFX.hpp>
 
   using DisplayType = LGFX;  
-  extern DisplayType display;              // LGFX-Objekt, global
+  
 
   static constexpr int SCREEN_WIDTH   = 170;
   static constexpr int SCREEN_HEIGHT  = 320;
@@ -72,6 +72,9 @@
 #else
   #error "Ungültiger DISPLAY_TYPE! Bitte DISPLAY_TYPE_SH1106, SSD1306 oder ST7789 verwenden."
 #endif
+
+
+extern DisplayType display;              // LGFX-Objekt, global
 
 // -----------------------------
 // Helper für Initialisierung

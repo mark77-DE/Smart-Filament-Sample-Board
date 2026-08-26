@@ -31,6 +31,15 @@ void displayFlush();
 #define TFT_RED 0xF800
 #endif
 
+#ifndef TFT_GREEN
+#define TFT_GREEN 0x07E0
+#endif
+
+#ifndef TFT_ORANGE
+#define TFT_ORANGE 0xFD20
+#endif
+   
+
 class MYDISPLAY {
 public:
     /**
