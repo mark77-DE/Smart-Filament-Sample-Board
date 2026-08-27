@@ -9,19 +9,19 @@
       "chipFamily": "ESP32",
       "parts": [
         {
-          "path": "../firmware/esp32-st7789/bootloader.bin",
+          "path": "../firmware2/esp32-st7789/bootloader.bin",
           "offset": 4096
         },
         {
-          "path": "../firmware/esp32-st7789/partitions.bin",
+          "path": "../firmware2/esp32-st7789/partitions.bin",
           "offset": 32768
         },
         {
-          "path": "../firmware/esp32-st7789/firmware.bin",
+          "path": "../firmware2/esp32-st7789/firmware.bin",
           "offset": 65536
         },
         {
-          "path": "../firmware/esp32-st7789/littlefs.bin",
+          "path": "../firmware2/esp32-st7789/littlefs.bin",
           "offset": 3473408
         }
       ]
