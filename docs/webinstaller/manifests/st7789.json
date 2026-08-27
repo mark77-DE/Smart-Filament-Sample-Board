@@ -7,15 +7,15 @@
     {
       "chipFamily": "ESP32",
       "parts": [
-        { "path": "../firmware/esp32-st7789/firmware.factory.bin", "offset": 0 },
-        { "path": "../firmware/esp32-st7789/littlefs", "offset": 3473408 }
+        { "path": "../../firmware/esp32-st7789/firmware.factory.bin", "offset": 0 },
+        { "path": "../../firmware/esp32-st7789/littlefs", "offset": 3473408 }
       ]
     },
     {
       "chipFamily": "ESP32-S3",
       "parts": [
-        { "path": "../firmware/esp32-s3-st7789/firmware.factory.bin", "offset": 0 }
-        { "path": "../firmware/esp32-s3-st7789/littlefs.bin", "offset": 3473408 }
+        { "path": "../../firmware/esp32-s3-st7789/firmware.factory.bin", "offset": 0 }
+        { "path": "../../firmware/esp32-s3-st7789/littlefs.bin", "offset": 3473408 }
       ]
     }
   ]
