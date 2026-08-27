@@ -69,6 +69,7 @@ static bool s_evTapRelease  = false;  // sofortiges Release-Event (beim Loslasse
 struct Step { bool on; uint16_t ms; };
 
 static bool           s_buzEnabled    = false;
+static bool           s_buzInitialized = false;
 static unsigned long  s_buzStepUntil  = 0;
 static uint8_t        s_buzPos        = 0;
 static uint8_t        s_buzLen        = 0;
@@ -78,6 +79,8 @@ static Step           s_buzSeq[8];        // reicht für Muster
 // Buzzer Low-Level
 // ----------------------------------------------------------------------------
 static inline void buzzer_output(bool on) {
+
+  if (!s_buzInitialized) return;
   // WICHTIG: Beim Re-Init wollen wir "AUS" auch dann erzwingen,
   // wenn s_buzEnabled gerade false ist.
   if (!s_buzEnabled && on) return;
@@ -119,6 +122,8 @@ static inline void buzzer_start_sequence(const Step* seq, uint8_t len) {
 // Public: Init
 // ============================================================================
 void gpiohw_init() {
+
+    s_buzInitialized = false;
     // --- RE-INIT CLEANUP (wichtig bei applyConfig/import) ---
     // Sequencer hart stoppen + Ausgang AUS
     s_buzLen = 0;
@@ -133,6 +138,7 @@ void gpiohw_init() {
     // Falls vorher passiv (LEDC) aktiv war: sauber detach
     if (s_ledcChannel >= 0) {
       ledcWriteTone((uint8_t)s_ledcChannel, 0);
+       s_buzInitialized = true;
     #if defined(ESP_ARDUINO_VERSION_MAJOR) && (ESP_ARDUINO_VERSION_MAJOR >= 3)
       // ESP32 core v3: detach am Pin (wichtig!)
       ledcDetach((uint8_t)BUZ_PIN);
@@ -223,6 +229,7 @@ void gpiohw_init() {
     } else {
       pinMode(BUZ_PIN, OUTPUT);
       digitalWrite(BUZ_PIN, CFG_BUZ_ACTIVE_HIGH ? LOW : HIGH); // AUS
+      s_buzInitialized = true;
     }
   #else
     pinMode(BUZ_PIN, OUTPUT);
