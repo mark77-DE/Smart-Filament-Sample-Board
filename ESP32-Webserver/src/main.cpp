@@ -101,6 +101,7 @@ AsyncWebSocket ws("/ws");
   Adafruit_PN532 nfc(PN532_CS);
 #endif
 
+
 // ----------------- LED & Display Timing -----------------
 int targetLed = -1;
 unsigned long ledStartTime = 0;

@@ -13,7 +13,6 @@
 #endif
 
 
-
 // ----------------- I2C -----------------
 #ifndef SDA_PIN
 #define SDA_PIN 21
