@@ -6,7 +6,6 @@
   "builds": [
     {
       "chipFamily": "ESP32",
-      "chipFamily": "ESP32",
       "parts": [
         {
           "path": "../firmware2/esp32-st7789/bootloader.bin",
