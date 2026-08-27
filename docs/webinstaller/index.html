@@ -224,7 +224,8 @@
   <p class="sub">Firmware direkt aus dem Browser aufspielen — kein Arduino IDE, keine Kommandozeile nötig.</p>
 
   <div class="variant-picker" role="group" aria-label="Display-Variante wählen">
-    <button type="button" data-variant="oled" class="active">SSD1306 / SH110X OLED</button>
+    <button type="button" data-variant="ssd1306" class="active">SSD1306 OLED</button>
+	<button type="button" data-variant="sh1106">SH1106 OLED</button>
     <button type="button" data-variant="st7789">ST7789 TFT</button>
   </div>
 
@@ -235,7 +236,7 @@
         <circle class="thread" cx="30" cy="30" r="24"></circle>
       </svg>
     </div>
-    <p class="variant-label" id="variant-label">Ausgewählt: SSD1306 / SH110X OLED</p>
+    <p class="variant-label" id="variant-label">Ausgewählt: SSD1306 OLED</p>
     <h2>Board verbinden &amp; flashen</h2>
     <p>ESP32 per USB anschließen, dann auf Verbinden klicken.<br>Der Chip-Typ (ESP32 / ESP32-S3) wird automatisch erkannt.</p>
 
@@ -282,7 +283,8 @@
     const label = document.getElementById('variant-label');
 
     const manifests = {
-      oled: { file: 'manifests/oled.json', label: 'SSD1306 / SH110X OLED' },
+      ssd1306: { file: 'manifests/ssd1306.json', label: 'SSD1306 OLED' },
+	  sh1106: { file: 'manifests/sh1106.json', label: 'sh1106 OLED' },
       st7789: { file: 'manifests/st7789.json', label: 'ST7789 TFT' }
     };
 
