@@ -63,6 +63,31 @@
     margin:0 0 40px;
   }
 
+  .variant-picker{
+    display:flex;
+    gap:8px;
+    background:var(--bg-raised);
+    border:1px solid var(--grid-line);
+    border-radius:11px;
+    padding:5px;
+    margin-bottom:28px;
+  }
+  .variant-picker button{
+    font-family:var(--sans);
+    font-size:14px;
+    font-weight:600;
+    padding:10px 18px;
+    border-radius:8px;
+    border:none;
+    background:transparent;
+    color:var(--ink-dim);
+    cursor:pointer;
+  }
+  .variant-picker button.active{
+    background:var(--spool);
+    color:#20241f;
+  }
+
   .card{
     background:var(--bg-raised);
     border:1px solid var(--grid-line);
@@ -111,6 +136,13 @@
     font-size:14px;
     margin:0 0 26px;
     line-height:1.5;
+  }
+
+  .variant-label{
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--teal);
+    margin:0 0 4px;
   }
 
   esp-web-install-button{
@@ -191,6 +223,11 @@
   <h1>Smart Filament Sample Board</h1>
   <p class="sub">Firmware direkt aus dem Browser aufspielen — kein Arduino IDE, keine Kommandozeile nötig.</p>
 
+  <div class="variant-picker" role="group" aria-label="Display-Variante wählen">
+    <button type="button" data-variant="oled" class="active">SSD1306 / SH110X OLED</button>
+    <button type="button" data-variant="st7789">ST7789 TFT</button>
+  </div>
+
   <div class="card">
     <div class="spool" aria-hidden="true">
       <svg viewBox="0 0 60 60">
@@ -198,10 +235,11 @@
         <circle class="thread" cx="30" cy="30" r="24"></circle>
       </svg>
     </div>
+    <p class="variant-label" id="variant-label">Ausgewählt: SSD1306 / SH110X OLED</p>
     <h2>Board verbinden &amp; flashen</h2>
-    <p>ESP32 per USB anschließen, dann auf Verbinden klicken.<br>Der Chip-Typ wird automatisch erkannt.</p>
+    <p>ESP32 per USB anschließen, dann auf Verbinden klicken.<br>Der Chip-Typ (ESP32 / ESP32-S3) wird automatisch erkannt.</p>
 
-    <esp-web-install-button manifest="manifest.json">
+    <esp-web-install-button id="install-btn" manifest="manifests/oled.json">
       <button slot="activate">Verbinden &amp; installieren</button>
       <span slot="unsupported" class="unsupported show">
         Dein Browser unterstützt Web Serial nicht. Bitte Chrome, Edge oder Firefox auf dem Desktop verwenden.
@@ -220,18 +258,51 @@
 
   <div class="steps">
     <ol>
+      <li><strong>Display-Variante oben auswählen</strong> — je nachdem, welches Display auf deinem Board verbaut ist.</li>
       <li><strong>Board per USB anschließen</strong> — ein Datenkabel verwenden, kein reines Ladekabel.</li>
       <li><strong>Verbinden &amp; installieren</strong> klicken und den seriellen Port in der Browser-Auswahl bestätigen.</li>
       <li><strong>Warten, bis der Flash-Vorgang abgeschlossen ist</strong> — das Board startet danach automatisch neu.</li>
-      <li><strong>WLAN einrichten</strong> — falls unterstützt, fragt das Board direkt nach dem Flashen nach den Zugangsdaten.</li>
     </ol>
   </div>
 
   <footer>
     <a href="https://github.com/mark77-DE/Smart-Filament-Sample-Board">Zum Repository</a>
     &nbsp;·&nbsp;
-    <a href="https://github.com/mark77-DE/Smart-Filament-Sample-Board/tree/main/docs">Dokumentation</a>
+    <a href="../">Dokumentation</a>
   </footer>
+
+  <script>
+    // Bei jedem Firmware-Release hochzählen (z. B. Datum oder fortlaufende Nummer) —
+    // erzwingt beim Nutzer eine frische Abfrage von manifest.json und den .bin-Dateien
+    // statt eines evtl. veralteten Browser-Cache-Treffers.
+    const ASSET_VERSION = '2026-08-27-1';
+
+    const buttons = document.querySelectorAll('.variant-picker button');
+    const installBtn = document.getElementById('install-btn');
+    const label = document.getElementById('variant-label');
+
+    const manifests = {
+      oled: { file: 'manifests/oled.json', label: 'SSD1306 / SH110X OLED' },
+      st7789: { file: 'manifests/st7789.json', label: 'ST7789 TFT' }
+    };
+
+    function setManifest(key) {
+      const variant = manifests[key];
+      installBtn.setAttribute('manifest', variant.file + '?v=' + ASSET_VERSION);
+      label.textContent = 'Ausgewählt: ' + variant.label;
+    }
+
+    buttons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        buttons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        setManifest(btn.dataset.variant);
+      });
+    });
+
+    // Cache-Busting auch für die initial vorausgewählte Variante beim Laden der Seite
+    setManifest('oled');
+  </script>
 
 </body>
 </html>
