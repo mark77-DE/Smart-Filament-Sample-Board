@@ -210,13 +210,23 @@ def create_github_release(version):
     for family, fs_env in CHIP_FAMILY_FS_ENV.items():
         assets.append(str(TARGET_BASE / f"{fs_env}-littlefs.bin"))
 
+    tag = f"v{version}"
+    release_exists = subprocess.run(
+        ["gh", "release", "view", tag], cwd=REPO_ROOT,
+        capture_output=True,
+    ).returncode == 0
+
     try:
-        run([
-            "gh", "release", "create", f"v{version}",
-            *assets,
-            "--title", f"v{version}",
-            "--generate-notes",
-        ])
+        if release_exists:
+            print(f"  Release {tag} existiert bereits - Assets werden aktualisiert (überschreibt gleichnamige Dateien).")
+            run(["gh", "release", "upload", tag, *assets, "--clobber"])
+        else:
+            run([
+                "gh", "release", "create", tag,
+                *assets,
+                "--title", tag,
+                "--generate-notes",
+            ])
     finally:
         for renamed in renamed_temp:
             renamed.unlink(missing_ok=True)
@@ -262,4 +272,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
     
