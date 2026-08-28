@@ -1,33 +1,21 @@
 {
   "name": "Smart Filament Sample Board (SH1106)",
-  "version": "0.4.3",
+  "version": "0.4.2",
   "home_assistant_domain": "smart_filament",
   "new_install_prompt_erase": true,
   "builds": [
     {
       "chipFamily": "ESP32",
       "parts": [
-        {
-          "path": "../firmware/esp32-sh1106/firmware.factory.bin?v=0.4.3",
-          "offset": 0
-        },
-        {
-          "path": "../firmware/esp32-sh1106/littlefs.bin?v=0.4.3",
-          "offset": 3473408
-        }
+        { "path": "../firmware/esp32-sh1106/firmware.factory.bin?v=0.4.2", "offset": 0 },
+        { "path": "../firmware/esp32-littlefs.bin?v=0.4.2", "offset": 3473408 }
       ]
     },
     {
       "chipFamily": "ESP32-S3",
       "parts": [
-        {
-          "path": "../firmware/esp32-s3-sh1106/firmware.factory.bin?v=0.4.3",
-          "offset": 0
-        },
-        {
-          "path": "../firmware/esp32-s3-sh1106/littlefs.bin?v=0.4.3",
-          "offset": 3473408
-        }
+        { "path": "../firmware/esp32-s3-sh1106/firmware.factory.bin?v=0.4.2", "offset": 0 },
+        { "path": "../firmware/esp32-s3-littlefs.bin?v=0.4.2", "offset": 3473408 }
       ]
     }
   ]
