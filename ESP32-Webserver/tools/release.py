@@ -47,7 +47,18 @@ INDEX_HTML = REPO_ROOT / "docs" / "webinstaller" / "index.html"
 
 def run(cmd, cwd=None):
     print(f"  $ {' '.join(cmd)}")
-    subprocess.run(cmd, check=True, cwd=cwd or REPO_ROOT)
+    try:
+        subprocess.run(cmd, check=True, cwd=cwd or REPO_ROOT)
+    except FileNotFoundError:
+        print(f"\nFEHLER: Befehl '{cmd[0]}' wurde nicht gefunden.")
+        if cmd[0] == "gh":
+            print("GitHub CLI ist offenbar nicht installiert oder nicht im PATH.")
+            print("Installieren: winget install --id GitHub.cli")
+            print("Danach neues Terminal öffnen und einmalig: gh auth login")
+            print(f"\nAlles vor Schritt 6 lief bereits erfolgreich durch.")
+            print(f"Sobald 'gh' funktioniert, nur den Release-Schritt nachholen mit:")
+            print(f"  python tools/release.py {sys.argv[1]} --release-only")
+        sys.exit(1)
 
 
 def check_git_clean():
@@ -181,11 +192,17 @@ def main():
     parser.add_argument("version", help="Neue Versionsnummer, z. B. 0.4.2 (ohne 'v')")
     parser.add_argument("--skip-build", action="store_true", help="Bauen überspringen (nutzt vorhandene .pio/build-Dateien)")
     parser.add_argument("--skip-release", action="store_true", help="Kein Git-Tag-Push, kein GitHub Release - nur lokal bauen/exportieren")
+    parser.add_argument("--release-only", action="store_true", help="Nur Schritt 6 (GitHub Release) ausführen - für den Fall, dass Build/Commit/Push schon erfolgreich liefen und nur gh fehlgeschlagen ist")
     args = parser.parse_args()
 
     version = args.version.lstrip("v")
 
     print(f"=== Release-Workflow für v{version} ===")
+
+    if args.release_only:
+        create_github_release(version)
+        print(f"\nFertig! Release v{version} wurde nachträglich erstellt.")
+        return
 
     check_git_clean()
     create_tag(version)
@@ -210,4 +227,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
