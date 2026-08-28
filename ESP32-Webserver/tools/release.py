@@ -32,6 +32,14 @@ ENV_MAPPING = {
     "esp32-s3-st7789": "esp32-s3-st7789",
 }
 
+# LittleFS ist über alle Display-Varianten einer Chip-Familie identisch (gleiche
+# data/-Assets, nur die App unterscheidet sich je Display-Treiber). Deshalb wird
+# das Dateisystem nur einmal pro Familie gebaut - über diesen repräsentativen Env.
+CHIP_FAMILY_FS_ENV = {
+    "ESP32": "esp32",
+    "ESP32-S3": "esp32-s3",
+}
+
 FILES = [
     "firmware.factory.bin",
     "littlefs.bin",
@@ -87,13 +95,20 @@ def create_tag(version):
 def build_all():
     print("\n=== Schritt 2/6: Firmware-Varianten bauen ===")
     for env_name in ENV_MAPPING:
-        print(f"\n  -- {env_name} --")
+        print(f"\n  -- {env_name} (App) --")
         run(["pio", "run", "-e", env_name], cwd=PROJECT_DIR)
-        run(["pio", "run", "-e", env_name, "-t", "buildfs"], cwd=PROJECT_DIR)
+
+    print("\n  -- LittleFS (einmal pro Chip-Familie) --")
+    for family, fs_env in CHIP_FAMILY_FS_ENV.items():
+        print(f"\n  -- {fs_env} ({family}) --")
+        run(["pio", "run", "-e", fs_env, "-t", "buildfs"], cwd=PROJECT_DIR)
 
 
 def export_firmware():
     print("\n=== Schritt 3/6: Firmware für Webinstaller exportieren ===")
+    TARGET_BASE.mkdir(parents=True, exist_ok=True)
+
+    # App-Binary: eine pro Display-Variante
     for env_name, target_name in ENV_MAPPING.items():
         source_dir = BUILD_DIR / env_name
         target_dir = TARGET_BASE / target_name
@@ -104,13 +119,23 @@ def export_firmware():
 
         target_dir.mkdir(parents=True, exist_ok=True)
 
-        for filename in FILES:
-            source = source_dir / filename
-            if not source.exists():
-                print(f"  FEHLER: {filename} fehlt in {source_dir}")
-                sys.exit(1)
-            shutil.copy2(source, target_dir / filename)
-            print(f"  {filename} -> {target_name}/")
+        source = source_dir / "firmware.factory.bin"
+        if not source.exists():
+            print(f"  FEHLER: firmware.factory.bin fehlt in {source_dir}")
+            sys.exit(1)
+        shutil.copy2(source, target_dir / "firmware.factory.bin")
+        print(f"  firmware.factory.bin -> {target_name}/")
+
+    # LittleFS: nur einmal pro Chip-Familie, liegt direkt unter firmware/
+    # und wird von allen Display-Varianten dieser Familie gemeinsam referenziert
+    for family, fs_env in CHIP_FAMILY_FS_ENV.items():
+        source = BUILD_DIR / fs_env / "littlefs.bin"
+        if not source.exists():
+            print(f"  FEHLER: littlefs.bin fehlt in {BUILD_DIR / fs_env}")
+            sys.exit(1)
+        target_filename = f"{fs_env}-littlefs.bin"
+        shutil.copy2(source, TARGET_BASE / target_filename)
+        print(f"  littlefs.bin -> {target_filename}  (geteilt für alle {family}-Varianten)")
 
 
 def bump_manifests(version):
@@ -165,12 +190,19 @@ def create_github_release(version):
     print(f"\n=== Schritt 6/6: GitHub Release v{version} erstellen ===")
 
     assets = []
+    renamed_temp = []
+
+    # App-Binaries: eine je Display-Variante, umbenannt für eindeutige Asset-Namen
     for env_name, target_name in ENV_MAPPING.items():
-        for filename in FILES:
-            src = TARGET_BASE / target_name / filename
-            renamed = TARGET_BASE / f"{target_name}-{filename}"
-            shutil.copy2(src, renamed)
-            assets.append(str(renamed))
+        src = TARGET_BASE / target_name / "firmware.factory.bin"
+        renamed = TARGET_BASE / f"{target_name}-firmware.factory.bin"
+        shutil.copy2(src, renamed)
+        renamed_temp.append(renamed)
+        assets.append(str(renamed))
+
+    # LittleFS: nur einmal pro Chip-Familie, Dateiname ist schon eindeutig
+    for family, fs_env in CHIP_FAMILY_FS_ENV.items():
+        assets.append(str(TARGET_BASE / f"{fs_env}-littlefs.bin"))
 
     try:
         run([
@@ -180,11 +212,8 @@ def create_github_release(version):
             "--generate-notes",
         ])
     finally:
-        # temporäre, umbenannte Kopien wieder aufräumen
-        for env_name, target_name in ENV_MAPPING.items():
-            for filename in FILES:
-                renamed = TARGET_BASE / f"{target_name}-{filename}"
-                renamed.unlink(missing_ok=True)
+        for renamed in renamed_temp:
+            renamed.unlink(missing_ok=True)
 
 
 def main():
