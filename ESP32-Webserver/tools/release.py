@@ -4,7 +4,8 @@ release.py - Kompletter Release-Workflow in einem Schritt:
   1. Git-Tag vX.Y.Z setzen (VOR dem Build, damit git_version.py die neue
      Versionsnummer in die Firmware einbettet)
   2. Alle Firmware-Varianten bauen (App + LittleFS)
-  3. firmware.factory.bin + littlefs.bin für den Webinstaller exportieren
+  3. firmware.factory.bin (Webinstaller) + firmware.bin (OTA-Updater) je Variante
+     sowie littlefs.bin (einmal pro Chip-Familie, geteilt über alle Displays) exportieren
   4. Version + Cache-Busting-Parameter in den Manifesten / index.html aktualisieren
   5. Änderungen committen, Tag + Commit pushen
   6. GitHub Release mit allen Firmware-Dateien als Assets erstellen
@@ -109,6 +110,8 @@ def export_firmware():
     TARGET_BASE.mkdir(parents=True, exist_ok=True)
 
     # App-Binary: eine pro Display-Variante
+    #   firmware.factory.bin -> für den Webinstaller (Bootloader+Partitionen+App zusammengeführt)
+    #   firmware.bin         -> für den eingebauten OTA-Updater (nur die reine App)
     for env_name, target_name in ENV_MAPPING.items():
         source_dir = BUILD_DIR / env_name
         target_dir = TARGET_BASE / target_name
@@ -119,12 +122,13 @@ def export_firmware():
 
         target_dir.mkdir(parents=True, exist_ok=True)
 
-        source = source_dir / "firmware.factory.bin"
-        if not source.exists():
-            print(f"  FEHLER: firmware.factory.bin fehlt in {source_dir}")
-            sys.exit(1)
-        shutil.copy2(source, target_dir / "firmware.factory.bin")
-        print(f"  firmware.factory.bin -> {target_name}/")
+        for filename in ("firmware.factory.bin", "firmware.bin"):
+            source = source_dir / filename
+            if not source.exists():
+                print(f"  FEHLER: {filename} fehlt in {source_dir}")
+                sys.exit(1)
+            shutil.copy2(source, target_dir / filename)
+            print(f"  {filename} -> {target_name}/")
 
     # LittleFS: nur einmal pro Chip-Familie, liegt direkt unter firmware/
     # und wird von allen Display-Varianten dieser Familie gemeinsam referenziert
@@ -192,13 +196,15 @@ def create_github_release(version):
     assets = []
     renamed_temp = []
 
-    # App-Binaries: eine je Display-Variante, umbenannt für eindeutige Asset-Namen
+    # App-Binaries: firmware.factory.bin (Webinstaller) + firmware.bin (OTA-Updater)
+    # je Display-Variante, umbenannt für eindeutige Asset-Namen
     for env_name, target_name in ENV_MAPPING.items():
-        src = TARGET_BASE / target_name / "firmware.factory.bin"
-        renamed = TARGET_BASE / f"{target_name}-firmware.factory.bin"
-        shutil.copy2(src, renamed)
-        renamed_temp.append(renamed)
-        assets.append(str(renamed))
+        for filename in ("firmware.factory.bin", "firmware.bin"):
+            src = TARGET_BASE / target_name / filename
+            renamed = TARGET_BASE / f"{target_name}-{filename}"
+            shutil.copy2(src, renamed)
+            renamed_temp.append(renamed)
+            assets.append(str(renamed))
 
     # LittleFS: nur einmal pro Chip-Familie, Dateiname ist schon eindeutig
     for family, fs_env in CHIP_FAMILY_FS_ENV.items():
@@ -256,3 +262,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
