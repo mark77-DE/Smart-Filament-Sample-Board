@@ -1,6 +1,6 @@
 {
   "name": "Smart Filament Sample Board (ST7789)",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "home_assistant_domain": "smart_filament",
   "new_install_prompt_erase": true,
   "builds": [
@@ -8,19 +8,19 @@
       "chipFamily": "ESP32",
       "parts": [
         {
-          "path": "../firmware2/esp32-st7789/bootloader.bin?v=0.4.2",
+          "path": "../firmware2/esp32-st7789/bootloader.bin?v=0.4.3",
           "offset": 4096
         },
         {
-          "path": "../firmware2/esp32-st7789/partitions.bin?v=0.4.2",
+          "path": "../firmware2/esp32-st7789/partitions.bin?v=0.4.3",
           "offset": 32768
         },
         {
-          "path": "../firmware2/esp32-st7789/firmware.bin?v=0.4.2",
+          "path": "../firmware2/esp32-st7789/firmware.bin?v=0.4.3",
           "offset": 65536
         },
         {
-          "path": "../firmware2/esp32-st7789/littlefs.bin?v=0.4.2",
+          "path": "../firmware2/esp32-st7789/littlefs.bin?v=0.4.3",
           "offset": 3473408
         }
       ]
@@ -29,11 +29,11 @@
       "chipFamily": "ESP32-S3",
       "parts": [
         {
-          "path": "../firmware/esp32-s3-st7789/firmware.factory.bin?v=0.4.2",
+          "path": "../firmware/esp32-s3-st7789/firmware.factory.bin?v=0.4.3",
           "offset": 0
         },
         {
-          "path": "../firmware/esp32-s3-st7789/littlefs.bin?v=0.4.2",
+          "path": "../firmware/esp32-s3-st7789/littlefs.bin?v=0.4.3",
           "offset": 3473408
         }
       ]
