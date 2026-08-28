@@ -95,11 +95,11 @@ AsyncWebSocket ws("/ws");
 
 // ----------------- PN532 SPI Settings -----------------
 //Adafruit_PN532(uint8_t clk, uint8_t miso, uint8_t mosi, uint8_t ss);
-#if DISPLAY_TYPE == DISPLAY_TYPE_ST7789
+// #if DISPLAY_TYPE == DISPLAY_TYPE_ST7789
   Adafruit_PN532 nfc(NFC_SCK, NFC_MISO, NFC_MOSI,  PN532_CS);
-#else
-  Adafruit_PN532 nfc(PN532_CS);
-#endif
+// #else
+//   Adafruit_PN532 nfc(PN532_CS);
+// #endif
 
 
 // ----------------- LED & Display Timing -----------------
