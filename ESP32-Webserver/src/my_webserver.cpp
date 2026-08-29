@@ -327,32 +327,89 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
 
     server.on("/api/pinout", HTTP_GET, [](AsyncWebServerRequest *request) {
 
-        
+    // Netzlast-Hinweis
+    LEDCTRL_FILAMENT::netBusyHint(250);
+    LEDCTRL_NFC::netBusyHint(250);
 
-        // FIX: Netzlast-Hinweis – JSON bauen/senden
-        LEDCTRL_FILAMENT::netBusyHint(250);
-        LEDCTRL_NFC::netBusyHint(250);
+    JsonDocument doc;
 
-        JsonDocument doc;
-        doc["SCL_PIN"]                  = SCL_PIN;
-        doc["SDA_PIN"]                  = SDA_PIN;
-        
-        doc["LED_PIN"]                  = LED_PIN;
-        doc["NFC_LED_PIN"]              = NFC_LED_PIN;
+    // ------------------------------------------------------------
+    // Allgemeine Hardware
+    // ------------------------------------------------------------
 
-        doc["SCK_PIN"]                  = SPI_SCK;
-        doc["MISO_PIN"]                 = SPI_MISO;
-        doc["MOSI_PIN"]                 = SPI_MOSI;
-        doc["SS_PIN"]                   = PN532_CS;
+    doc["LED_PIN"]     = LED_PIN;
+    doc["NFC_LED_PIN"] = NFC_LED_PIN;
+    doc["BTN_PIN"]     = BTN_PIN;
+    doc["BUZ_PIN"]     = BUZ_PIN;
 
-        doc["BTN_PIN"]                  = BTN_PIN;
-        doc["BUZ_PIN"]                  = BUZ_PIN;
-        
-        
-        String response;
-        serializeJson(doc, response);
-        request->send(200, "application/json", response);
-    });
+
+    // ------------------------------------------------------------
+    // I2C
+    // ------------------------------------------------------------
+
+    doc["I2C"]["SDA"] = SDA_PIN;
+    doc["I2C"]["SCL"] = SCL_PIN;
+
+
+    // ------------------------------------------------------------
+    // PN532 SPI
+    // ------------------------------------------------------------
+
+    doc["PN532"]["SCK"]  = NFC_SPI_SCK;
+    doc["PN532"]["MISO"] = NFC_SPI_MISO;
+    doc["PN532"]["MOSI"] = NFC_SPI_MOSI;
+    doc["PN532"]["CS"]   = NFC_SPI_CS;
+
+
+    // ------------------------------------------------------------
+    // Display
+    // ------------------------------------------------------------
+
+#if DISPLAY_TYPE == DISPLAY_TYPE_ST7789
+
+    doc["display"]["type"] = "ST7789";
+
+    doc["display"]["SPI"]["SCK"]  = TFT_SPI_SCK;
+    doc["display"]["SPI"]["MOSI"] = TFT_SPI_MOSI;
+    doc["display"]["SPI"]["CS"]   = TFT_SPI_CS;
+    doc["display"]["SPI"]["DC"]   = TFT_SPI_DC;
+    doc["display"]["SPI"]["RST"]  = TFT_SPI_RST;
+
+#elif DISPLAY_TYPE == DISPLAY_TYPE_SH1106
+
+    doc["display"]["type"] = "SH1106";
+
+#elif DISPLAY_TYPE == DISPLAY_TYPE_SSD1306
+
+    doc["display"]["type"] = "SSD1306";
+
+#else
+
+    doc["display"]["type"] = "unknown";
+
+#endif
+
+
+    // ------------------------------------------------------------
+    // Board
+    // ------------------------------------------------------------
+
+#ifdef BOARD_VARIANT
+    doc["board"] = BOARD_VARIANT;
+#else
+    doc["board"] = "unknown";
+#endif
+
+
+    // ------------------------------------------------------------
+    // JSON senden
+    // ------------------------------------------------------------
+
+    String response;
+    serializeJson(doc, response);
+
+    request->send(200, "application/json", response);
+});
     
 
 

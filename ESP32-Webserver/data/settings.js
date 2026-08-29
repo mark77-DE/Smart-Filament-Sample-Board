@@ -119,14 +119,27 @@ const ledSelect = document.getElementById("ledIndexSelect");
 
 const sclPin = document.getElementById("sclPin");
 const sdaPin = document.getElementById("sdaPin");
+
 const ledPin = document.getElementById("ledPin");
 const nfcLedPin = document.getElementById("nfcLedPin");
+
 const buttonPin = document.getElementById("buttonPin");
 const buzzerPin = document.getElementById("buzzerPin");
-const sckPin = document.getElementById("sckPin");
-const misoPin = document.getElementById("misoPin");
-const mosiPin = document.getElementById("mosiPin");
-const ssPin = document.getElementById("ssPin");
+
+// PN532
+const nfcSckPin = document.getElementById("nfcSckPin");
+const nfcMisoPin = document.getElementById("nfcMisoPin");
+const nfcMosiPin = document.getElementById("nfcMosiPin");
+const nfcCsPin = document.getElementById("nfcCsPin");
+
+// Display
+const displayType = document.getElementById("displayType");
+const displaySpiSection = document.getElementById("displaySpiSection");
+const tftSckPin = document.getElementById("tftSckPin");
+const tftMosiPin = document.getElementById("tftMosiPin");
+const tftCsPin = document.getElementById("tftCsPin");
+const tftDcPin = document.getElementById("tftDcPin");
+const tftRstPin = document.getElementById("tftRstPin");
 
 
 
@@ -1329,17 +1342,68 @@ getPinout = async () => {
     fetch("/api/pinout")
         .then(r => r.json())
         .then(data => {
-            
-            sclPin.textContent = data.SCL_PIN;
-            sdaPin.textContent = data.SDA_PIN;
-            ledPin.textContent = data.LED_PIN;
-            nfcLedPin.textContent = data.NFC_LED_PIN;
-            buttonPin.textContent = data.BTN_PIN;
-            buzzerPin.textContent = data.BUZ_PIN;
-            sckPin.textContent = data.SCK_PIN;
-            misoPin.textContent = data.MISO_PIN;
-            mosiPin.textContent = data.MOSI_PIN;
-            ssPin.textContent = data.SS_PIN;
+
+            // --------------------------------------------------------
+            // I2C
+            // --------------------------------------------------------
+
+            sclPin.textContent = data.I2C?.SCL ?? "";
+            sdaPin.textContent = data.I2C?.SDA ?? "";
+
+
+            // --------------------------------------------------------
+            // Allgemeine Hardware
+            // --------------------------------------------------------
+
+            ledPin.textContent = data.LED_PIN ?? "";
+            nfcLedPin.textContent = data.NFC_LED_PIN ?? "";
+            buttonPin.textContent = data.BTN_PIN ?? "";
+            buzzerPin.textContent = data.BUZ_PIN ?? "";
+
+
+            // --------------------------------------------------------
+            // PN532
+            // --------------------------------------------------------
+
+            nfcSckPin.textContent = data.PN532?.SCK ?? "";
+            nfcMisoPin.textContent = data.PN532?.MISO ?? "";
+            nfcMosiPin.textContent = data.PN532?.MOSI ?? "";
+            nfcCsPin.textContent = data.PN532?.CS ?? "";
+
+
+            // --------------------------------------------------------
+            // Display
+            // --------------------------------------------------------
+
+            const type = data.display?.type ?? "";
+
+            displayType.textContent = type;
+
+
+            // --------------------------------------------------------
+            // Display SPI nur bei ST7789 anzeigen
+            // --------------------------------------------------------
+
+            if (type === "ST7789" && data.display?.SPI) {
+
+                displaySpiSection.style.display = "";
+
+                tftSckPin.textContent = data.display.SPI.SCK ?? "";
+                tftMosiPin.textContent = data.display.SPI.MOSI ?? "";
+                tftCsPin.textContent = data.display.SPI.CS ?? "";
+                tftDcPin.textContent = data.display.SPI.DC ?? "";
+                tftRstPin.textContent = data.display.SPI.RST ?? "";
+
+            } else {
+
+                displaySpiSection.style.display = "none";
+
+                tftSckPin.textContent = "";
+                tftMosiPin.textContent = "";
+                tftCsPin.textContent = "";
+                tftDcPin.textContent = "";
+                tftRstPin.textContent = "";
+            }
 
         })
         .catch(err => console.error("Pinout fetch failed:", err));

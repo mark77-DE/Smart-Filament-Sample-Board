@@ -1,16 +1,37 @@
-// ----------------- PN532 SPI -----------------
-#ifndef SPI_SCK
-#define SPI_SCK 18
+// pins.h
+
+// ----------------- NFC-Reader (PN532) SPI-Bus -----------------
+#ifndef NFC_SPI_SCK
+#define NFC_SPI_SCK 18
 #endif
-#ifndef SPI_MISO
-#define SPI_MISO 19
+#ifndef NFC_SPI_MISO
+#define NFC_SPI_MISO 19
 #endif
-#ifndef SPI_MOSI
-#define SPI_MOSI 23
+#ifndef NFC_SPI_MOSI
+#define NFC_SPI_MOSI 23
 #endif
-#ifndef PN532_CS
-#define PN532_CS 26
+#ifndef NFC_SPI_CS
+#define NFC_SPI_CS 5
 #endif
+
+
+// ----------------- ST7789 SPI-Bus -----------------
+#ifndef TFT_SPI_SCK
+#define TFT_SPI_SCK -1   // nur bei ST7789-Varianten belegt
+#endif
+#ifndef TFT_SPI_MOSI
+#define TFT_SPI_MOSI -1  // nur bei ST7789-Varianten belegt
+#endif
+#ifndef TFT_SPI_CS
+#define TFT_SPI_CS -1
+#endif
+#ifndef TFT_SPI_DC
+#define TFT_SPI_DC -1
+#endif
+#ifndef TFT_SPI_RST
+#define TFT_SPI_RST -1
+#endif
+// TFT_SPI_MISO bewusst nicht definiert – ST7789 nutzt kein MISO
 
 
 // ----------------- I2C -----------------

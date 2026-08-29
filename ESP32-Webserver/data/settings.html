@@ -708,22 +708,88 @@
                 </div>
 
                 <div class="settingsPanel" id="panel-pinout">
-                    <div id="pinoutSettings" class="card" data-help="pinout">
-                        <div class="cardHeader"><span data-i18n="txt_pinout_settings">Pinout</span></div>
-                        <div class="formGrid">
-                            <span>SCL Pin:</span><span id="sclPin"></span>
-                            <span>SDA Pin:</span><span id="sdaPin"></span>
-                            <span>LED Pin:</span><span id="ledPin"></span>
-                            <span>NFC LED Pin:</span><span id="nfcLedPin"></span>
-                            <span>Button Pin:</span><span id="buttonPin"></span>
-                            <span>Buzzer Pin:</span><span id="buzzerPin"></span>
-                            <span>SCK Pin:</span><span id="sckPin"></span>
-                            <span>MOSI Pin:</span><span id="mosiPin"></span>
-                            <span>MISO Pin:</span><span id="misoPin"></span>
-                            <span>SS Pin:</span><span id="ssPin"></span>
-                        </div>
-                    </div>
-                </div>
+    <div id="pinoutSettings" class="card" data-help="pinout">
+
+        <div class="cardHeader">
+            <span data-i18n="txt_pinout_settings">Pinout</span>
+        </div>
+
+        <div class="formGrid">
+
+            <!-- I2C ------------------------------------------------ -->
+
+            <span>SCL Pin:</span>
+            <span id="sclPin"></span>
+
+            <span>SDA Pin:</span>
+            <span id="sdaPin"></span>
+
+
+            <!-- Allgemeine Hardware ------------------------------ -->
+
+            <span>LED Pin:</span>
+            <span id="ledPin"></span>
+
+            <span>NFC LED Pin:</span>
+            <span id="nfcLedPin"></span>
+
+            <span>Button Pin:</span>
+            <span id="buttonPin"></span>
+
+            <span>Buzzer Pin:</span>
+            <span id="buzzerPin"></span>
+
+
+            <!-- PN532 --------------------------------------------- -->
+
+            <span>PN532 SCK Pin:</span>
+            <span id="nfcSckPin"></span>
+
+            <span>PN532 MISO Pin:</span>
+            <span id="nfcMisoPin"></span>
+
+            <span>PN532 MOSI Pin:</span>
+            <span id="nfcMosiPin"></span>
+
+            <span>PN532 CS Pin:</span>
+            <span id="nfcCsPin"></span>
+
+
+            <!-- Display ------------------------------------------- -->
+
+            <span>Display:</span>
+            <span id="displayType"></span>
+
+        </div>
+
+
+        <!-- ST7789 SPI -------------------------------------------- -->
+
+        <div id="displaySpiSection">
+
+            <div class="formGrid">
+
+                <span>Display SCK Pin:</span>
+                <span id="tftSckPin"></span>
+
+                <span>Display MOSI Pin:</span>
+                <span id="tftMosiPin"></span>
+
+                <span>Display CS Pin:</span>
+                <span id="tftCsPin"></span>
+
+                <span>Display DC Pin:</span>
+                <span id="tftDcPin"></span>
+
+                <span>Display RST Pin:</span>
+                <span id="tftRstPin"></span>
+
+            </div>
+
+        </div>
+
+    </div>
+</div>
 
 
                 <div class="settingsPanel" id="panel-update">

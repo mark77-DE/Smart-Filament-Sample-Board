@@ -35,15 +35,15 @@ public:
         bus_cfg.freq_write = 40000000;
         bus_cfg.freq_read  = 16000000;
         bus_cfg.spi_mode = 0;
-        bus_cfg.pin_sclk = TFT_SCK;
-        bus_cfg.pin_mosi = TFT_MOSI;
-        bus_cfg.pin_miso = TFT_MISO;
-        bus_cfg.pin_dc   = TFT_DC;
+        bus_cfg.pin_sclk = TFT_SPI_SCK;
+        bus_cfg.pin_mosi = TFT_SPI_MOSI;
+        bus_cfg.pin_miso = TFT_SPI_MISO;
+        bus_cfg.pin_dc   = TFT_SPI_DC;
         _bus.config(bus_cfg);
 
         auto panel_cfg = _panel.config();
-        panel_cfg.pin_cs    = TFT_CS;
-        panel_cfg.pin_rst   = TFT_RST;
+        panel_cfg.pin_cs    = TFT_SPI_CS;
+        panel_cfg.pin_rst   = TFT_SPI_RST;
         panel_cfg.pin_busy  = -1;
         panel_cfg.panel_width = 170;
         panel_cfg.panel_height = 320;
