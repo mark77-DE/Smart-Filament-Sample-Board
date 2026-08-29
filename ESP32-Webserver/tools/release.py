@@ -6,7 +6,8 @@ release.py - Kompletter Release-Workflow in einem Schritt:
   2. Alle Firmware-Varianten bauen (App + LittleFS)
   3. firmware.factory.bin (Webinstaller) + firmware.bin (OTA-Updater) je Variante
      sowie littlefs.bin (einmal pro Chip-Familie, geteilt über alle Displays) exportieren
-  4. Version + Cache-Busting-Parameter in den Manifesten / index.html aktualisieren
+  4. Version + Cache-Busting-Parameter in den Manifesten / index.html aktualisieren,
+     sowie version.txt (ESP32-Webserver/version.txt) auf die neue Version setzen
   5. Änderungen committen, Tag + Commit pushen
   6. GitHub Release mit allen Firmware-Dateien als Assets erstellen
 
@@ -52,6 +53,10 @@ BUILD_DIR = PROJECT_DIR / ".pio" / "build"
 TARGET_BASE = REPO_ROOT / "docs" / "webinstaller" / "firmware"
 MANIFEST_DIR = REPO_ROOT / "docs" / "webinstaller" / "manifests"
 INDEX_HTML = REPO_ROOT / "docs" / "webinstaller" / "index.html"
+
+# Einfache Textdatei mit der aktuellen Versionsnummer, liegt direkt unter
+# ESP32-Webserver/ (also z. B. .../ESP32-Webserver/version.txt), Inhalt: "v0.4.2\n"
+VERSION_FILE = PROJECT_DIR / "version.txt"
 
 
 def run(cmd, cwd=None):
@@ -147,20 +152,19 @@ def bump_manifests(version):
 
     if not MANIFEST_DIR.exists():
         print(f"  WARNUNG: {MANIFEST_DIR} nicht gefunden, überspringe.")
-        return
-
-    for manifest_path in sorted(MANIFEST_DIR.glob("*.json")):
-        data = json.loads(manifest_path.read_text(encoding="utf-8"))
-        data["version"] = version
-        for build in data.get("builds", []):
-            for part in build.get("parts", []):
-                # bestehenden ?v=... Parameter ersetzen oder neu anhängen
-                base_path = re.sub(r"\?v=[^&]*$", "", part["path"])
-                part["path"] = f"{base_path}?v={version}"
-        manifest_path.write_text(
-            json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
-        )
-        print(f"  {manifest_path.name} -> v{version}")
+    else:
+        for manifest_path in sorted(MANIFEST_DIR.glob("*.json")):
+            data = json.loads(manifest_path.read_text(encoding="utf-8"))
+            data["version"] = version
+            for build in data.get("builds", []):
+                for part in build.get("parts", []):
+                    # bestehenden ?v=... Parameter ersetzen oder neu anhängen
+                    base_path = re.sub(r"\?v=[^&]*$", "", part["path"])
+                    part["path"] = f"{base_path}?v={version}"
+            manifest_path.write_text(
+                json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+            )
+            print(f"  {manifest_path.name} -> v{version}")
 
     if INDEX_HTML.exists():
         html = INDEX_HTML.read_text(encoding="utf-8")
@@ -173,10 +177,22 @@ def bump_manifests(version):
         else:
             print("  WARNUNG: ASSET_VERSION-Zeile in index.html nicht gefunden.")
 
+    update_version_file(version)
+
+
+def update_version_file(version):
+    """Schreibt/aktualisiert eine einfache Textdatei mit der aktuellen Version,
+    z. B. für externe Tools/Skripte, die per HTTP nur die Versionsnummer abfragen
+    wollen (ähnlich version_public.txt im Public-Repo)."""
+    VERSION_FILE.write_text(f"v{version}\n", encoding="utf-8")
+    rel_path = VERSION_FILE.relative_to(REPO_ROOT).as_posix()
+    print(f"  {rel_path} -> v{version}")
+
 
 def commit_and_push(version):
     print(f"\n=== Schritt 5/6: Commit + Push ===")
     run(["git", "add", "docs/webinstaller"])
+    run(["git", "add", VERSION_FILE.relative_to(REPO_ROOT).as_posix()])
 
     staged = subprocess.run(
         ["git", "diff", "--cached", "--quiet"], cwd=REPO_ROOT
@@ -272,5 +288,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-    
