@@ -1,6 +1,6 @@
 {
   "name": "Smart Filament Sample Board (SSD1306)",
-  "version": "0.4.6",
+  "version": "0.4.7",
   "home_assistant_domain": "smart_filament",
   "new_install_prompt_erase": true,
   "builds": [
@@ -8,11 +8,11 @@
       "chipFamily": "ESP32",
       "parts": [
         {
-          "path": "../firmware/esp32-ssd1306/firmware.factory.bin?v=0.4.6",
+          "path": "../firmware/esp32-ssd1306/firmware.factory.bin?v=0.4.7",
           "offset": 0
         },
         {
-          "path": "../firmware/esp32-littlefs.bin?v=0.4.6",
+          "path": "../firmware/esp32-littlefs.bin?v=0.4.7",
           "offset": 3473408
         }
       ]
@@ -21,11 +21,11 @@
       "chipFamily": "ESP32-S3",
       "parts": [
         {
-          "path": "../firmware/esp32-s3-ssd1306/firmware.factory.bin?v=0.4.6",
+          "path": "../firmware/esp32-s3-ssd1306/firmware.factory.bin?v=0.4.7",
           "offset": 0
         },
         {
-          "path": "../firmware/esp32-s3-littlefs.bin?v=0.4.6",
+          "path": "../firmware/esp32-s3-littlefs.bin?v=0.4.7",
           "offset": 3473408
         }
       ]
