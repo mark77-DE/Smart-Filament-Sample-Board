@@ -22,35 +22,65 @@ Für die kompilierten Binaries gibt es feste Vorgaben, wer selbst kompiliert, ka
 
 Für den weit verbreiteten Standard typ, dem ESP32 Devkit V1 gillt folgendes pinout:
 
-### OLED Display variante
-
+### ESP32 OLED Variante
 | ESP32 Pin | Verbunden mit | Funktion |
 |---|---|---|
-| GPIO 18 | SPI/SCK | NFC-Reader |
-| GPIO 19 | SPI/MISO | NFC-Reader |
-| GPIO 23 | SPI/MOSI | NFC-Reader |
-| GPIO 26 | PN532 CS | NFC-Reader |
-| GPIO 21 | SDA | OLED |
-| GPIO 22 | SCL | OLED |
-| GPIO 32 | Button | optional |
-| GPIO 33 | Buzzer | optional |
 | GPIO 4 | LEDs | Samples |
 | GPIO 15 | LEDs | NFC-Symbol |
+| GPIO 18 | SPI/SCK | NFC-Reader |
+| GPIO 19 | SPI/MISO | NFC-Reader |
+| GPIO 21 | SDA | OLED |
+| GPIO 22 | SCL | OLED |
+| GPIO 23 | SPI/MOSI | NFC-Reader |
+| GPIO 26 | PN532 CS | NFC-Reader |
+| GPIO 32 | Button | optional |
+| GPIO 33 | Buzzer | optional |
 
-Für den ESP32-S3-Zero gillt folgendes Pinout
+### ESP32-S3 OLED Variante
+*(getestet mit ESP32-S3 Zero)*
 
-| ESP32 Pin | Verbunden mit | Funktion |
+| ESP32-S3 Pin | Verbunden mit | Funktion |
 |---|---|---|
+| GPIO 1 | LEDs | NFC-Symbol |
+| GPIO 2 | LEDs | Samples |
 | GPIO 3 | SPI/SCK | NFC-Reader |
 | GPIO 4 | SPI/MISO | NFC-Reader |
 | GPIO 5 | SPI/MOSI | NFC-Reader |
 | GPIO 6 | PN532 CS | NFC-Reader |
-| GPIO 13 | SDA | OLED |
-| GPIO 12 | SCL | OLED |
 | GPIO 7 | Button | optional |
 | GPIO 8 | Buzzer | optional |
-| GPIO 2 | LEDs | Samples |
-| GPIO 1 | LEDs | NFC-Symbol |
+| GPIO 12 | SCL | OLED |
+| GPIO 13 | SDA | OLED |
+
+### ESP32 ST7789 Variante
+| ESP32 Pin | Verbunden mit | Funktion |
+|---|---|---|
+| GPIO 4 | LEDs | Samples |
+| GPIO 5 | TFT CS | ST7789 Display |
+| GPIO 12 | NFC_MISO | NFC-Reader |
+| GPIO 13 | NFC_MOSI | NFC-Reader |
+| GPIO 14 | NFC_SCK | NFC-Reader |
+| GPIO 15 | LEDs | NFC-Symbol |
+| GPIO 26 | PN532 CS | NFC-Reader |
+| GPIO 27 | TFT RST | ST7789 Display |
+| GPIO 32 | TFT DC | ST7789 Display |
+| GPIO 33 | Buzzer | optional |
+
+### ESP32 ST7789 Variante
+| ESP32 Pin | Verbunden mit | Funktion |
+|---|---|---|
+| GPIO 4 | LEDs | Samples |
+| GPIO 5 | TFT CS | ST7789 Display |
+| GPIO 12 | NFC_MISO | NFC-Reader |
+| GPIO 13 | NFC_MOSI | NFC-Reader |
+| GPIO 14 | NFC_SCK | NFC-Reader |
+| GPIO 15 | LEDs | NFC-Symbol |
+| GPIO 25 | Button | optional |
+| GPIO 26 | PN532 CS | NFC-Reader |
+| GPIO 27 | TFT RST | ST7789 Display |
+| GPIO 32 | TFT DC | ST7789 Display |
+| GPIO 33 | Buzzer | optional |
+| – | TFT MISO | nicht verbunden |
 
 
 
