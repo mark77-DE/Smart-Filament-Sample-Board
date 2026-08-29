@@ -687,7 +687,7 @@ function updateRssiIcon(rssi) {
 function showUpdateNotification(msg) {
   
   const updateDiv = document.getElementById('updateStatus');
-  updateDiv.textContent = `⚠️ Update available (test only!): ${msg.latestVersion}`;
+  updateDiv.textContent = `⚠️ Update available: ${msg.latestVersion}`;
   updateDiv.style.color = 'orange';
 
 }
