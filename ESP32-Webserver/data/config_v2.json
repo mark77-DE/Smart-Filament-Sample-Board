@@ -7,7 +7,7 @@
         "animationAfterBoot": true,
         "hostname": "filament-board-dev",
         "defaultLanguage": "en",
-        "updateCheckInterval": 3
+        "updateCheckInterval": 120
         },
     "led": {
         "count": 8,
