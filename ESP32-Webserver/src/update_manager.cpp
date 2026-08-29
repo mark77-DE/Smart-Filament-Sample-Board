@@ -51,7 +51,7 @@ bool checkForUpdate(String& latestVersion) {
     HTTPClient http;
     http.setTimeout(2000); // 🔹 wichtig gegen lange Hänger
 
-    const char* url = "https://raw.githubusercontent.com/mark77-DE/Smart-Filament-Sample-Board-Public/refs/heads/main/version_public.txt";
+    const char* url = "https://raw.githubusercontent.com/mark77-DE/Smart-Filament-Sample-Board/refs/heads/main/ESP32-Webserver/version.txt";
     http.begin(client, url);
 
     int httpCode = http.GET();
