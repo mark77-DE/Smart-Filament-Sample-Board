@@ -19,8 +19,8 @@ Die 6er Version lässt sich noch auf dem A1-Mini drucken.
 
 ## Wichtige Druckeinstellungen
 
-Der Fuß nenötigt eine Druckpause bei Laver 12 bzw. 2,4mm Höhe.
-An der Stelle wird das NFC-Tag eingelegt und am Besten mit seine Klebefolie auch eingeklebt, damit es im Druck nicht heraussprongt oder hoch kommt.
+Der Fuß benötigt eine Druckpause bei Layer 12 bzw. 2,4mm Höhe.
+An der Stelle wird das NFC-Tag eingelegt und am Besten mit seiner Klebefolie eingeklebt, damit es sich im Druck nicht verschiebt.
 
 <p align="center">
   <img src="../screenshots/buildplate.png" alt="buildplate" width="320">
