@@ -10,6 +10,7 @@
 #include "config.h"
 #include "mqtt_manager.h"
 #include "pins.h"
+#include "led_config.h"
 
 // Debug-Ausgaben einschalten mit -DLED_FIL_DEBUG (build_flags)
 #ifdef LED_FIL_DEBUG
@@ -228,7 +229,7 @@ void LEDCTRL_FILAMENT::init(int count, int timeout_ms, int brightness, u_int32_t
   pinMode(LED_PIN, OUTPUT);
   digitalWrite(LED_PIN, LOW);
 
-  _leds = new Adafruit_NeoPixel(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
+  _leds = new Adafruit_NeoPixel(LED_COUNT, LED_PIN, LED_NEO_PIXEL_TYPE);
   _leds->begin();
   _leds->clear();
   _leds->setBrightness(LED_BRIGHTNESS);
