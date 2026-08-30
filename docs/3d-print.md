@@ -2,7 +2,7 @@
 
 # 3D-Druckteile
 
-Alle 3D-Druckdateien liegen im Ordner [`3D-Daten`](../3D-Daten).
+Alle 3D-Druck- bzw. .step-Dateien liegen im Ordner [`3D-Daten`](../3D-Daten/).
 
 Die 6er Version lässt sich noch auf dem A1-Mini drucken.
 
@@ -10,11 +10,10 @@ Die 6er Version lässt sich noch auf dem A1-Mini drucken.
 
 | Dateiname | Info |
 |---|---|
-| Filament-Sample-Board_6x.3mf | Komplettpaket eine Zeile 3x6 Halter |
-| Filament-Sample-Board_7x.3mf | Komplettpaket eine Zeile 3x7 Halter |
-| ModifiedSample.3mf | Das bekannte sSample mit verkürztem Fuß |
-| Sample_Fuss.3mf | Ser Fuß für die Samples |
-
+| [Filament-Sample-Board_6x.3mf](../3D-Daten/Printfiles/Filament-Sample-Board_6x.3mf) | Komplettpaket eine Zeile 3x6 Halter |
+| [Filament-Sample-Board_7x.3mf](../3D-Daten/Printfiles/Filament-Sample-Board_7x.3mf) | Komplettpaket eine Zeile 3x7 Halter |
+| [ModifiedSample.3mf](../3D-Daten/Printfiles/ModifiedSample.3mf) | Das bekannte Sample mit verkürztem Fuß |
+| [Sample_Fuss.3mf](../3D-Daten/Printfiles/Sample_Fuss.3mf) | Der Fuß für die Samples |
 
 
 ## Wichtige Druckeinstellungen
