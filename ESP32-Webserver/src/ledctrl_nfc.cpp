@@ -6,6 +6,7 @@
 #include "ledctrl_nfc.h"
 #include "neopixel_guard.h"
 #include "pins.h"
+#include "led_config.h"
 
 // ============================================================================
 // Debug
@@ -231,7 +232,7 @@ void LEDCTRL_NFC::init(int count, int timeout_ms, int brightness,
   digitalWrite(NFC_LED_PIN, LOW);
 
   // Strip anlegen
-  _leds = new Adafruit_NeoPixel(NFC_LED_COUNT, NFC_LED_PIN, NEO_GRB + NEO_KHZ800);
+  _leds = new Adafruit_NeoPixel(NFC_LED_COUNT, NFC_LED_PIN, LED_NEO_PIXEL_TYPE);
   _leds->begin();
   _leds->clear();
   _leds->setBrightness(NFC_LED_BRIGHTNESS);
