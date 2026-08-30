@@ -1,10 +1,10 @@
-# WORK IN PROGRESS
-
 # 3D-Druckteile
 
 Alle 3D-Druck- bzw. .step-Dateien liegen im Ordner [`3D-Daten`](../3D-Daten/).
 
 Die 6er Version lässt sich noch auf dem A1-Mini drucken.
+
+### Aktuell gibt es nur 6er und 7er Varianten, 4er und 5er sind in Planung.
 
 ## Dateiübersicht
 
@@ -18,8 +18,8 @@ Die 6er Version lässt sich noch auf dem A1-Mini drucken.
 
 ## Wichtige Druckeinstellungen
 
-Der Fuß benötigt eine Druckpause bei Layer 12 bzw. 2,4mm Höhe.
-An der Stelle wird das NFC-Tag eingelegt und am Besten mit seiner Klebefolie eingeklebt, damit es sich im Druck nicht verschiebt.
+Der Fuß benötigt eine <b>Druckpause bei Layer 12 bzw. 2,4mm Höhe.</b>
+An der Stelle wird das NFC-Tag eingelegt und am Besten mit <b>seiner Klebefolie eingeklebt</b>, damit es sich im Druck nicht verschiebt.
 
 <p align="center">
   <img src="../screenshots/buildplate.png" alt="buildplate" width="320">
@@ -27,10 +27,18 @@ An der Stelle wird das NFC-Tag eingelegt und am Besten mit seiner Klebefolie ein
   <sub>Print Pause</sub>
 </p>
 
+Das Sample selbt sollte mit <b>0,16mm Layerhöhe</b> gedruckt werden, da die Farben besser zur Geltung kommen.
+<p align="center">
+  <img src="../screenshots/sample.png" alt="sample" width="320"><br>
+  <sub>Sample</sub>
+</p>
+
+
 
 ## Montagehinweise
 
-Die LED Halter haben "Puzzle-Nasen", damit sie aneinadergereiht werden können.
+Die Teile sind untereinander kompatibel.<br>
+Die LED Halter haben "Puzzle-Nasen", damit sie aneinadergereiht werden können.<br>
 Außerdem haben sie kleine Aussparung an der Unterseite, damit der Halter für den Träger besser ausgerichtet werden kann.
 
 
