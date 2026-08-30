@@ -4,29 +4,42 @@
 
 Alle 3D-Druckdateien liegen im Ordner [`3D-Daten`](../3D-Daten).
 
-## Teileübersicht
+Die 6er Version lässt sich noch auf dem A1-Mini drucken.
 
-<!-- TODO: Tabelle mit den tatsächlichen Dateien füllen -->
+## Dateiübersicht
 
-| Datei | Teil | Anzahl | Hinweise |
-|---|---|---|---|
-| <!-- TODO: dateiname.stl --> | <!-- z. B. Grundplatte --> | 1 | |
-| <!-- TODO: dateiname.stl --> | <!-- z. B. LED-Halterung --> | 12 | |
-| <!-- TODO: dateiname.stl --> | <!-- z. B. Gehäuse ESP32 --> | 1 | |
-
-## Empfohlene Druckeinstellungen
-
-| Parameter | Empfehlung |
+| Dateiname | Info |
 |---|---|
-| Material | <!-- TODO: z. B. PETG, PLA --> |
-| Schichthöhe | <!-- TODO: z. B. 0,2 mm --> |
-| Fülldichte | <!-- TODO: z. B. 15–20 % --> |
-| Stützstrukturen | <!-- TODO: ja/nein, wo --> |
-| Wandstärke | <!-- TODO: --> |
+| Filament-Sample-Board_6x.3mf | Komplettpaket eine Zeile 3x6 Halter |
+| Filament-Sample-Board_7x.3mf | Komplettpaket eine Zeile 3x7 Halter |
+| ModifiedSample.3mf | Das bekannte sSample mit verkürztem Fuß |
+| Sample_Fuss.3mf | Ser Fuß für die Samples |
+
+
+
+## Wichtige Druckeinstellungen
+
+Der Fuß nenötigt eine Druckpause bei Laver 12 bzw. 2,4mm Höhe.
+An der Stelle wird das NFC-Tag eingelegt und am Besten mit seine Klebefolie auch eingeklebt, damit es im Druck nicht heraussprongt oder hoch kommt.
+
+<p align="center">
+  <img src="./screenshots/buildplate.png" alt="buildplate" width="320">
+  <img src="./screenshots/buildplate_pause.png" alt="buildplate pause" width="320"><br>
+  <sub>Print Pause</sub>
+</p>
+
 
 ## Montagehinweise
 
-<!-- TODO: Hinweise zum Zusammenbau der gedruckten Teile mit der Elektronik,
-Verweis auf docs/hardware.md für die Verkabelung -->
+Die LED Halter haben "Puzzle-Nasen", damit sie aneinadergereiht werden können.
+Außerdem haben sie kleine Ausbuchtungen an der Unterseite, damit der Halter für den Träger besser ausgerichtet werden kann.
 
-Siehe auch: [`hardware.md`](hardware.md) für die elektrische Verkabelung.
+<p align="center">
+  <img src="./screenshots/halter-3d_detail.png" alt="detail" width="320">
+  <img src="./screenshots/montage_1.png" alt="montage" width="320">
+</p>
+<p align="center">
+  <img src="./screenshots/montage_2.png" alt="montage" width="320">
+  <img src="./screenshots/montage_3.png" alt="montage" width="320">
+  <sub>Montage</sub>
+</p>
