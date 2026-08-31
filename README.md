@@ -58,7 +58,8 @@ Siehe [Hardware-Dokumentation](./docs/hardware.md)
 
 <p align="center">
   <img src="./pictures/full_board.jpg" alt="Fertiges Board" width="480">
-  <img src="./pictures/reader.jpg" alt="Display/Reader" width="185"><br>
+  <img src="./pictures/reader.jpg" alt="Display/Reader" width="187">  
+  <img src="./pictures/scan-clip.gif" alt="Display/Reader" width="340"><br>
   <sub>Fertig aufgebautes Board</sub>
 </p>
 
