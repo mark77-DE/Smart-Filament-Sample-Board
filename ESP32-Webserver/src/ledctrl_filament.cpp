@@ -104,7 +104,7 @@ static inline uint32_t rgbHexToNeo(Adafruit_NeoPixel* s, uint32_t rgb) {
   const uint8_t r = (rgb >> 16) & 0xFF;
   const uint8_t g = (rgb >>  8) & 0xFF;
   const uint8_t b =  rgb        & 0xFF;
-  return s->Color(r, g, b);
+  return ledColor(s, r, g, b);
 }
 
 static uint8_t breath8(uint16_t bpm, uint32_t nowMs, uint8_t low, uint8_t high) {
@@ -195,7 +195,7 @@ static void renderIdlePulseFrame(Adafruit_NeoPixel* s,
     const uint8_t g = dimDither8(g0, glvl, thr);
     const uint8_t b = dimDither8(b0, glvl, thr);
 
-    s->setPixelColor(i, s->Color(r, g, b));
+    s->setPixelColor(i, ledColor(s, r, g, b));
   }
 
   // ❌ KEIN ditherPhase++ mehr!

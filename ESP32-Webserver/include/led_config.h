@@ -140,9 +140,9 @@ static_assert(
 // Adafruit-NeoPixel-Typ aus LED_ORDER erzeugen
 // ============================================================================
 
-constexpr neoPixelType getNeoPixelOrder()
+constexpr neoPixelType getNeoPixelOrder(LedOrder order)
 {
-    switch (LED_ORDER) {
+    switch (order) {
 
         // ---------------- RGB ----------------
 
@@ -239,7 +239,6 @@ constexpr neoPixelType getNeoPixelOrder()
             return NEO_BGRW;
     }
 
-    // Sollte wegen LED_ORDER eigentlich nie erreicht werden.
     return NEO_GRB;
 }
 
@@ -250,5 +249,20 @@ constexpr neoPixelType getNeoPixelOrder()
 // ============================================================================
 
 constexpr neoPixelType LED_NEO_PIXEL_TYPE =
-    getNeoPixelOrder() + NEO_KHZ800;
-    
+    getNeoPixelOrder(static_cast<LedOrder>(LED_ORDER)) + NEO_KHZ800;
+
+
+
+inline uint32_t ledColor(
+    Adafruit_NeoPixel* strip,
+    uint8_t r,
+    uint8_t g,
+    uint8_t b
+)
+{
+    if constexpr (ledTypeIsRgbw()) {
+        return strip->Color(r, g, b, 0);
+    }
+
+    return strip->Color(r, g, b);
+}

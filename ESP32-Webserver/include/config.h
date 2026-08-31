@@ -2,12 +2,23 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
 
+#include "led_config.h"
+
 
 // ============================================================================
 // Konfigurationsstrukturen
 // ============================================================================
 
-
+/**
+ * @brief Globale LED-Hardware-Konfiguration
+ *
+ * Gilt für alle adressierbaren LEDs des Geräts.
+ * Die Defaults stammen aus platformio.ini.
+ */
+struct LedHardwareConfigV2 {
+  LedType  type  = static_cast<LedType>(LED_TYPE);
+  LedOrder order = static_cast<LedOrder>(LED_ORDER);
+};
 
 
 /**
@@ -107,6 +118,8 @@ struct AppConfigV2 {
   systemConfig system;     ///< System-Konfiguration
   uint32_t     webLEDTimeout;   // Default fürs Dashboard (ms)
   String       hostname;    ///< Hostname für WLAN
+
+  LedHardwareConfigV2 ledHardware;
 
   LedConfigV2    led;         ///< LED-Konfiguration (Filament)
   NfcLedConfigV2 nfc;         ///< NFC-LED-Konfiguration

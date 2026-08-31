@@ -116,7 +116,7 @@ static inline uint32_t rgbHexToNeo(uint32_t rgb) {
   const uint8_t r = (rgb >> 16) & 0xFF;
   const uint8_t g = (rgb >>  8) & 0xFF;
   const uint8_t b =  rgb        & 0xFF;
-  return LEDCTRL_NFC::rawStrip()->Color(r, g, b);
+  return ledColor(LEDCTRL_NFC::rawStrip(), r, g, b);
 }
 
 static inline void renderAll(uint32_t neo) {
@@ -183,7 +183,7 @@ static void renderIdlePulseFrame(unsigned long now) {
     const uint8_t b = dimDither8(b0, glvl, thr);
 
     LEDCTRL_NFC::rawStrip()->setPixelColor(
-        i, LEDCTRL_NFC::rawStrip()->Color(r, g, b));
+        i, ledColor(LEDCTRL_NFC::rawStrip(), r, g, b));
   }
 }
 

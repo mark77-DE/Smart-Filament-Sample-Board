@@ -9,6 +9,10 @@
         "defaultLanguage": "en",
         "updateCheckInterval": 120
         },
+    "ledHardware": {
+        "type": "SK6812_RGBW",
+        "order": "GRBW"
+    },
     "led": {
         "count": 8,
         "brightness": 50,
