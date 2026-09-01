@@ -10,8 +10,8 @@
         "updateCheckInterval": 120
         },
     "ledHardware": {
-        "type": "SK6812_RGBW",
-        "order": "GRBW"
+        "type": "WS2812B",
+        "order": "GRB"
     },
     "led": {
         "count": 8,
