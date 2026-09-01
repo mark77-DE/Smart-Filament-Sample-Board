@@ -1,5 +1,6 @@
 #pragma once
 #include <Arduino.h>
+#include "led_config.h"
 
 // Vorwärtsdeklaration genügt hier (die eigentliche Header-Datei wird in der .cpp inkludiert)
 class Adafruit_NeoPixel;
@@ -41,8 +42,9 @@ public:
    * @param color       Standardfarbe 0xRRGGBB
    * @param colorError  Fehlerfarbe 0xRRGGBB
    * @param colorPulse  Idle-Pulse-Farbe 0xRRGGBB
+   * @param type        NeoPixel-Typ (z. B. NEO_GRBW + NEO_KHZ800)
    */
-  static void init(int count, int timeout_ms, int brightness, uint32_t color, uint32_t colorError, uint32_t colorPulse);
+  static void init(int count, int timeout_ms, int brightness, uint32_t color, uint32_t colorError, uint32_t colorPulse, neoPixelType pixelType);
 
   /**
    * @brief In der main-Loop zyklisch aufrufen.

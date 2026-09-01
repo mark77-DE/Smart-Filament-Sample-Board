@@ -2,7 +2,7 @@
   "help": {
     "led": {
       "title": "LED Settings",
-      "content": "<p>Here you can configure the LEDs for the sample.</p><ul><li>Number of LEDs: Number of WS2812b LEDs, corresponding to the number of planned samples</li><li>Brightness: The brightness for the sample LEDs (0–100%)</li><li>LED Color: The color that lights up above the detected sample</li><li>LED Color on Error: The color displayed when the NFC tag is unknown</li><li>Pulsing LED Color: The color that pulses in standby mode</li><li>Timeout: How many milliseconds the LED should light up on the sample</li></ul>"
+      "content": "<p>LED & NFC-LED Hardware Settings.</p><ul><li>Connected LED-Type.</li><li>LED color order corresponding to the LED type</li></ul><p>Here you can configure the LEDs for the sample.</p><ul><li>Number of LEDs: Number of WS2812b LEDs, corresponding to the number of planned samples</li><li>Brightness: The brightness for the sample LEDs (0–100%)</li><li>LED Color: The color that lights up above the detected sample</li><li>LED Color on Error: The color displayed when the NFC tag is unknown</li><li>Pulsing LED Color: The color that pulses in standby mode</li><li>Timeout: How many milliseconds the LED should light up on the sample</li></ul>"
     },
     "nfcled": {
       "title": "NFC LED Settings",
@@ -69,6 +69,7 @@
     "txt_edit": "Edit",
     "txt_button": "Pushbutton",
     "txt_buzzer": "Buzzer",
+    "txt_led_hw_settings": "LED & NFC-LED Hardware Settings",
     "txt_led_settings": "LED Settings",
     "txt_max_leds": "Number of LEDs (1–100):",
     "txt_led_brightness": "Brightness (%):",

@@ -8,6 +8,7 @@
 #include "pins.h"
 #include "led_config.h"
 
+
 // ============================================================================
 // Debug
 // ============================================================================
@@ -201,7 +202,7 @@ static inline void dbgState(const char* where, LedState s) {
 // ============================================================================
 void LEDCTRL_NFC::init(int count, int timeout_ms, int brightness,
                        uint32_t colorSuccess, uint32_t colorError, uint32_t colorPulse,
-                       bool successBlinkEnabled, int successBlinkCount, int successBlinkMs) {
+                       bool successBlinkEnabled, int successBlinkCount, int successBlinkMs, neoPixelType pixelType) {
 
   NFC_LED_COUNT       = max(0, count);
   NFC_LED_TIMEOUT     = (unsigned long)max(0, timeout_ms);
@@ -232,7 +233,11 @@ void LEDCTRL_NFC::init(int count, int timeout_ms, int brightness,
   digitalWrite(NFC_LED_PIN, LOW);
 
   // Strip anlegen
-  _leds = new Adafruit_NeoPixel(NFC_LED_COUNT, NFC_LED_PIN, LED_NEO_PIXEL_TYPE);
+  _leds = new Adafruit_NeoPixel(
+    NFC_LED_COUNT,
+    NFC_LED_PIN,
+    pixelType
+);
   _leds->begin();
   _leds->clear();
   _leds->setBrightness(NFC_LED_BRIGHTNESS);

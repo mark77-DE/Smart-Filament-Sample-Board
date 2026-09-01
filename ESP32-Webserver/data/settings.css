@@ -1254,3 +1254,7 @@ body.daymode #rssiIcon .bar.green { fill: #00dd00; }
 #newTags {
     width: 200px;
 }
+
+.ledSettingsGrid {
+    margin-top: 24px;
+}

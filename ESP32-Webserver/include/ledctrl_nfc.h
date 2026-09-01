@@ -1,5 +1,6 @@
 #pragma once
 #include <Arduino.h>
+#include "led_config.h"
 
 // Hinweis: Für den Zeiger-Typ reicht eine Vorwärtsdeklaration.
 // (Die eigentliche Header-Datei von Adafruit_NeoPixel wird im .cpp inkludiert.)
@@ -46,10 +47,11 @@ public:
    * @param successBlinkEnabled  True = Success blinkt zunächst
    * @param successBlinkCount    Anzahl Blink-Zyklen
    * @param successBlinkMs       Blink-Intervall in ms
+   * @param ledType              NeoPixel-Typ
    */
   // --------------------------------------------------------------------------
   static void init(int count, int timeout_ms, int brightness, uint32_t colorSuccess, uint32_t colorError, uint32_t colorPulse,
-                   bool successBlinkEnabled, int successBlinkCount, int successBlinkMs);
+                   bool successBlinkEnabled, int successBlinkCount, int successBlinkMs, neoPixelType pixelType);
 
   // --------------------------------------------------------------------------
   // Muss zyklisch aus loop() aufgerufen werden.

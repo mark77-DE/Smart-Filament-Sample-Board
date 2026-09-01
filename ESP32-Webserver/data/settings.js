@@ -43,6 +43,9 @@ const infoSpiffsSize = document.getElementById("infoSpiffsSize");
 const infoFreeSpiffs = document.getElementById("infoFreeSpiffs");
 const infoBoardVariant = document.getElementById("infoBoardVariant");
 
+const ledHardwareTypeSelect = document.getElementById("ledHardwareTypeSelect");
+const ledHardwareColorOrderSelect = document.getElementById("ledHardwareColorOrderSelect");
+
 
 const ledBrightnessInput = document.getElementById("ledBrightness");
 const maxLEDInput = document.getElementById("maxLED");
@@ -652,6 +655,17 @@ function renderTable() {
     
 
     // --- Werte setzen ---
+
+    // --- LED Hardware ---
+const ledHardware = CONFIGV2.ledHardware || {};
+
+if (ledHardwareTypeSelect) {
+    ledHardwareTypeSelect.value = ledHardware.type ?? "WS2812B";
+}
+
+if (ledHardwareColorOrderSelect) {
+    ledHardwareColorOrderSelect.value = ledHardware.order ?? "GRB";
+}
     
 
     ledBrightnessInput.value = ledValueToPercent(led.brightness ?? 99);
@@ -831,6 +845,9 @@ async function updateAddFormSamples() {
 async function saveConfigHandler() {
     if (!confirm(t("txt_save_config_sure"))) return;
 
+    const ledHardwareType = ledHardwareTypeSelect.value;
+    const ledHardwareColorOrder = ledHardwareColorOrderSelect.value;
+
     // --- Filament LED ---
     const ledCount = Number(document.getElementById("maxLED").value);
     const ledBrightness = percentToLedValue(Number(document.getElementById("ledBrightness").value));
@@ -906,6 +923,10 @@ async function saveConfigHandler() {
                     hostname: hostname || "filament-board",
                     defaultLanguage,
                     updateCheckInterval
+                },
+                ledHardware: {
+                    type: ledHardwareType,
+                    order: ledHardwareColorOrder
                 },
                 led: {
                     count: ledCount,
@@ -1621,6 +1642,41 @@ updateCheckIntervalInput.addEventListener("input", updateIntervalDisplay);
 updateCheckIntervalInput.addEventListener("change", updateIntervalDisplay);
 
 
+ledHardwareTypeSelect.addEventListener("change", updateLedColorOrderOptions);
+
+function updateLedColorOrderOptions() {
+    const ledTypeSelect = document.getElementById("ledHardwareTypeSelect");
+    const colorOrderSelect = document.getElementById("ledHardwareColorOrderSelect");
+
+    if (!ledTypeSelect || !colorOrderSelect) {
+        return;
+    }
+
+    const isRGBW = ledTypeSelect.value === "SK6812_RGBW";
+
+    Array.from(colorOrderSelect.options).forEach(option => {
+        const isWhiteOrder = option.value.endsWith("W");
+
+        // RGBW -> nur W-Varianten
+        // RGB  -> nur Varianten ohne W
+        option.hidden = isRGBW ? !isWhiteOrder : isWhiteOrder;
+    });
+
+    // Falls die aktuell ausgewählte Option durch den Wechsel
+    // nicht mehr gültig ist, automatisch die erste sichtbare wählen.
+    const selectedOption = colorOrderSelect.options[colorOrderSelect.selectedIndex];
+
+    if (selectedOption && selectedOption.hidden) {
+        const firstVisibleOption = Array.from(colorOrderSelect.options)
+            .find(option => !option.hidden);
+
+        if (firstVisibleOption) {
+            colorOrderSelect.value = firstVisibleOption.value;
+        }
+    }
+}
+
+
 // -------------------- Init --------------------
 async function init() {
 
@@ -1641,7 +1697,7 @@ async function init() {
     await getPinout();
 
     updateIntervalDisplay();
-    
+    updateLedColorOrderOptions();
 
     document.querySelectorAll('#addForm input[data-max]').forEach(el => updateCharsLeft(el));
     

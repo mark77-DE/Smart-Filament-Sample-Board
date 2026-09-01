@@ -206,7 +206,7 @@ static void renderIdlePulseFrame(Adafruit_NeoPixel* s,
 // ============================================================================
 // Public API
 // ============================================================================
-void LEDCTRL_FILAMENT::init(int count, int timeout_ms, int brightness, u_int32_t color, uint32_t colorError, uint32_t colorPulse) {
+void LEDCTRL_FILAMENT::init(int count, int timeout_ms, int brightness, u_int32_t color, uint32_t colorError, uint32_t colorPulse, neoPixelType pixelType) {
   LED_COUNT      = max(0, count);
   
   LED_TIMEOUT    = max(0, timeout_ms);
@@ -214,6 +214,7 @@ void LEDCTRL_FILAMENT::init(int count, int timeout_ms, int brightness, u_int32_t
   LED_COLOR      = color;
   LED_COLOR_ERROR= colorError; 
   LED_COLOR_PULSE= colorPulse;
+
 
   // vorhandenen Strip sauber freigeben
   if (_leds) {
@@ -229,7 +230,11 @@ void LEDCTRL_FILAMENT::init(int count, int timeout_ms, int brightness, u_int32_t
   pinMode(LED_PIN, OUTPUT);
   digitalWrite(LED_PIN, LOW);
 
-  _leds = new Adafruit_NeoPixel(LED_COUNT, LED_PIN, LED_NEO_PIXEL_TYPE);
+  _leds = new Adafruit_NeoPixel(
+    LED_COUNT,
+    LED_PIN,
+    pixelType
+  );
   _leds->begin();
   _leds->clear();
   _leds->setBrightness(LED_BRIGHTNESS);

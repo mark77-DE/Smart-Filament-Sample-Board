@@ -19,8 +19,6 @@
 #include "esp_system.h"
 #include "update_manager.h"
 
-
-
 File fsFile; // global oder in cpp außerhalb des Lambdas
 
 extern void webifArmIdleTimeout(uint32_t ms);
@@ -28,19 +26,18 @@ extern void webifArmIdleTimeout(uint32_t ms);
 unsigned long lastHeartbeatMs = 0;
 const unsigned long HEARTBEAT_INTERVAL_MS = 1000; // 1 Sekunde
 
-
-//Vorwärtsdeklaration
+// Vorwärtsdeklaration
 extern void renderRebootCountdown(unsigned long nowMs);
 
 extern void handleUID(const String &uid, UidSource source);
 
-const char* boardVariant = BOARD_VARIANT;
+const char *boardVariant = BOARD_VARIANT;
 
-
-SysInfo getSysInfo() {
+SysInfo getSysInfo()
+{
     SysInfo info;
 
-    // Enum -> String 
+    // Enum -> String
     info.chipName = ESP.getChipModel();
     info.cores = ESP.getChipCores();
     info.revision = ESP.getChipRevision();
@@ -51,7 +48,6 @@ SysInfo getSysInfo() {
     return info;
 }
 
-
 // ----------------- WebSocket Event -----------------
 void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
                AwsEventType type, void *arg, uint8_t *data, size_t len)
@@ -59,30 +55,36 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
     LEDCTRL_FILAMENT::netBusyHint(350);
     LEDCTRL_NFC::netBusyHint(350);
 
-    if (type != WS_EVT_DATA) return;
+    if (type != WS_EVT_DATA)
+        return;
 
-    AwsFrameInfo *info = (AwsFrameInfo*)arg;
-    if (info->opcode != WS_TEXT) return;
+    AwsFrameInfo *info = (AwsFrameInfo *)arg;
+    if (info->opcode != WS_TEXT)
+        return;
 
     // --- FIX: WS-Fragmente zusammensetzen ---
     static String wsBuf;
-    if (info->index == 0) {
+    if (info->index == 0)
+    {
         wsBuf = "";
         wsBuf.reserve(info->len);
     }
 
-    wsBuf.concat((const char*)data, len);
+    wsBuf.concat((const char *)data, len);
 
     // Noch nicht komplett?
-    if (!(info->final && (info->index + len == info->len))) {
+    if (!(info->final && (info->index + len == info->len)))
+    {
         return;
     }
 
     // Jetzt ist wsBuf vollständig
     JsonDocument doc;
     DeserializationError err = deserializeJson(doc, wsBuf);
-    if (err) {
-        if (CONFIGV2.system.debugMode) {
+    if (err)
+    {
+        if (CONFIGV2.system.debugMode)
+        {
             Serial.print("WS JSON parse error: ");
             Serial.println(err.c_str());
             Serial.print("WS raw: ");
@@ -91,20 +93,23 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
         return;
     }
 
-    const char* action = doc["action"] | "";
-    if(CONFIGV2.system.debugMode) {
+    const char *action = doc["action"] | "";
+    if (CONFIGV2.system.debugMode)
+    {
         Serial.print("WS action: ");
         Serial.println(action);
-    }   
+    }
 
-    if (strcmp(action, "highlightUIDLED") == 0) {
+    if (strcmp(action, "highlightUIDLED") == 0)
+    {
         // --- ACK sofort zurück an genau diesen Client ---
         // (damit JS nicht retry-spamt)
         uint32_t seq = doc["seq"] | 0;
-        if (seq != 0) {
+        if (seq != 0)
+        {
             JsonDocument ack;
             ack["action"] = "ack";
-            ack["seq"]    = seq;
+            ack["seq"] = seq;
 
             String out;
             serializeJson(ack, out);
@@ -119,121 +124,127 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
         webifArmIdleTimeout(t);
 
         handleUID(uid, UidSource::WEBIF);
-
-
-    } else if (strcmp(action, "highlightMultiLED") == 0) {
-
-    // --- ACK sofort zurück an genau diesen Client ---
-    uint32_t seq = doc["seq"] | 0;
-    if (seq != 0) {
-        JsonDocument ack;
-        ack["action"] = "ack";
-        ack["seq"]    = seq;
-
-        String out;
-        serializeJson(ack, out);
-        client->text(out);
     }
+    else if (strcmp(action, "highlightMultiLED") == 0)
+    {
 
-    // --- Timeout bestimmen ---
-    uint32_t t = (CONFIGV2.system.webLEDTimeout > 0)
-                   ? CONFIGV2.system.webLEDTimeout
-                   : (uint32_t)CONFIGV2.led.timeout;
+        // --- ACK sofort zurück an genau diesen Client ---
+        uint32_t seq = doc["seq"] | 0;
+        if (seq != 0)
+        {
+            JsonDocument ack;
+            ack["action"] = "ack";
+            ack["seq"] = seq;
 
-    uint16_t holdMs = (uint16_t)min<uint32_t>(t, 65535);
-
-    LEDCTRL_FILAMENT::webifHoldFor(holdMs);
-    webifArmIdleTimeout(t);
-
-    // --- UIDs verarbeiten ---
-    JsonArray uids = doc["uids"].as<JsonArray>();
-
-    FilamentEntry entry;
-    int16_t index = 0;
-    bool anyHit = false;
-
-    LEDCTRL_FILAMENT::allOff();
-
-    for (JsonVariant uidVar : uids) {
-        String uid = uidVar.as<String>();
-
-        if (CONFIGV2.system.debugMode) {
-            Serial.print(index++);
-            Serial.print(": WS highlightUID: ");
-            Serial.println(uid);
+            String out;
+            serializeJson(ack, out);
+            client->text(out);
         }
 
-        if (FilamentDB::findByUID(uid, entry)) {
-            LEDCTRL_FILAMENT::setPixel(entry.ledIndex, CONFIGV2.led.color);
-            anyHit = true;
+        // --- Timeout bestimmen ---
+        uint32_t t = (CONFIGV2.system.webLEDTimeout > 0)
+                         ? CONFIGV2.system.webLEDTimeout
+                         : (uint32_t)CONFIGV2.led.timeout;
 
-            if (CONFIGV2.system.debugMode) {
-                Serial.printf(
-                    "  -> LED %u (%s %s %s)\n",
-                    entry.ledIndex,
-                    entry.vendor.c_str(),
-                    entry.type.c_str(),
-                    entry.color.c_str(),
-                    entry.info1.c_str(),
-                    entry.info2.c_str(),
-                    entry.storage.c_str()
-                
+        uint16_t holdMs = (uint16_t)min<uint32_t>(t, 65535);
 
-                );
+        LEDCTRL_FILAMENT::webifHoldFor(holdMs);
+        webifArmIdleTimeout(t);
+
+        // --- UIDs verarbeiten ---
+        JsonArray uids = doc["uids"].as<JsonArray>();
+
+        FilamentEntry entry;
+        int16_t index = 0;
+        bool anyHit = false;
+
+        LEDCTRL_FILAMENT::allOff();
+
+        for (JsonVariant uidVar : uids)
+        {
+            String uid = uidVar.as<String>();
+
+            if (CONFIGV2.system.debugMode)
+            {
+                Serial.print(index++);
+                Serial.print(": WS highlightUID: ");
+                Serial.println(uid);
             }
-        } else if (CONFIGV2.system.debugMode) {
-            Serial.print("  !! UID not found: ");
-            Serial.println(uid);
+
+            if (FilamentDB::findByUID(uid, entry))
+            {
+                LEDCTRL_FILAMENT::setPixel(entry.ledIndex, CONFIGV2.led.color);
+                anyHit = true;
+
+                if (CONFIGV2.system.debugMode)
+                {
+                    Serial.printf(
+                        "  -> LED %u (%s %s %s | %s | %s | %s)\n",
+                        entry.ledIndex,
+                        entry.vendor.c_str(),
+                        entry.type.c_str(),
+                        entry.color.c_str(),
+                        entry.info1.c_str(),
+                        entry.info2.c_str(),
+                        entry.storage.c_str());
+                }
+            }
+            else if (CONFIGV2.system.debugMode)
+            {
+                Serial.print("  !! UID not found: ");
+                Serial.println(uid);
+            }
+        }
+
+        if (!anyHit && CONFIGV2.system.debugMode)
+        {
+            Serial.println("WS highlightMultiLED: no matching UIDs");
         }
     }
+    else if (strcmp(action, "highlightSingleLed") == 0)
+    {
 
-    if (!anyHit && CONFIGV2.system.debugMode) {
-        Serial.println("WS highlightMultiLED: no matching UIDs");
-    }
-} else if (strcmp(action, "highlightSingleLed") == 0) {
+        if (CONFIGV2.system.debugMode)
+        {
+            Serial.println("WS highlightSingleLed received");
+        }
 
-    if(CONFIGV2.system.debugMode) {
-        Serial.println("WS highlightSingleLed received");
-    }
+        int ledIndex = doc["led"] | -1; // Default -1, falls key fehlt
+        if (ledIndex < 0)
+        {
+            Serial.println("WS highlightSingleLed: LED index fehlt oder ungültig");
+            return;
+        }
 
-    int ledIndex = doc["led"] | -1;  // Default -1, falls key fehlt
-    if (ledIndex < 0) {
-        Serial.println("WS highlightSingleLed: LED index fehlt oder ungültig");
-        return;
-    }
-
-    activateLed(ledIndex);
-    uint32_t t = (CONFIGV2.system.webLEDTimeout > 0) ? CONFIGV2.system.webLEDTimeout : (uint32_t)CONFIGV2.led.timeout;
+        activateLed(ledIndex);
+        uint32_t t = (CONFIGV2.system.webLEDTimeout > 0) ? CONFIGV2.system.webLEDTimeout : (uint32_t)CONFIGV2.led.timeout;
 
         LEDCTRL_FILAMENT::webifHoldFor((uint16_t)min<uint32_t>(t, 65535));
         webifArmIdleTimeout(t);
-
-
-     
-
+    }
 }
-
-
-}
-
 
 // ------------------ Webserver Init -------------------
 void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
 {
-    
+
     // LittleFS mounten
-    if (!LittleFS.begin(true)) {  // true = format if mount fails
+    if (!LittleFS.begin(true))
+    { // true = format if mount fails
         Serial.println("LittleFS mount failed!");
-    } else {
+    }
+    else
+    {
         Serial.println("LittleFS mounted successfully!");
-        Serial.print("Total Bytes: "); Serial.println(LittleFS.totalBytes());
-        Serial.print("Used Bytes:  "); Serial.println(LittleFS.usedBytes());
+        Serial.print("Total Bytes: ");
+        Serial.println(LittleFS.totalBytes());
+        Serial.print("Used Bytes:  ");
+        Serial.println(LittleFS.usedBytes());
     }
 
     // [ORDER-FIX]: WebSocket zuerst registrieren, damit /ws nicht vom Catch-all "/" abgefangen wird
     ws.onEvent(onWsEvent);
     server.addHandler(&ws);
-
 
     // FIX: Statische Dateien per serveStatic + Cache-Header ausliefern
     //      (schneller, weniger LittleFS-Lesezugriffe, Browser-Caching)
@@ -260,16 +271,16 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
         .setCacheControl("public, max-age=2592000");
 
     server.serveStatic("/update.html", LittleFS, "/update.html")
-        .setCacheControl("no-cache");      
-        
+        .setCacheControl("no-cache");
+
     server.serveStatic("/update.css", LittleFS, "/update.css")
         .setCacheControl("no-cache");
 
     server.serveStatic("/update.js", LittleFS, "/update.js")
         .setCacheControl("no-cache");
 
-
-    server.on("/api/version", HTTP_GET, [](AsyncWebServerRequest *request) {
+    server.on("/api/version", HTTP_GET, [](AsyncWebServerRequest *request)
+              {
 
         SysInfo info = getSysInfo();
 
@@ -320,12 +331,10 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
         
         String response;
         serializeJson(doc, response);
-        request->send(200, "application/json", response);
-    });
+        request->send(200, "application/json", response); });
 
-
-
-    server.on("/api/pinout", HTTP_GET, [](AsyncWebServerRequest *request) {
+    server.on("/api/pinout", HTTP_GET, [](AsyncWebServerRequest *request)
+              {
 
     // Netzlast-Hinweis
     LEDCTRL_FILAMENT::netBusyHint(250);
@@ -360,10 +369,9 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
     doc["PN532"]["MOSI"] = NFC_SPI_MOSI;
     doc["PN532"]["CS"]   = NFC_SPI_CS;
 
-
-    // ------------------------------------------------------------
-    // Display
-    // ------------------------------------------------------------
+        // ------------------------------------------------------------
+        // Display
+        // ------------------------------------------------------------
 
 #if DISPLAY_TYPE == DISPLAY_TYPE_ST7789
 
@@ -389,10 +397,9 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
 
 #endif
 
-
-    // ------------------------------------------------------------
-    // Board
-    // ------------------------------------------------------------
+        // ------------------------------------------------------------
+        // Board
+        // ------------------------------------------------------------
 
 #ifdef BOARD_VARIANT
     doc["board"] = BOARD_VARIANT;
@@ -408,14 +415,11 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
     String response;
     serializeJson(doc, response);
 
-    request->send(200, "application/json", response);
-});
-    
-
-
+    request->send(200, "application/json", response); });
 
     // Filament-Liste als JSON
-    server.on("/filaments.json", HTTP_GET, [](AsyncWebServerRequest *request){
+    server.on("/filaments.json", HTTP_GET, [](AsyncWebServerRequest *request)
+              {
         // FIX: Netzlast-Hinweis – Dateizugriff + JSON
         LEDCTRL_FILAMENT::netBusyHint(350);
         LEDCTRL_NFC::netBusyHint(350);
@@ -441,11 +445,11 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
 
         String json;
         serializeJson(arr, json);
-        request->send(200, "application/json", json);
-    });
+        request->send(200, "application/json", json); });
 
     // --- api to export ALL (filaments + config) ---
-    server.on("/api/exportAll", HTTP_GET, [](AsyncWebServerRequest *req) {
+    server.on("/api/exportAll", HTTP_GET, [](AsyncWebServerRequest *req)
+              {
         // FIX: Netzlast-Hinweis – relativ große JSON-Antwort
         LEDCTRL_FILAMENT::netBusyHint(500);
         LEDCTRL_NFC::netBusyHint(500);
@@ -462,19 +466,16 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
 
         String out;
         serializeJsonPretty(outDoc, out);
-        req->send(200, "application/json", out);
-    });
+        req->send(200, "application/json", out); });
 
     // --- api to import ALL ---
-    server.on("/api/importAll", HTTP_POST,
-        [](AsyncWebServerRequest *req){ 
+    server.on("/api/importAll", HTTP_POST, [](AsyncWebServerRequest *req)
+              { 
             // FIX: Netzlast-Hinweis – Upload startet
             LEDCTRL_FILAMENT::netBusyHint(500);
             LEDCTRL_NFC::netBusyHint(500);
-            req->send(200, "text/plain", "Upload started"); 
-        },
-        nullptr,
-        [](AsyncWebServerRequest *req, uint8_t *data, size_t len, size_t index, size_t total){
+            req->send(200, "text/plain", "Upload started"); }, nullptr, [](AsyncWebServerRequest *req, uint8_t *data, size_t len, size_t index, size_t total)
+              {
             // FIX: Netzlast-Hinweis – bei jedem Chunk
             LEDCTRL_FILAMENT::netBusyHint(500);
             LEDCTRL_NFC::netBusyHint(500);
@@ -500,20 +501,16 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
             if (doc["filaments"].is<JsonArray>())
                 importFilamentsJson(doc["filaments"].as<JsonArray>());
 
-            req->send(200, "text/plain", "Import OK");
-        }
-    );
+            req->send(200, "text/plain", "Import OK"); });
 
     // Update single filament
-    server.on("/api/update", HTTP_POST,
-        [](AsyncWebServerRequest *req){
+    server.on("/api/update", HTTP_POST, [](AsyncWebServerRequest *req)
+              {
             // FIX: Netzlast-Hinweis – kurzer Upload/JSON
             LEDCTRL_FILAMENT::netBusyHint(350);
             LEDCTRL_NFC::netBusyHint(350);
-            req->send(200, "text/plain", "Processing");
-        },
-        nullptr,
-        [](AsyncWebServerRequest *req, uint8_t *data, size_t len, size_t index, size_t total){
+            req->send(200, "text/plain", "Processing"); }, nullptr, [](AsyncWebServerRequest *req, uint8_t *data, size_t len, size_t index, size_t total)
+              {
             // FIX: Netzlast-Hinweis – pro Chunk
             LEDCTRL_FILAMENT::netBusyHint(350);
             LEDCTRL_NFC::netBusyHint(350);
@@ -569,20 +566,16 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
                 if(CONFIGV2.system.debugMode) {
                     Serial.println("DB update failed");
                 }
-            }
-        }
-    );
+            } });
 
     // Neuen Eintrag anlegen
-    server.on("/api/add", HTTP_POST,
-        [](AsyncWebServerRequest *req){
+    server.on("/api/add", HTTP_POST, [](AsyncWebServerRequest *req)
+              {
             // FIX: Netzlast-Hinweis – kurzer Upload/JSON
             LEDCTRL_FILAMENT::netBusyHint(350);
             LEDCTRL_NFC::netBusyHint(350);
-            req->send(200, "text/plain", "Processing");
-        },
-        nullptr,
-        [](AsyncWebServerRequest *req, uint8_t *data, size_t len, size_t index, size_t total){
+            req->send(200, "text/plain", "Processing"); }, nullptr, [](AsyncWebServerRequest *req, uint8_t *data, size_t len, size_t index, size_t total)
+              {
             // FIX: Netzlast-Hinweis – pro Chunk
             LEDCTRL_FILAMENT::netBusyHint(350);
             LEDCTRL_NFC::netBusyHint(350);
@@ -625,11 +618,10 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
                 if(CONFIGV2.system.debugMode) {
                     Serial.println("ADD filament: FAILED");
                 }
-            }
-        }
-    );
+            } });
 
-    server.on("/api/delete", HTTP_POST, [](AsyncWebServerRequest *request) {
+    server.on("/api/delete", HTTP_POST, [](AsyncWebServerRequest *request)
+              {
         // FIX: Netzlast-Hinweis – kleiner JSON-Response + DB-Zugriff
         LEDCTRL_FILAMENT::netBusyHint(250);
         LEDCTRL_NFC::netBusyHint(250);
@@ -650,11 +642,11 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
             saveFilamentsToFile();
         }
 
-        request->send(200, "application/json", "{\"status\":\"ok\"}");
-    });
+        request->send(200, "application/json", "{\"status\":\"ok\"}"); });
 
     // Config als JSON ausliefern
-    server.on("/config.json", HTTP_GET, [](AsyncWebServerRequest *request){
+    server.on("/config.json", HTTP_GET, [](AsyncWebServerRequest *request)
+              {
         // FIX: Netzlast-Hinweis – FS-Read + JSON
         LEDCTRL_FILAMENT::netBusyHint(250);
         LEDCTRL_NFC::netBusyHint(250);
@@ -663,11 +655,11 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
             request->send(404, "application/json", "{\"error\":\"config.json missing\"}");
             return;
         }
-        request->send(LittleFS, "/config.json", "application/json");
-    });
+        request->send(LittleFS, "/config.json", "application/json"); });
 
     // Config als JSON ausliefern
-    server.on("/config_v2.json", HTTP_GET, [](AsyncWebServerRequest *request){
+    server.on("/config_v2.json", HTTP_GET, [](AsyncWebServerRequest *request)
+              {
         // FIX: Netzlast-Hinweis – FS-Read + JSON
         LEDCTRL_FILAMENT::netBusyHint(250);
         LEDCTRL_NFC::netBusyHint(250);
@@ -676,11 +668,11 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
             request->send(404, "application/json", "{\"error\":\"config_v2.json missing\"}");
             return;
         }
-        request->send(LittleFS, "/config_v2.json", "application/json");
-    });
+        request->send(LittleFS, "/config_v2.json", "application/json"); });
 
     // Help/Texte als JSON ausliefern
-    server.on("/help_de.json", HTTP_GET, [](AsyncWebServerRequest *request){
+    server.on("/help_de.json", HTTP_GET, [](AsyncWebServerRequest *request)
+              {
 
         // Optional: Netzlast-Hinweis wie bei Config
         LEDCTRL_FILAMENT::netBusyHint(150);
@@ -691,10 +683,10 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
             return;
         }
 
-        request->send(LittleFS, "/help_de.json", "application/json");
-    });
+        request->send(LittleFS, "/help_de.json", "application/json"); });
 
-    server.on("/help_en.json", HTTP_GET, [](AsyncWebServerRequest *request){
+    server.on("/help_en.json", HTTP_GET, [](AsyncWebServerRequest *request)
+              {
 
         // Optional: Netzlast-Hinweis wie bei Config
         LEDCTRL_FILAMENT::netBusyHint(150);
@@ -705,10 +697,10 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
             return;
         }
 
-        request->send(LittleFS, "/help_en.json", "application/json");
-    });
+        request->send(LittleFS, "/help_en.json", "application/json"); });
 
-    server.on("/i18n_help.js", HTTP_GET, [](AsyncWebServerRequest *request){
+    server.on("/i18n_help.js", HTTP_GET, [](AsyncWebServerRequest *request)
+              {
 
         // Optional: Netzlast-Hinweis wie bei Config
         LEDCTRL_FILAMENT::netBusyHint(150);
@@ -719,24 +711,21 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
             return;
         }
 
-        request->send(LittleFS, "/i18n_help.js", "application/javascript");
-    });
-    
-
+        request->send(LittleFS, "/i18n_help.js", "application/javascript"); });
 
     // FIX: /logo.png und /favicon.ico laufen nun über serveStatic (oben) mit Cache
     // server.on("/logo.png", HTTP_GET, ...);    // entfernt
     // server.on("/favicon.ico", HTTP_GET, ...); // entfernt
 
     // Update LED Config (sicherer Upload-Handler)
-    server.on("/api/updateConfig", HTTP_POST, 
-        [](AsyncWebServerRequest *req){ 
+    server.on("/api/updateConfig", HTTP_POST, [](AsyncWebServerRequest *req)
+              { 
             // FIX: Netzlast-Hinweis – Start der Config-Übertragung
             LEDCTRL_FILAMENT::netBusyHint(400);
-            LEDCTRL_NFC::netBusyHint(400);
-        },  // keine GET-Handler nötig
-        nullptr,                            // kein Body-Upload-Handler für Chunked POST
-        [](AsyncWebServerRequest *req, uint8_t *data, size_t len, size_t index, size_t total) {
+            LEDCTRL_NFC::netBusyHint(400); },     // keine GET-Handler nötig
+              nullptr, // kein Body-Upload-Handler für Chunked POST
+              [](AsyncWebServerRequest *req, uint8_t *data, size_t len, size_t index, size_t total)
+              {
             // FIX: Netzlast-Hinweis – pro Chunk
             LEDCTRL_FILAMENT::netBusyHint(400);
             LEDCTRL_NFC::netBusyHint(400);
@@ -771,11 +760,10 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
                 return;
             }
 
-            req->send(200, "application/json", "{\"status\":\"ok\"}");
-        }
-    );
+            req->send(200, "application/json", "{\"status\":\"ok\"}"); });
 
-    server.on("/api/reboot", HTTP_POST, [](AsyncWebServerRequest *request){
+    server.on("/api/reboot", HTTP_POST, [](AsyncWebServerRequest *request)
+              {
         // FIX: Netzlast-Hinweis – Request bearbeiten
         LEDCTRL_FILAMENT::netBusyHint(250);
         LEDCTRL_NFC::netBusyHint(250);
@@ -796,17 +784,11 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
             renderRebootCountdown(nowMs);
         }
         // optional: Status-JSON zurückgeben
-        request->send(200, "application/json", "{\"status\":\"ok\",\"pending\":true}");
-    });
+        request->send(200, "application/json", "{\"status\":\"ok\",\"pending\":true}"); });
 
-
-
-    server.on("/api/otaUpdate", HTTP_POST, 
-    [](AsyncWebServerRequest *req){
-        req->send(200, "text/plain", "Upload started");
-    },
-    nullptr,
-    [](AsyncWebServerRequest *req, uint8_t *data, size_t len, size_t index, size_t total){
+    server.on("/api/otaUpdate", HTTP_POST, [](AsyncWebServerRequest *req)
+              { req->send(200, "text/plain", "Upload started"); }, nullptr, [](AsyncWebServerRequest *req, uint8_t *data, size_t len, size_t index, size_t total)
+              {
 
         SysInfo info = getSysInfo();
 
@@ -885,18 +867,11 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
                 req->send(500, "application/json",
                     "{\"status\":\"error\",\"msg\":\"FW update failed\"}");
             }
-        }
-    }
-);
+        } });
 
-
-
-server.on("/api/uploadFS", HTTP_POST,
-    [](AsyncWebServerRequest *req){ 
-        req->send(200,"text/plain","FS Upload started"); 
-    },
-    nullptr,
-    [](AsyncWebServerRequest *req, uint8_t *data, size_t len, size_t index, size_t total){
+    server.on("/api/uploadFS", HTTP_POST, [](AsyncWebServerRequest *req)
+              { req->send(200, "text/plain", "FS Upload started"); }, nullptr, [](AsyncWebServerRequest *req, uint8_t *data, size_t len, size_t index, size_t total)
+              {
 
         if (req->hasParam("filename", true)) { // falls dein JS FormData verwendet
             String fname = req->getParam("filename", true)->value();
@@ -954,16 +929,7 @@ server.on("/api/uploadFS", HTTP_POST,
                 req->send(500, "application/json",
                     "{\"status\":\"error\",\"msg\":\"FS update failed\"}");
             }
-        }
-    }
-);
-
-
-
-
-
-
-    
+        } });
 
     // [ORDER-FIX]: Catch-all (ROOT) *zuletzt*, damit nichts Wichtiges davor abgefangen wird
     server.serveStatic("/", LittleFS, "/")
@@ -973,29 +939,32 @@ server.on("/api/uploadFS", HTTP_POST,
     server.begin();
 }
 
-
-
-void sendHeartbeat(AsyncWebSocket &ws) {
+void sendHeartbeat(AsyncWebSocket &ws)
+{
     unsigned long now = millis();
-    if (now - lastHeartbeatMs < HEARTBEAT_INTERVAL_MS) return;
+    if (now - lastHeartbeatMs < HEARTBEAT_INTERVAL_MS)
+        return;
     lastHeartbeatMs = now;
 
     JsonDocument doc;
-    doc["action"]       = "heartbeat";
-    doc["uptime_ms"]    = millis();
-    doc["heap_free"]    = ESP.getFreeHeap();
-    doc["wifi_rssi"]    = WiFi.RSSI();
-    doc["cpu_temp_c"]   = temperatureRead();
+    doc["action"] = "heartbeat";
+    doc["uptime_ms"] = millis();
+    doc["heap_free"] = ESP.getFreeHeap();
+    doc["wifi_rssi"] = WiFi.RSSI();
+    doc["cpu_temp_c"] = temperatureRead();
 
     // Update-Info
     UpdateInfo &update = getUpdateInfo();
 
-    if(update.updateAvailable) {
-        doc["updateAvailable"]  = update.updateAvailable;
-        doc["currentVersion"]   = update.currentVersion;
-        doc["latestVersion"]    = update.latestVersion;
-        doc["lastCheck"]        = update.lastCheck;
-    } else {
+    if (update.updateAvailable)
+    {
+        doc["updateAvailable"] = update.updateAvailable;
+        doc["currentVersion"] = update.currentVersion;
+        doc["latestVersion"] = update.latestVersion;
+        doc["lastCheck"] = update.lastCheck;
+    }
+    else
+    {
         doc["updateAvailable"] = false;
     }
 

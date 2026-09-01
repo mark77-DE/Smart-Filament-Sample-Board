@@ -2,7 +2,7 @@
   "help": {
     "led": {
       "title": "LED Settings",
-      "content": "<p>Hier werden die LEDs für das Sample konfiguriert.</p><ul><li>Anzahl LEDs: Anzahl der WS2812b LEDs, entspricht der Anzahl der geplanten Samples</li><li>Helligkeit: Die Helligkeit für die Sample LEDs (0–100%)</li><li>LED Farbe: die Farbe die über dem erkannten Sample leuchten soll</li><li>LED Farbe bei Fehler: die Farbe, die angezeigt wird, wenn das NFC-Tag unbekannt ist.</li><li>LED Farbe pulsieren: die Farbe, die im Standby pulsieren soll</li><li>Timeout: Wieviele Millisekunden soll die LED am Sample leuchten</li></ul>"
+      "content": "<p>LED & NFC-LED Hardware Einstellungen.</p><ul><li>Der angeschlossene LED-Typ.</li><li>LED Farbreihenfolge passend zum LED Typ</li></ul><p>Hier werden die LEDs für das Sample konfiguriert.</p><ul><li>Anzahl LEDs: Anzahl der WS2812b LEDs, entspricht der Anzahl der geplanten Samples</li><li>Helligkeit: Die Helligkeit für die Sample LEDs (0–100%)</li><li>LED Farbe: die Farbe die über dem erkannten Sample leuchten soll</li><li>LED Farbe bei Fehler: die Farbe, die angezeigt wird, wenn das NFC-Tag unbekannt ist.</li><li>LED Farbe pulsieren: die Farbe, die im Standby pulsieren soll</li><li>Timeout: Wieviele Millisekunden soll die LED am Sample leuchten</li></ul>"
     },
     "nfcled": {
       "title": "NFC LED Settings",
@@ -69,6 +69,7 @@
     "txt_edit": "Bearbeiten",
     "txt_button": "Taster",
     "txt_buzzer": "Pieper",
+    "txt_led_hw_settings": "LED & NFC-LED Hardware Einstellungen",
     "txt_led_settings": "LED Einstellungen",
     "txt_max_leds": "Anzahl LEDs (1–100):",
     "txt_led_brightness": "Helligkeit (%):",
