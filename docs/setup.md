@@ -2,64 +2,51 @@
 
 Diese Anleitung beschreibt, wie die Firmware aufgespielt und das Board eingerichtet wird.
 
-## Voraussetzungen
+## Installation
+### 1. Möglichkeit: Webinstaller
+[webinstaller](https://mark77-de.github.io/Smart-Filament-Sample-Board/webinstaller/)
+Dort auswählen, welches Display man nutzen möchte.
+Aktuell SSD1306 OLED, SH1106 OLED oder ST7789 TFT.<br>
+Details unter [hardware](./hardware.md)
 
-<!-- TODO: zutreffendes auswählen/anpassen -->
+### 2. Möglichket: .bin herunterladen und flashen
+Diese liegen hier: [Releases](https://github.com/mark77-DE/Smart-Filament-Sample-Board/releases)
 
-- Arduino IDE (Version x.x) **oder** PlatformIO
-- ESP32 Board-Package installiert
-- Folgende Libraries:
-  - <!-- TODO: z. B. Adafruit_PN532 -->
-  - <!-- TODO: z. B. FastLED / Adafruit_NeoPixel -->
-  - <!-- TODO: z. B. U8g2 (Display) -->
-  - <!-- TODO: z. B. PubSubClient (MQTT) -->
-  - <!-- TODO: z. B. ArduinoJson -->
+### 3. Möglichkeit: Repo clonen und selbst kompilieren und flashen
 
-## 1. Repository klonen
+## Setup (nur die Basics)
+### 1. Start
+Beim ersten Start wird nachden WLAN-Setting gefragt, dazu öffnet der ESP einen Hotspot mit der SSID "SpotMyFilament".
+Hier verbinden und die IP Adresse 192.168.4.1 im Browser eintragen und die eigenen WLAN-Daten eintragen und speichern.
 
-```bash
-git clone https://github.com/mark77-DE/Smart-Filament-Sample-Board.git
-cd Smart-Filament-Sample-Board/ESP32-Webserver
-```
+### 2. LEDs konfigurieren
+Hier sollte die Anzahl der LEDs konfiguriert werden. Diese sollte der Anzahl der Plätze für Samples entsprechen.
+<p align="center">
+  <img src="../screenshots/settings_led.png" alt="settings LED" width="320"><br>
+  <sub>LEDs konfigurieren</sub>
+</p>
 
-## 2. Konfiguration anpassen
+### 3. NFC-LEDs konfigurieren
+Hier sollte die Anzahl der LEDs 12 bleiben, wenn die 3D-Druckteile aus dem Repo benutz werden.
+<p align="center">
+  <img src="../screenshots/settings_nfc-led.png" alt="settings NFC-LED" width="320"><br>
+  <sub>NFC-LEDs konfigurieren</sub>
+</p>
 
-<!-- TODO: Beschreibe, welche Datei angepasst werden muss, z. B. config.h -->
-
-```cpp
-// Beispiel – Datei- und Variablennamen an den tatsächlichen Code anpassen
-#define WIFI_SSID     "dein-wlan"
-#define WIFI_PASSWORD "dein-passwort"
-
-#define MQTT_HOST     "192.168.x.x"
-#define MQTT_PORT     1883
-#define MQTT_USER     "..."
-#define MQTT_PASSWORD "..."
-```
-
-## 3. Firmware flashen
-
-<!-- TODO: konkrete Schritte für Arduino IDE oder PlatformIO
-Beispiel PlatformIO:
-```bash
-pio run -t upload
-```
--->
-
-## 4. Home-Assistant-Integration
-
-Das Board meldet sich per **MQTT Auto-Discovery** bei Home Assistant an.
-
-1. MQTT-Broker in Home Assistant einrichten (falls noch nicht vorhanden).
-2. Board neu starten — die Entitäten erscheinen automatisch unter **Einstellungen → Geräte & Dienste → MQTT**.
-3. <!-- TODO: welche Entitäten werden angelegt (Sensoren, Switches, Lights)? -->
-
-## 5. Erste Inbetriebnahme prüfen
-
-<!-- TODO: Woran erkennt man, dass alles funktioniert?
-z. B. Display zeigt Startbildschirm, LED-Testlauf, WebIF unter http://<ip>/ erreichbar -->
+### 4. optional MQTT konfigurieren
+<p align="center">
+  <img src="../screenshots/settings_mqtt.png" alt="settings NFC-LED" width="320"><br>
+  <sub>MQTT konfigurieren</sub>
+</p>
+<b>Werden hier Einstellungen gemacht, muss ein Neustart erfolgen</b>
 
 ## Troubleshooting
+<p align="center">
+  <img src="../screenshots/settings_debug.png" alt="settings debug" width="320"><br>
+  <sub>Debug (de)aktivieren</sub>
+</p>
+Ausgabe der Debug Daten über die serielle Schnittstelle.
+
 
 <!-- TODO: häufige Probleme, z. B.
 - NFC-Reader wird nicht erkannt → Verkabelung/Adresse prüfen
