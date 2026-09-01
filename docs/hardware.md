@@ -8,8 +8,8 @@ Diese Seite beschreibt den Aufbau des Smart Filament Sample Boards.
 |---|---|---|---|
 | ESP-32 Devkit V1 **oder** ESP32-S3 Super Mini | 1 | | |
 | PN532 NFC-Reader | 1 | | |
-| WS2812B, SK6812 oder SK6812W LEDs | 4×3 (Standard) | für Hintergrundbeleuchtung des NFC Symbols,<br> laut KI bis 150 LEDs je nach eigenem Setup<br>Abstand der LEDs sollte 33mm betragen, also 30LEDs/m | |
-| 1.3" I2C Display 128×64 (SH1106) **oder** 1.9" TFT ST7789 | 1 | | |
+| WS2812B **oder**<br>SK6812 **oder**<br>SK6812W LEDs | 4×3 (Standard) NFC-Symbol<br>Plus Anzahl Samples | für Hintergrundbeleuchtung des NFC Symbols,<br> laut KI bis 150 LEDs je nach eigenem Setup<br>Abstand der LEDs sollte 33mm betragen, also 30LEDs/m | |
+| 1.3" I2C Display 128×64 (SH1106 **oder** SSD1306) **oder** 1.9" TFT ST7789 | 1 | | |
 | Taster | optional | | |
 | Buzzer | optional | | |
 | Ntag215 | bis 150 | DieStückzahl sollte min. zur Anzahl der geplanten Samples passen | [AliExpress](https://de.aliexpress.com/item/1005006375989905.html) |
