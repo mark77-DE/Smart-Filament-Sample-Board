@@ -10,7 +10,7 @@ This is an ESP32-S3 embedded system project called "Spot My Filament" - a smart 
 ### Key Components
 1. **Hardware Drivers** (encapsulated in `include/`)
    - `ledctrl_filament.h` - NeoPixel LED strip control (static methods)
-   - `display.h` - OLED display (Adafruit_SSD1306)
+   - `display.h` - OLED display (Adafruit_SH1106 or ST7789 via LovyanGFX)
    - `nfc.h` - PN532 NFC reader
    - `filament_db.h` - In-memory filament database
 

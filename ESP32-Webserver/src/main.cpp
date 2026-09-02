@@ -463,7 +463,7 @@ void setup() {
   uint32_t version = nfc.getFirmwareVersion();
   if (!version) {
     Serial.println("PN532 not found!");
-    MYDISPLAY::showCentered("PN532 FEHLT!");
+    MYDISPLAY::showCentered("PN532 FEHLER!");
     g_nfcInfo.available = false;
     // while (1) { delay(100); }
   } else {

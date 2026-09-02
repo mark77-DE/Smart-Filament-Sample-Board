@@ -3,11 +3,9 @@ import shutil
 
 
 ENV_MAPPING = {
-    "esp32": "esp32-ssd1306",
-    "esp32-SH1106": "esp32-sh1106",
+    "esp32": "esp32-sh1106",
     "esp32-st7789": "esp32-st7789",
-    "esp32-s3": "esp32-s3-ssd1306",
-    "esp32-s3-SH1106": "esp32-s3-sh1106",
+    "esp32-s3": "esp32-s3-sh1106",
     "esp32-s3-st7789": "esp32-s3-st7789",
 }
 

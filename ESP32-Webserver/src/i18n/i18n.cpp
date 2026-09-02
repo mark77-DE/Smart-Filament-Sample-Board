@@ -2,7 +2,7 @@
 #include <ArduinoJson.h>
 #include <LittleFS.h>
 
-StaticJsonDocument<16384> langDoc;
+JsonDocument langDoc;
 
 String I18N::_currentLang = "de";
 
@@ -26,6 +26,8 @@ bool I18N::loadLanguage(const char* path) {
         Serial.printf("Sprachdatei %s nicht gefunden!\n", path);
         return false;
     }
+
+    langDoc.clear();  // clear old content before loading new language
 
     DeserializationError err = deserializeJson(langDoc, file);
     file.close();

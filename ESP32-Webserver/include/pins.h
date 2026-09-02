@@ -45,16 +45,16 @@
 
 // ----------------- Button & Buzzer -----------------
 #ifndef BTN_PIN
-#define BTN_PIN 32
+#define BTN_PIN 27
 #endif
 #ifndef BUZ_PIN 
-#define BUZ_PIN 33
+#define BUZ_PIN 14
 #endif
 
 
 // ----------------- LEDs -----------------
 #ifndef LED_PIN
-#define LED_PIN 4
+#define LED_PIN 13
 #endif
 #ifndef NFC_LED_PIN
 #define NFC_LED_PIN 15

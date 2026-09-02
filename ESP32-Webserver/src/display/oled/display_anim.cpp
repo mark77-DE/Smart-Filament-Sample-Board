@@ -1,6 +1,6 @@
 #include "display/display_config.h"
 
-#if DISPLAY_TYPE == DISPLAY_TYPE_SH1106 || DISPLAY_TYPE == DISPLAY_TYPE_SSD1306
+#if DISPLAY_TYPE == DISPLAY_TYPE_SH1106
 
 #include "display/display_anim.h"
 #include "display/display.h"

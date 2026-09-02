@@ -387,9 +387,6 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
 
     doc["display"]["type"] = "SH1106";
 
-#elif DISPLAY_TYPE == DISPLAY_TYPE_SSD1306
-
-    doc["display"]["type"] = "SSD1306";
 
 #else
 

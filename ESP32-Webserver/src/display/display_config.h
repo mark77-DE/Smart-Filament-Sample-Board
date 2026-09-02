@@ -8,9 +8,6 @@
 #define DISPLAY_TYPE_SH1106 1
 #endif
 
-#ifndef DISPLAY_TYPE_SSD1306
-#define DISPLAY_TYPE_SSD1306 2
-#endif
 
 #ifndef DISPLAY_TYPE_ST7789
 #define DISPLAY_TYPE_ST7789 3
@@ -50,14 +47,7 @@
   static constexpr uint8_t OLED_ADDR  = 0x3C;
   static constexpr uint16_t DISPLAY_COLOR = SH110X_WHITE;
 
-#elif DISPLAY_TYPE == DISPLAY_TYPE_SSD1306
-  #include <Adafruit_SSD1306.h>
-  using DisplayType = Adafruit_SSD1306;
-  static constexpr int SCREEN_WIDTH   = 128;
-  static constexpr int SCREEN_HEIGHT  = 32;
-  static constexpr int OLED_RESET_PIN = -1;
-  static constexpr uint8_t OLED_ADDR  = 0x3C;
-  static constexpr uint16_t DISPLAY_COLOR = SSD1306_WHITE;
+
 
 #elif DISPLAY_TYPE == DISPLAY_TYPE_ST7789
   #include "display/st7789/display_st7789.h"  // LGFX bekannt
@@ -70,7 +60,7 @@
   static constexpr int SCREEN_HEIGHT  = 320;
 
 #else
-  #error "Ungültiger DISPLAY_TYPE! Bitte DISPLAY_TYPE_SH1106, SSD1306 oder ST7789 verwenden."
+  #error "Ungültiger DISPLAY_TYPE! Bitte DISPLAY_TYPE_SH1106 oder ST7789 verwenden."
 #endif
 
 
@@ -82,8 +72,6 @@ extern DisplayType display;              // LGFX-Objekt, global
 inline bool initDisplay(DisplayType &disp) {
 #if DISPLAY_TYPE == DISPLAY_TYPE_SH1106
     return disp.begin(OLED_ADDR, true);
-#elif DISPLAY_TYPE == DISPLAY_TYPE_SSD1306
-    return disp.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR);
 #elif DISPLAY_TYPE == DISPLAY_TYPE_ST7789
     disp.init(); // LovyanGFX init
     return true;
