@@ -1258,3 +1258,17 @@ body.daymode #rssiIcon .bar.green { fill: #00dd00; }
 .ledSettingsGrid {
     margin-top: 24px;
 }
+
+
+.row-highlight {
+    animation: rowHighlight 3s ease-in-out;
+}
+
+@keyframes rowHighlight {
+    0% {
+        box-shadow: 0 0 0 3px red;
+    }
+    100% {
+        box-shadow: 0 0 0 0 transparent;
+    }
+}

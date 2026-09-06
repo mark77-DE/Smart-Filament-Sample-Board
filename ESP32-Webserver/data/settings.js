@@ -3,6 +3,8 @@ const MAX_LENGTH = 30; // maximale Zeichenanzahl für vendor und color
 
 
 
+
+
 const dbDiv = document.getElementById("db");
 const addForm = document.getElementById("addForm");
 const wsStatus = document.getElementById("wsStatus");
@@ -144,7 +146,7 @@ const tftCsPin = document.getElementById("tftCsPin");
 const tftDcPin = document.getElementById("tftDcPin");
 const tftRstPin = document.getElementById("tftRstPin");
 
-
+let numberNewUID = 1;
 
 let FILAMENT_DATA = [];
 let EDIT_MODE = false;
@@ -355,6 +357,17 @@ async function handleWSMessage(ev) {
             lastHighlightedRow = row;
 
             row.scrollIntoView({ behavior: "smooth", block: "center" });
+            
+
+            row.parentNode.classList.remove("row-highlight");
+
+            // Animation zuverlässig neu starten, auch wenn kurz hintereinander
+            // derselbe Eintrag gefunden wird.
+            void row.parentNode.offsetWidth;
+
+            row.parentNode.classList.add("row-highlight");
+            
+
         }
     });
 
@@ -366,7 +379,7 @@ async function handleWSMessage(ev) {
 
         const option = document.createElement("option");
         option.value = data.uid;
-        option.textContent = data.uid;
+        option.textContent = `${numberNewUID++}: ${data.uid}`;
 
         newTagsSelect.appendChild(option);
         newTagsSelect.value = data.uid;
@@ -1508,13 +1521,6 @@ newTagsSelect.addEventListener("change", () => {
 });
 
 
-newTagsSelect.addEventListener("focus", () => {
-    newTagsSelect.size = Math.min(newTagsSelect.options.length, 6);
-});
-
-newTagsSelect.addEventListener("blur", () => {
-    newTagsSelect.size = 1;
-});
 
 
 async function loadFilaments() {
