@@ -34,6 +34,9 @@ uint32_t  LED_COLOR       = 0x00FF00;   // Beispiel: grün
 // Eigenständige Error-Farbe (nur für errorBlink/errorAll)
 uint32_t  LED_COLOR_ERROR = 0xFF0000;   // rot
 
+// Eigenständige Success-Farbe (nur für successAll)
+uint32_t  LED_COLOR_SUCCESS = 0x00FF00;   // grün
+
 // Farbe für den Idle-Breath-Pulse
 uint32_t  LED_COLOR_PULSE = 0x0033AA;   // blau-ish
 
@@ -356,6 +359,30 @@ void LEDCTRL_FILAMENT::errorAll() {
   FILDBG("errorAll (solid)\n");
 }
 
+
+// ----------------------------------------------------------------------------
+// SUCCESS SOLID: alle Pixel = LED_COLOR_SUCCESS
+// ----------------------------------------------------------------------------
+void LEDCTRL_FILAMENT::successAll() {
+  if (!_leds || !_buf) return;
+
+  _errBlinkActive = false;
+  _errSolidActive = true;
+
+  // Alle rot/err füllen (Buffer + Ausgabe)
+  const uint32_t neoSuccess = rgbHexToNeo(_leds, LED_COLOR_SUCCESS);
+  for (int i = 0; i < _bufCount; ++i) _buf[i] = neoSuccess;
+  renderAllFromBuf(_leds); // (doppelt)
+
+  // Timeout ab Tag-Entfernung
+  _releaseTs = _tagHeld ? 0UL : millis();
+
+  // Idle kurz blocken
+  _idleBlockUntil = millis() + 2;
+  FILDBG("successAll (solid)\n");
+}
+
+
 // ----------------------------------------------------------------------------
 // ERROR BLINK: erst blinken (LED_COLOR_ERROR), dann – falls noch aktiv – solid-Error
 // ----------------------------------------------------------------------------
@@ -387,6 +414,41 @@ void LEDCTRL_FILAMENT::errorBlink() {
   _idleBlockUntil = millis() + 2;
   FILDBG("errorBlink start ms=%u count=%u\n", _errBlinkMs, _errBlinkCount);
 }
+
+// ----------------------------------------------------------------------------
+// SUCCESS BLINK: erst blinken (LED_COLOR_SUCCESS), dann – falls noch aktiv – solid-Success
+// ----------------------------------------------------------------------------
+void LEDCTRL_FILAMENT::successBlink() {
+  if (!_leds) return;
+
+  // Parameter (ggf. später aus Config herausziehbar)
+  static const uint16_t MIN_BLINK_MS = 25;
+  _errBlinkMs    = (uint16_t)max<int>(MIN_BLINK_MS, 150); // Standard 150 ms
+  _errBlinkCount = 3;                                     // 3x An-Aus
+
+  _errBlinkActive = true;
+  _errSolidActive = false;
+  _errBlinkStart  = millis();
+  _errBlinkStep   = 0;
+
+  // Blinkfarbe fest in Neo-Format (unabhängig vom Buffer)
+  s_errBlinkColorNeo = rgbHexToNeo(_leds, LED_COLOR_SUCCESS);
+
+  // Startframe = AN (direkt rendern, ohne Buffer)
+  for (int i = 0; i < _leds->numPixels(); ++i) _leds->setPixelColor(i, s_errBlinkColorNeo);
+  // FIX: Blink-Kante doppelt
+  forceShow(_leds);
+
+  // Timeout erst ab Entfernung
+  _releaseTs = _tagHeld ? 0UL : millis();
+
+  // Idle blocken
+  _idleBlockUntil = millis() + 2;
+  FILDBG("successBlink start ms=%u count=%u\n", _errBlinkMs, _errBlinkCount);
+}
+
+
+
 
 void LEDCTRL_FILAMENT::update() {
   if (!_leds) return;

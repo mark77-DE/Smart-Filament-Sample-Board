@@ -85,6 +85,18 @@ public:
   // --------------------------------------------------------------------------
 
   /**
+   * @brief Sofort alle Pixel in LED_COLOR_SUCCESS setzen (Solid).
+   *        Timeout läuft erst nach Tag-Entfernung.
+   */
+  static void successAll();
+
+  /**
+   * @brief Erst LED_COLOR_ERROR blinken lassen, danach – sofern noch aktiv –
+   *        in errorAll() (Solid) übergehen.
+   */
+  static void successBlink();
+
+  /**
    * @brief Sofort alle Pixel in LED_COLOR_ERROR setzen (Solid).
    *        Timeout läuft erst nach Tag-Entfernung.
    */

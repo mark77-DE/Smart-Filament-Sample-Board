@@ -3,13 +3,13 @@ const fsInput = document.getElementById("fsFile");
 
 
 fwInput.addEventListener("change", () => {
-    document.getElementById("fwFileName").textContent =
-        fwInput.files.length ? fwInput.files[0].name : t("txt_no_file_selected");
+  document.getElementById("fwFileName").textContent =
+    fwInput.files.length ? fwInput.files[0].name : t("txt_no_file_selected");
 });
 
 fsInput.addEventListener("change", () => {
-    document.getElementById("fsFileName").textContent =
-        fsInput.files.length ? fsInput.files[0].name : t("txt_no_file_selected");
+  document.getElementById("fsFileName").textContent =
+    fsInput.files.length ? fsInput.files[0].name : t("txt_no_file_selected");
 });
 
 
@@ -40,6 +40,7 @@ async function uploadFS() {
       status.textContent = t("txt_update_success");
     } else {
       status.textContent = t("txt_update_failed") + ": " + response.statusText;
+      console.error("Upload FS failed:", response.statusText);
     }
   } catch (err) {
     status.textContent = t("txt_update_failed") + ": " + err;
@@ -71,11 +72,20 @@ async function uploadFirmware() {
     if (response.ok) {
       status.textContent = t("txt_update_success");
     } else {
-      status.textContent = t("txt_update_failed") + ": " + response.statusText;
+      let errMsg = response.statusText;
+      try {
+        const errJson = await response.json();
+        if (errJson?.msg) errMsg = errJson.msg;
+      } catch (_) {
+        // Body war kein JSON, statusText bleibt Fallback
+      }
+      status.textContent = t("txt_update_failed") + ": " + errMsg;
+      console.error("Upload FW failed:", errMsg);
     }
   } catch (err) {
     status.textContent = t("txt_update_failed") + ": " + err;
   }
+
 }
 
 

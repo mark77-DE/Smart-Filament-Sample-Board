@@ -11,6 +11,7 @@ extern AsyncWebSocket ws;
 
 extern volatile bool rebootPending;
 extern unsigned long rebootAt;
+extern bool rebootReason;
 
 extern uint32_t REBOOT_DELAY_MS;        // Button-Delay (ms)
 extern uint32_t REBOOT_DELAY_WEBIF_MS;  // WebIF-Delay (ms)
