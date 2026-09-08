@@ -28,7 +28,7 @@ namespace NFC {
    *
    * @param nfc  Gültiger Zeiger auf eine initialisierbare `Adafruit_PN532`-Instanz.
    */
-  void init(Adafruit_PN532* nfc);
+  uint32_t init(Adafruit_PN532* nfc);
 
   /**
    * @brief Einmalige, eher „synchrone“ UID-Abfrage (Debug/Tools).

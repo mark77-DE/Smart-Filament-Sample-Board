@@ -78,10 +78,13 @@ bool loadConfigV2()
     const char *ledType = ledHardware["type"] | "WS2812B";
     const char *ledOrder = ledHardware["order"] | "GRB";
 
-    Serial.println();
-    Serial.println("[DEBUG] LED-Hardware aus JSON:");
-    Serial.printf("  type  = '%s'\n", ledType);
-    Serial.printf("  order = '%s'\n", ledOrder);
+    if(CONFIGV2.system.debugMode)
+    {
+        Serial.println();
+        Serial.println("LED-Hardware from JSON:");
+        Serial.printf("  type  = '%s'\n", ledType);
+        Serial.printf("  order = '%s'\n", ledOrder);
+    }
 
     // LED-Typ
     if (strcmp(ledType, "WS2812B") == 0)

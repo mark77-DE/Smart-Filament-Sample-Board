@@ -1,6 +1,7 @@
 #include "nfc.h"
 #include "ledctrl_nfc.h"
 #include "ledctrl_filament.h"
+#include "config.h"
 
 // ============================================================================
 // Debug
@@ -67,14 +68,14 @@ namespace NFC {
 // ============================================================================
 // Initialisierung der PN532-Hardware
 // ============================================================================
-void init(Adafruit_PN532* nfc) {
+uint32_t init(Adafruit_PN532* nfc) {
   _nfc = nfc;
   _nfc->begin();
 
   const uint32_t version = _nfc->getFirmwareVersion();
   if (!version) {
     Serial.println(F("[NFC] getFirmwareVersion FAILED (wiring?)"));
-  } else {
+  } else if (CONFIGV2.system.debugMode) {
     Serial.print(F("[NFC] PN532 FW ")); Serial.print((version >> 24) & 0xFF);
     Serial.print('.');                  Serial.print((version >> 16) & 0xFF);
     Serial.print(F(" chip=0x"));        Serial.println(version & 0xFFFF, HEX);
@@ -82,10 +83,17 @@ void init(Adafruit_PN532* nfc) {
 
   // Normalmodus
   _nfc->SAMConfig();
-  Serial.println(F("[NFC] init done"));
+
+  if(CONFIGV2.system.debugMode)
+  {
+      Serial.println(F("[NFC] init done"));
+  }
+
 #ifdef NFC_DEBUG
   DBG("Debug enabled\n");
 #endif
+
+  return version;
 }
 
 // ============================================================================

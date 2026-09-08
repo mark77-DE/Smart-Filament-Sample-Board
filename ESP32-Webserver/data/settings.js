@@ -11,6 +11,8 @@ const wsStatus = document.getElementById("wsStatus");
 const editToggle = document.getElementById("editToggle");
 const debugToggle = document.getElementById("debugToggle");
 
+const statusTxt = document.getElementById('statusTxt');
+
 const selectLanguageSelect = document.getElementById("langSelect");
 
 
@@ -196,6 +198,9 @@ function connectWebSocket() {
         updateWSStatus(true);
 
         stopWSWatchdog();             // Sicherheit
+
+        statusTxt.textContent = "";
+
     };
 
     socket.onmessage = handleWSMessage;

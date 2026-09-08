@@ -48,23 +48,32 @@ static void printOtaInfo()
   const esp_partition_t *boot = esp_ota_get_boot_partition();
   const esp_partition_t *run = esp_ota_get_running_partition();
 
-  Serial.printf("OTA boot: name=%s addr=0x%06X subtype=0x%02X\n",
-                boot ? boot->label : "null",
-                boot ? (unsigned)boot->address : 0,
-                boot ? (unsigned)boot->subtype : 0);
+  
 
-  Serial.printf("OTA run : name=%s addr=0x%06X subtype=0x%02X\n",
-                run ? run->label : "null",
-                run ? (unsigned)run->address : 0,
-                run ? (unsigned)run->subtype : 0);
+  if(CONFIGV2.system.debugMode)
+  {
+      Serial.println();
+      Serial.printf("OTA boot: name=%s addr=0x%06X subtype=0x%02X\n",
+                    boot ? boot->label : "null",
+                    boot ? (unsigned)boot->address : 0,
+                    boot ? (unsigned)boot->subtype : 0);
+
+      Serial.printf("OTA run : name=%s addr=0x%06X subtype=0x%02X\n",
+                    run ? run->label : "null",
+                    run ? (unsigned)run->address : 0,
+                    run ? (unsigned)run->subtype : 0);
+  }
 
   if (run)
   {
     esp_ota_img_states_t st{};
     if (esp_ota_get_state_partition(run, &st) == ESP_OK)
     {
-      Serial.printf("OTA state: %d (PENDING_VERIFY=%d)\n",
-                    (int)st, (int)ESP_OTA_IMG_PENDING_VERIFY);
+      if(CONFIGV2.system.debugMode)
+      {
+          Serial.printf("OTA state: %d (PENDING_VERIFY=%d)\n",
+                        (int)st, (int)ESP_OTA_IMG_PENDING_VERIFY);
+      }
     }
   }
 }
@@ -192,12 +201,20 @@ void renderRebootCountdown(unsigned long nowMs)
     {
       LEDCTRL_NFC::showSuccess();       // NFC-Ring sofort grün (solid)
       LEDCTRL_FILAMENT::successBlink(); // Filament: blinkt -> grün (
+      if (CONFIGV2.system.debugMode)
+      {
+        Serial.println("Reboot countdown: SUCCESS");
+      }
     }
     else
     {
       // Beim Start des Countdowns IMMER auf Error umschalten (einmalig)
       LEDCTRL_NFC::showError();       // NFC-Ring sofort rot (solid)
       LEDCTRL_FILAMENT::errorBlink(); // Filament: blinkt -> rot (wie gewünscht)
+      if (CONFIGV2.system.debugMode)
+      {
+        Serial.println("Reboot countdown: ERROR or user reboot");
+      }
     }
 
 
@@ -370,26 +387,29 @@ void setup()
   Serial.println("++-------------------------------++");
   Serial.println();
   Serial.println("Booting...");
-  Serial.println();
 
   printOtaInfo();
 
   markOtaImageValidIfNeeded();
 
   Serial.println();
-  Serial.printf("Firmware Version Info: %s\n", FIRMWARE_VERSION);
-  Serial.printf("Build Date: %s\n", BUILD_DATE_SHORT);
+  Serial.printf("FW version: %s\n", FIRMWARE_VERSION);
+  Serial.printf("Build date: %s\n", BUILD_DATE_SHORT);
   Serial.println();
 
   g_sysInfo = getSysInfo();
 
-  printChipInfo();
-  Serial.println();
-  Serial.println("Setup starting...");
-  Serial.println();
+  if(CONFIGV2.system.debugMode)
+  {
+      printChipInfo();
+  }
 
   loadConfigV2();
+
+  
+
   applyConfigV2();
+  
   I18N::begin(CONFIGV2.system.defaultLanguage);
 
   LEDCTRL_FILAMENT::allOff();
@@ -406,12 +426,14 @@ void setup()
   //    - Erst WENN er mit dem Router verbunden ist:
   //      -> "VERBINDUNG..." zeigen und anschließend die Router-IP.
   WiFiManager wifiManager;
+  wifiManager.setDebugOutput(CONFIGV2.system.debugMode);
+
   wifiManager.setAPCallback(onWiFiManagerConfigPortalStarted);
 
   if (CONFIGV2.system.hostname.length() > 0)
   {
     WiFi.setHostname(CONFIGV2.system.hostname.c_str()); // <- hier
-    Serial.printf("Hostname gesetzt: %s\n", CONFIGV2.system.hostname.c_str());
+    Serial.printf("Hostname: %s\n", CONFIGV2.system.hostname.c_str());
   }
 
   // Optional: neutrale Anzeige während autoConnect() entscheidet (Router vs. AP-Portal).
@@ -426,9 +448,10 @@ void setup()
   // Ab hier: Router verbunden
   MYDISPLAY::showCentered("VERBINDUNG...");
 
-  Serial.printf("IP-Address: %s\n", WiFi.localIP().toString().c_str());
+  Serial.printf("IP-Address:  %s\n", WiFi.localIP().toString().c_str());
   String mac = WiFi.macAddress();
   Serial.printf("MAC-Address: %s\n", mac.c_str());
+  Serial.println();
 
   // 4) IP kurz zeigen (nicht hart blockieren)
   {
@@ -453,7 +476,10 @@ void setup()
   }
   else
   {
-    Serial.println("MQTT is disabled, skipping initialization.");
+    if(CONFIGV2.system.debugMode)
+    {
+        Serial.println("MQTT is disabled, skipping initialization.");
+    }
   }
 
   // Upadte Check
@@ -480,28 +506,21 @@ void setup()
                                        SPLASH_CHAR_MS, SPLASH_LINE_MS, SPLASH_HOLD_MS);
 
   // 7) PN532 JETZT initialisieren (kann im Fehlerfall aufs Display schreiben)
-  NFC::init(&nfc); // begin() + SAMConfig()
-  uint32_t version = nfc.getFirmwareVersion();
-  if (!version)
-  {
-    Serial.println("PN532 not found!");
-    MYDISPLAY::showCentered("PN532 FEHLER!");
-    g_nfcInfo.available = false;
-    // while (1) { delay(100); }
-  }
-  else
-  {
-    g_nfcInfo.available = true;
-    g_nfcInfo.fwVerMajor = (version >> 24) & 0xFF;
-    g_nfcInfo.fwVerMinor = (version >> 16) & 0xFF;
-    g_nfcInfo.chipID = version & 0xFFFF, HEX;
-    Serial.print("[NFC] PN532 FW ");
-    Serial.print((version >> 24) & 0xFF);
-    Serial.print('.');
-    Serial.print((version >> 16) & 0xFF);
-    Serial.print(" chip=0x");
-    Serial.println(version & 0xFFFF, HEX);
-  }
+uint32_t version = NFC::init(&nfc); // begin() + SAMConfig(), FW wird intern geloggt
+
+if (!version)
+{
+  MYDISPLAY::showCentered("PN532 FEHLER!");
+  g_nfcInfo.available = false;
+  // while (1) { delay(100); }
+}
+else
+{
+  g_nfcInfo.available  = true;
+  g_nfcInfo.fwVerMajor = (version >> 24) & 0xFF;
+  g_nfcInfo.fwVerMinor = (version >> 16) & 0xFF;
+  g_nfcInfo.chipID     = version & 0xFFFF;
+}
 
   // 8) Idle-Animation vorbereiten
   DisplayAnim::startIdleTextFirst(millis());
@@ -511,11 +530,11 @@ void setup()
   // server.addHandler(&ws); // <-- ENTFERNT, Registrierung erfolgt in initWebServer()
   initWebServer(server, ws);
   WiFi.setSleep(false);
-
+  
+  Serial.println();
+  Serial.println();
   Serial.println("*********************");
-  Serial.println("*                   *");
   Serial.println("*  Setup complete!  *");
-  Serial.println("*                   *");
   Serial.println("*********************");
   Serial.println();
   Serial.println();

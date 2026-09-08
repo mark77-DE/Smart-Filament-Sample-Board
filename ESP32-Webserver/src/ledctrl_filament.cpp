@@ -24,7 +24,6 @@
 // Öffentliche Konfig-Variablen (werden von loadLedConfig() überschrieben)
 // ============================================================================
 int       LED_COUNT       = 0;
-// int       LED_PIN         = 4;
 int       LED_TIMEOUT     = 3000;
 int       LED_BRIGHTNESS  = 50;
 
@@ -365,6 +364,8 @@ void LEDCTRL_FILAMENT::errorAll() {
 // ----------------------------------------------------------------------------
 void LEDCTRL_FILAMENT::successAll() {
   if (!_leds || !_buf) return;
+
+  LED_COLOR_ERROR = 0x00FF00; // grün
 
   _errBlinkActive = false;
   _errSolidActive = true;

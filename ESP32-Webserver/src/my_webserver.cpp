@@ -895,7 +895,7 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
             }
 
             DisplayAnim::stop();
-            MYDISPLAY::showThreeLinesCentered(F("started"), F("FW OTA"), F("update"));
+            MYDISPLAY::showThreeLinesCentered(F("started"), F("FW"), F("update"));
 
             if (!Update.begin(total)) {
                 Serial.println("OTA begin failed");
@@ -927,9 +927,11 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
                 LEDCTRL_FILAMENT::successAll();  // Filament: grün (wie gewünscht)
                 req->send(200, "application/json",
                     "{\"status\":\"ok\",\"msg\":\"FW update successful, rebooting\"}");
-                rebootPending = true;
-                rebootAt = millis() + 3000;
+                
                 rebootReason = true; // true = success
+                rebootPending = true;
+                rebootAt = millis() + 1000;
+                
             } else {
                 Serial.printf("Update.end failed! Error: %d\n", Update.getError());
                 MYDISPLAY::showThreeLinesCentered(F("FW OTA"), F("update"), F("failed"));
@@ -993,10 +995,10 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
                 req->send(200, "application/json",
                     "{\"status\":\"ok\",\"msg\":\"FS update successful, rebooting\"}");
 
-                // Reboot verzögert auslösen
-        
+                // Reboot auslösen
+                rebootReason = true; // true = success
                 rebootPending = true;
-                rebootAt = millis() + 3000;
+                rebootAt = millis() + 1000;
             } else {
                 req->send(500, "application/json",
                     "{\"status\":\"error\",\"msg\":\"FS update failed\"}");

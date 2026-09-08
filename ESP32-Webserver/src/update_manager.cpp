@@ -31,19 +31,28 @@ void updateInit() {
 
     changed = true;
 
-    Serial.println("[UPDATE] Init done. Current version: " + g_updateInfo.currentVersion);
-    Serial.println("[UPDATE] Interval (ms): " + String(updateIntervalMs));
+    if(CONFIGV2.system.debugMode)
+    {
+        Serial.println("[UPDATE-CHECK] Init done. Current version: " + g_updateInfo.currentVersion);
+        Serial.println("[UPDATE-CHECK] Interval (ms): " + String(updateIntervalMs));
+    }
 }
 
 // ----------------------------------------
 bool checkForUpdate(String& latestVersion) {
     if (WiFi.status() != WL_CONNECTED) {
-        Serial.println("[UPDATE] WiFi not connected, skipping check.");
+        if(CONFIGV2.system.debugMode)
+        {
+            Serial.println("[UPDATE-CHECK] WiFi not connected, skipping check.");
+        }
         return false;
     }
 
-    Serial.println("[UPDATE] Checking for update...");
-    Serial.println("[UPDATE] Uptime: " + String(millis() / 1000) + " seconds");
+    if(CONFIGV2.system.debugMode)
+    {
+        Serial.println("[UPDATE-CHECK] Checking for update...");
+        Serial.println("[UPDATE-CHECK] Uptime: " + String(millis() / 1000) + " seconds");
+    }
 
     WiFiClientSecure client;
     client.setInsecure();
@@ -55,10 +64,16 @@ bool checkForUpdate(String& latestVersion) {
     http.begin(client, url);
 
     int httpCode = http.GET();
-    Serial.println("[UPDATE] HTTP Code: " + String(httpCode));
+    if(CONFIGV2.system.debugMode)
+    {
+        Serial.println("[UPDATE-CHECK] HTTP Code: " + String(httpCode));
+    }
 
     if (httpCode != 200) {
-        Serial.println("[UPDATE] HTTP request failed");
+        if(CONFIGV2.system.debugMode)
+        {
+            Serial.println("[UPDATE-CHECK] HTTP request failed");
+        }
         http.end();
         return false;
     }
@@ -66,7 +81,10 @@ bool checkForUpdate(String& latestVersion) {
     latestVersion = http.getString();
     latestVersion.trim();
 
-    Serial.println("[UPDATE] Latest version fetched: " + latestVersion);
+    if(CONFIGV2.system.debugMode)
+    {
+        Serial.println("[UPDATE-CHECK] Latest version fetched: " + latestVersion);
+    }
 
     http.end();
     return latestVersion.length() > 0;
@@ -95,9 +113,12 @@ int compareVersion(const String& v1, const String& v2) {
 bool isUpdateAvailable(const String& current, const String& latest) {
     bool available = compareVersion(current, latest) > 0;
 
-    Serial.println("[UPDATE] Compare versions: Current=" + current +
-                   " Latest=" + latest +
-                   " -> UpdateAvailable=" + String(available));
+    if(CONFIGV2.system.debugMode)
+    {
+        Serial.println("[UPDATE-CHECK] Compare versions: Current=" + current +
+                       " Latest=" + latest +
+                       " -> UpdateAvailable=" + String(available));
+    }
 
     return available;
 }
@@ -119,7 +140,10 @@ void updateTask(void * parameter) {
 // ----------------------------------------
 void startUpdateTask() {
     if (updateTaskRunning) {
-        Serial.println("[UPDATE] Task already running, skip.");
+        if(CONFIGV2.system.debugMode)
+        {
+            Serial.println("[UPDATE-CHECK] Task already running, skip.");
+        }
         return;
     }
 
@@ -143,14 +167,17 @@ void updateLoop() {
     // 🔹 Config-Änderung
     if (CONFIGV2.system.updateCheckInterval != updateIntervalMs / (60 * 1000UL)) {
         updateIntervalMs = CONFIGV2.system.updateCheckInterval * 60 * 1000UL;
-        Serial.println("[UPDATE] Update interval changed to " + String(updateIntervalMs) + " ms");
+        Serial.println("[UPDATE-CHECK] Update interval changed to " + String(updateIntervalMs) + " ms");
     }
 
     // 🔹 Zeit noch nicht erreicht
     if (now - g_updateInfo.lastCheck >= updateIntervalMs) {
         g_updateInfo.lastCheck = now;
 
-        Serial.println("[UPDATE] Trigger async update check...");
+        if(CONFIGV2.system.debugMode)
+        {
+            Serial.println("[UPDATE-CHECK] Trigger async update check...");
+        }
         startUpdateTask();
     }
 
@@ -159,7 +186,10 @@ void updateLoop() {
         updateResultReady = false;
 
         if (latestVersionBuffer != g_updateInfo.latestVersion) {
-            Serial.println("[UPDATE] New version detected!");
+            if(CONFIGV2.system.debugMode)
+            {
+                Serial.println("[UPDATE-CHECK] New version detected!");
+            }
             changed = true;
         }
 

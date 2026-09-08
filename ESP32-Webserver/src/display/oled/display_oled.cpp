@@ -25,19 +25,29 @@ DisplayType display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET_PIN);
 
 void displayInit()
 {
-    Serial.printf("[DISPLAY] Wire.begin SDA=%d SCL=%d\n", SDA_PIN, SCL_PIN);
+    if(CONFIGV2.system.debugMode)
+    {
+        Serial.printf("[DISPLAY] Wire.begin SDA=%d SCL=%d\n", SDA_PIN, SCL_PIN);
+    }
 
     bool wireOk = Wire.begin(SDA_PIN, SCL_PIN);
 
-    Serial.printf("[DISPLAY] Wire.begin result: %s\n",
-                  wireOk ? "OK" : "FAILED");
+    if(CONFIGV2.system.debugMode)
+    {
+        Serial.printf("[DISPLAY] Wire.begin result: %s\n",
+                      wireOk ? "OK" : "FAILED");
+    }
+    
 
     if (!initDisplay(display)) {
         Serial.println("Display init failed");
         return;
     }
 
-    Serial.println("[DISPLAY] Display init OK");
+    if(CONFIGV2.system.debugMode)
+    {
+        Serial.println("[DISPLAY] Display init OK");
+    }
 
     display.clearDisplay();
 

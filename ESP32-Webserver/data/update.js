@@ -60,7 +60,7 @@ async function uploadFirmware() {
   }
 
 
-  const status = document.getElementById('status');
+  const status = document.getElementById('statusTxt');
   status.textContent = t("txt_uploading_fw");
 
   try {
