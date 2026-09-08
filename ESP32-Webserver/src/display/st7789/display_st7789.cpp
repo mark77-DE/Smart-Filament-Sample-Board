@@ -115,7 +115,7 @@ void MYDISPLAY::showFourLinesCentered(
 
     _display->setTextSize(1);
 
-    // ---------- Höhen berechnen ----------
+    // ---------- Calculate heights ----------
     int y1 = h * 0.15;
     int y2 = h * 0.35;
     int y3 = h * 0.60;
@@ -215,7 +215,7 @@ void MYDISPLAY::showErrorCentered(
         borderWidth / 2,                        // x = 1 (2px Rand innen)
         borderWidth / 2,                        // y = 1
         _display->width() - borderWidth,        // Breite
-        _display->height() - borderWidth,       // Höhe
+        _display->height() - borderWidth,       // Height
         FOREGROUND_COLOR                        // Farbe
     );
 }

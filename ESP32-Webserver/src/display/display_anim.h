@@ -3,7 +3,7 @@
 #include <Arduino.h>
 #include "display/display.h"
 
-// Kleine State-Machine für die Idle-Animation (Spinner + "SCAN TAG")
+// Small state machine for the idle animation (spinner + "SCAN TAG")
 namespace DisplayAnim {
 
     // Idle-Animation starten (Standard: erst Animation, dann Text)
@@ -15,7 +15,7 @@ namespace DisplayAnim {
     // Idle-Animation komplett stoppen (z.B. wenn ein Tag gescannt wurde)
     void stop();
 
-    // Muss regelmäßig aus loop() aufgerufen werden, wenn das System im Idle ist
+    // Must be called regularly from loop() when the system is idle
     void tickIdle(DisplayType &display, unsigned long now);
 
 
@@ -28,12 +28,12 @@ namespace DisplayAnim {
         uint32_t charDelayMs     = 40,   // Delay pro Buchstabe (Tippen)
         uint32_t linePauseMs     = 250,  // Pause zwischen Zeilen (nach Tippen)
         uint32_t endHoldMs       = 800,  // Haltezeit nach kompletter Anzeige
-        bool     eraseBackwards  = true, // Rückwärts löschen aktiv?
-        uint32_t eraseCharDelayMs= 10,   // Delay pro Buchstabe (Löschen)
-        uint32_t eraseLinePauseMs= 180   // Pause zwischen Zeilen (vor Löschen)
+        bool     eraseBackwards  = true, // Enable backward erasing?
+        uint32_t eraseCharDelayMs= 10,   // Delay per character (erasing)
+        uint32_t eraseLinePauseMs= 180   // Pause between lines (before erasing)
     );
 
-    // Komfort-Overload für PROGMEM-Strings (F("..."))
+    // Convenience overload for PROGMEM strings (F("..."))
     void playThreeLineTypewriter(
         DisplayType& display,
         const __FlashStringHelper* line1,

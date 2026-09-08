@@ -46,7 +46,7 @@ const byte PROGMEM frames[][512] = {
 // Anzahl der Frames automatisch bestimmen
 static const uint16_t FRAME_COUNT = sizeof(frames) / sizeof(frames[0]);
 
-// ---------------- State-Machine für Idle-Animation ----------------------------
+// ---------------- State machine for idle animation ----------------------------
 
 namespace {
 
@@ -73,7 +73,7 @@ unsigned long  s_lastCharTime    = 0;
 bool           s_cursorVisible   = false;
 unsigned long  s_lastCursorBlink = 0;
 
-// --- Layout für Cursor (damit wir nur noch den Cursor zeichnen müssen) ---
+// --- Cursor layout (so only the cursor needs to be drawn) ---
 bool           s_layoutReady     = false;
 int16_t        s_textX           = 0;
 int16_t        s_textY           = 0;
@@ -89,14 +89,14 @@ static int16_t s_cursorX1 = 0;   // x-offset aus getTextBounds
 static int16_t s_cursorY1 = 0;   // y-offset aus getTextBounds
 
 // ------------------------------------------------------------
-// Frame-Cropping für 32px
+// Frame cropping for 32px
 // ------------------------------------------------------------
 
 static void drawFrameCropped(DisplayType &display, uint16_t frameIdx) {
     // 1bpp Bitmap: bytes pro Zeile
     const int16_t bytesPerRow = (FRAME_WIDTH + 7) / 8;
 
-    // Zielhöhe = min(FRAME_HEIGHT, SCREEN_HEIGHT)
+    // Target height = min(FRAME_HEIGHT, SCREEN_HEIGHT)
     int16_t drawH = FRAME_HEIGHT;
     if (SCREEN_HEIGHT < FRAME_HEIGHT) drawH = SCREEN_HEIGHT;
 
@@ -126,7 +126,7 @@ static void drawFrameCropped(DisplayType &display, uint16_t frameIdx) {
 
 
 // ------------------------------------------------------------
-// Animation zurücksetzen
+// Reset animation
 // ------------------------------------------------------------
 static void resetTextAnimation(unsigned long now) {
     const char *src = IDLE_TEXT_STRING;
@@ -145,12 +145,12 @@ static void resetTextAnimation(unsigned long now) {
 
     s_textStartTime   = now;
 
-    s_layoutReady     = false;   // Layout wird später berechnet
+    s_layoutReady     = false;   // Layout will be calculated later
 }
 
 
 // ------------------------------------------------------------
-// Hilfsfunktion: Text zentriert zeichnen (für Tipp-Phase)
+// Helper: draw centered text (for typing phase)
 // (löscht weiterhin das Display – aber nur während des „Tippen“)
 // ------------------------------------------------------------
 static void drawIdleText(DisplayType &display, uint8_t count, bool showCursor) {
@@ -196,7 +196,7 @@ static void drawIdleText(DisplayType &display, uint8_t count, bool showCursor) {
 
 
 // ------------------------------------------------------------
-// Layout für Text + Cursor berechnen (ohne irgendwas zu löschen)
+// Calculate layout for text + cursor (without clearing anything)
 // ------------------------------------------------------------
 static void computeLayout(DisplayType &display) {
     if (s_layoutReady || s_textLen == 0) return;
@@ -219,7 +219,7 @@ static void computeLayout(DisplayType &display) {
     s_textW = wText;
     s_textH = hText;
 
-    // Cursorbreite/-höhe bestimmen
+    // Determine cursor width/height
     int16_t cx1, cy1;
     uint16_t cw, ch;
     display.getTextBounds("_", 0, 0, &cx1, &cy1, &cw, &ch);
@@ -245,12 +245,12 @@ static void computeLayout(DisplayType &display) {
 
 
 // ------------------------------------------------------------
-// Nur den Cursor zeichnen / löschen (kein clearDisplay!)
+// Draw/erase only the cursor (no clearDisplay!)
 // ------------------------------------------------------------
 static void drawCursor(DisplayType &display, bool visible) {
     if (!s_layoutReady) return;
 
-    // Cursor-Bereich löschen
+    // Clear the cursor area
     display.fillRect(s_cursorX, s_cursorY, s_cursorW, s_cursorH, 0);
 
     if (visible) {
@@ -294,7 +294,7 @@ void startIdle(unsigned long now) {
 
 
 // ------------------------------------------------------------
-// Idle mit Text beginnen → Text zuerst (für Boot)
+// Start idle with text -> text first (for boot)
 // ------------------------------------------------------------
 void startIdleTextFirst(unsigned long now) {
     s_state         = IDLE_TEXT;
@@ -356,7 +356,7 @@ void tickIdle(DisplayType &display, unsigned long now) {
                     drawIdleText(display, s_textCharIndex, false);
                 }
                 else if ((now - s_lastCharTime) >= IDLE_TEXT_CHAR_DELAY) {
-                    // nächster Buchstabe
+                    // Next character
                     s_textCharIndex++;
                     s_lastCharTime = now;
                     drawIdleText(display, s_textCharIndex, false);
@@ -396,7 +396,7 @@ void tickIdle(DisplayType &display, unsigned long now) {
 
 
 // ----------------------------------------------
-// 3-Zeilen-Typewriter inkl. rückwärts Löschen
+// 3-line typewriter including backward erasing
 // ----------------------------------------------
 namespace {
 
@@ -438,15 +438,15 @@ static void computeThreeLineLayout(
     display.setTextSize(1);
     display.setFont(DISPLAY_FONT); // darf nullptr sein -> Standardfont
 
-    // Referenzhöhe messen (stabil)
+    // Measure reference height (stable)
     int16_t rx1, ry1; uint16_t rw, rh;
     display.getTextBounds("Hg", 0, 0, &rx1, &ry1, &rw, &rh);
     int16_t lineHeight = (int16_t)rh + 2;
 
-    // Gesamt-Blockhöhe (3 Zeilen)
+    // Total block height (3 lines)
     int16_t totalH = (int16_t)(3 * lineHeight);
 
-    // Oberen Start so wählen, dass der Block vertikal zentriert ist
+    // Choose the top start so the block is vertically centered
     int16_t blockTop = (int16_t)((SCREEN_HEIGHT - totalH) / 2);
 
     yTop1 = blockTop;
@@ -516,7 +516,7 @@ void playThreeLineTypewriter(
     delay_with_yield(endHoldMs);
 
     if (!eraseBackwards) {
-        return; // ohne Rückwärts-Animation beenden
+        return; // Finish without backward animation
     }
 
     // 5) Rückwärts löschen: Zeile 3 → 2 → 1

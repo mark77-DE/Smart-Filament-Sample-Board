@@ -3,12 +3,15 @@
 #include <ArduinoJson.h>
 #include "ledctrl_filament.h"
 #include "ledctrl_nfc.h"
-#include "gpio_hardware.h" // für gpiohw_init()
+#include "gpio_hardware.h" // for gpiohw_init()
 #include "globals.h"
 #include "filehandling.h"
 #include "pins.h"
 
 AppConfigV2 CONFIGV2;
+
+// migration flag
+bool configChanged = false;
 
 // ============================================================================
 // Laden / Anwenden der Konfiguration
@@ -24,7 +27,7 @@ bool loadConfigV2()
 
         Serial.println(F("LittleFS mount failed V2!"));
 
-        // unverändertes Verhalten: blockieren
+        // Preserve existing behavior: block
         while (1)
         {
             delay(10);
@@ -52,6 +55,9 @@ bool loadConfigV2()
 
     if (!doc.is<JsonObject>())
         return false;
+
+    bool wasMigrated = migrateConfigV2(doc); // check for migration needs
+
     JsonObject cfg = doc.as<JsonObject>();
 
     JsonObject sys = cfg["system"];
@@ -78,10 +84,13 @@ bool loadConfigV2()
     const char *ledType = ledHardware["type"] | "WS2812B";
     const char *ledOrder = ledHardware["order"] | "GRB";
 
-    Serial.println();
-    Serial.println("[DEBUG] LED-Hardware aus JSON:");
-    Serial.printf("  type  = '%s'\n", ledType);
-    Serial.printf("  order = '%s'\n", ledOrder);
+    if (CONFIGV2.system.debugMode)
+    {
+        Serial.println();
+        Serial.println("LED-Hardware from JSON:");
+        Serial.printf("  type  = '%s'\n", ledType);
+        Serial.printf("  order = '%s'\n", ledOrder);
+    }
 
     // LED-Typ
     if (strcmp(ledType, "WS2812B") == 0)
@@ -234,6 +243,12 @@ bool loadConfigV2()
     }
 
     loadFilaments();
+
+    if (wasMigrated)
+    {
+        saveConfigV2(); // CONFIGV2 values are now populated -> persist cleanly
+    }
+
     return true;
 }
 
@@ -935,6 +950,9 @@ bool importConfigJsonV2(JsonObject src)
     if (!LittleFS.begin(true))
         return false;
 
+    migrateConfigV2(src);
+    CONFIGV2.system.version = src["version"] | CONFIGV2.system.version;  // <-- NEU
+
     // =========================
     // System
     // =========================
@@ -1263,7 +1281,7 @@ uint32_t colorFromArrayV2(JsonArrayConst arr)
 }
 
 // ============================================================================
-// JSON-Helper für UI / Import / Export
+// JSON helpers for UI / import / export
 // ============================================================================
 
 bool loadConfigAsJsonV2(JsonObject target)
@@ -1288,3 +1306,4 @@ bool loadConfigAsJsonV2(JsonObject target)
     }
     return true;
 }
+

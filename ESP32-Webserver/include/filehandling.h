@@ -12,21 +12,21 @@
 
 
 /**
- * @brief Lädt die Filament-Datenbank in den Speicher (FilamentDB)
- * @return true bei Erfolg, sonst false
+ * @brief Loads the filament database into memory (FilamentDB)
+ * @return true on success, otherwise false
  */
 bool loadFilaments();
 
 // ============================================================================
-// JSON Hilfs-API
+// JSON helper API
 // ============================================================================
 
 
 
 /**
- * @brief Lädt die Filament-Datenbank als JsonArray in ein bestehendes Dokument
- * @param target Ziel-JsonArray (wird befüllt)
- * @return true bei Erfolg, sonst false
+ * @brief Loads the filament database as a JsonArray into an existing document
+ * @param target Target JsonArray (will be populated)
+ * @return true on success, otherwise false
  */
 bool loadFilamentsAsJson(JsonArray target);
 
@@ -34,36 +34,74 @@ bool loadFilamentsAsJson(JsonArray target);
 
 
 /**
- * @brief Importiert Filamente aus einem JSON-Array (DB + Datei)
- * @param src Quell-JsonArray
- * @return true bei Erfolg, sonst false
+ * @brief Imports filaments from a JSON array (database + file)
+ * @param src Source JsonArray
+ * @return true on success, otherwise false
  */
 bool importFilamentsJson(JsonArray src);
 
 // ============================================================================
-// Sonstiges
+// Miscellaneous
 // ============================================================================
 
 /**
- * @brief Lädt die Filament-DB in ein externes Array
- * @param dst Ziel-Array
- * @param maxEntries maximale Anzahl Einträge
- * @param outCount Anzahl tatsächlich geladener Einträge (by ref)
- * @return true bei Erfolg, sonst false
- * @note Nur deklariert – Implementierung ggf. an anderer Stelle (abhängig von FilamentDB-API).
+ * @brief Loads the filament database into an external array
+ * @param dst Target array
+ * @param maxEntries Maximum number of entries
+ * @param outCount Number of entries actually loaded (by ref)
+ * @return true on success, otherwise false
+ * @note Declaration only; implementation may be elsewhere (depending on the FilamentDB API).
  */
 // bool loadFilamentDB(FilamentEntry* dst, size_t maxEntries, size_t& outCount);
 
 /**
- * @brief Speichert die aktuelle Filament-DB in /filaments.json
- * @return true bei Erfolg, sonst false
+ * @brief Saves the current filament database to /filaments.json
+ * @return true on success, otherwise false
  */
 bool saveFilamentsToFile();
 
 /**
- * @brief Schreibt eine 0xRRGGBB-Farbe als [r,g,b]-Array in ein JsonObject
- * @param opt Ziel-JsonObject (z. B. "options")
- * @param key Schlüssel, unter dem das Array erzeugt wird
+ * @brief Writes a 0xRRGGBB color as an [r,g,b] array into a JsonObject
+ * @param opt Target JsonObject (e.g. "options")
+ * @param key Key under which the array is created
  * @param color 0xRRGGBB
  */
 void setColorArray(JsonObject& opt, const char* key, uint32_t color);
+
+
+// filehandling.h
+
+/**
+ * @brief Migrates a single filament entry to the current schema
+ * @param entry Entry to migrate
+ * @param configVersion Current CONFIGV2.system.version, controls which migration steps apply
+ * @return true when something was changed
+ */
+inline bool migrateFilamentEntry(JsonObject entry, const String& configVersion)
+{
+    bool changed = false;
+
+    // Example migration step (currently unnecessary because "storage" already exists
+    // and is covered by the | default; kept as a template for future fields)
+    // if (configVersion == "1.0" || configVersion == "2.0") {
+    //     if (entry["someNewField"].isNull()) {
+    //         entry["someNewField"] = <sinnvoller Default>;
+    //         changed = true;
+    //     }
+    // }
+
+    return changed;
+}
+
+/**
+ * @brief Migrates all entries in a filament array
+ * @return true when at least one entry was changed
+ */
+inline bool migrateFilamentArray(JsonArray arr, const String& configVersion)
+{
+    bool anyChanged = false;
+    for (JsonObject entry : arr) {
+        if (migrateFilamentEntry(entry, configVersion)) anyChanged = true;
+    }
+    return anyChanged;
+}

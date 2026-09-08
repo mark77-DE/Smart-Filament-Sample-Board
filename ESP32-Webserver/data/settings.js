@@ -1,5 +1,5 @@
-// -------------------- Globale Referenzen --------------------
-const MAX_LENGTH = 30; // maximale Zeichenanzahl für vendor und color
+// -------------------- Global references --------------------
+const MAX_LENGTH = 30; // Maximum character count for vendor and color
 
 
 
@@ -10,6 +10,8 @@ const addForm = document.getElementById("addForm");
 const wsStatus = document.getElementById("wsStatus");
 const editToggle = document.getElementById("editToggle");
 const debugToggle = document.getElementById("debugToggle");
+
+const statusTxt = document.getElementById('statusTxt');
 
 const selectLanguageSelect = document.getElementById("langSelect");
 
@@ -37,6 +39,7 @@ const infoWifiRssi = document.getElementById("infoWifiRssi");
 const infoHostname = document.getElementById("infoHostname");
 const infoGitHash = document.getElementById("infoGitHash");
 const infoBuildDate = document.getElementById("infoBuildDate");
+const infoConfigVersion = document.getElementById("infoConfigVersion");
 const infoHeapSize = document.getElementById("infoHeapSize");
 const infoFreeHeap = document.getElementById("infoHeapFree");
 const infoSketchSize = document.getElementById("infoSketchSize");
@@ -110,7 +113,7 @@ const toggleBtn = document.getElementById("toggleSettings");
 const section = document.getElementById("sectionSettings");
 
 const updateCheckIntervalInput = document.getElementById("updateCheckInterval");
-const updateIntervalHuman = document.getElementById("updateIntervalHuman");
+const updateIntervalHumanTxt = document.getElementById("updateIntervalHuman");
 
 const infoCpuTempInfo = document.getElementById("infoCpuTemp");
 
@@ -152,13 +155,13 @@ let FILAMENT_DATA = [];
 let EDIT_MODE = false;
 let CONFIGV2 = null;
 let lastHighlightedRow = null;
-let BOARD_VARIANT = "unknown"; // wird in config.js überschrieben, dient aber hier schon als Fallback / Referenz
+let BOARD_VARIANT = "unknown"; // Overridden in config.js, used here as a fallback/reference
 
 let wsLastHeartbeat = 0;
 let wsWatchdogTimer = null;
 
-const WS_TIMEOUT_MS = 5000;   // z.B. 5 Sekunden
-const WS_CHECK_INTERVAL = 1000; // jede Sekunde prüfen
+const WS_TIMEOUT_MS = 5000;   // z.B. 5 seconds
+const WS_CHECK_INTERVAL = 1000; // Check every second
 
 let socket = null;
 let reconnectTimer = null;
@@ -192,10 +195,13 @@ function connectWebSocket() {
         console.log("WS connected");
 
         reconnectDelay = 1000;
-        wsLastHeartbeat = 0;          // noch KEIN Heartbeat gesehen
+        wsLastHeartbeat = 0;          // no heratbeat yet
         updateWSStatus(true);
 
-        stopWSWatchdog();             // Sicherheit
+        stopWSWatchdog();             // for safety, stop watchdog if running
+
+        statusTxt.textContent = "";
+
     };
 
     socket.onmessage = handleWSMessage;
@@ -226,7 +232,7 @@ function scheduleReconnect() {
         reconnectTimer = null;
         connectWebSocket();
 
-        // Delay erhöhen (bis max)
+        // Increase delay (up to the maximum)
         reconnectDelay = Math.min(reconnectDelay * 2, RECONNECT_MAX);
 
     }, reconnectDelay);
@@ -309,7 +315,7 @@ async function handleWSMessage(ev) {
         return;
     }
 
-    // ----------------- Heartbeat prüfen -----------------
+    // ----------------- Check heartbeat -----------------
     if (data.action === "heartbeat") {
 
     wsLastHeartbeat = Date.now();
@@ -322,6 +328,8 @@ async function handleWSMessage(ev) {
     updateRssiDisplay(data.wifi_rssi);
     infoCpuTempInfo.textContent = data.cpu_temp_c.toFixed(1) + " °C";
     infoFreeHeap.textContent = data.heap_free + " bytes";
+    infoUptime.textContent = formatUptime(data.uptime_ms);
+
 
     if (CONFIGV2?.system?.debugMode) {
         console.log("Heartbeat:", data);
@@ -335,7 +343,7 @@ async function handleWSMessage(ev) {
         return;
     }
 
-    // UID nur Hex-Ziffern, Großschreibung vereinheitlicht
+    // UID uses hexadecimal digits only; normalize uppercase
     const scannedUID = data.uid.replace(/[^a-fA-F0-9]/g, '').toUpperCase();
 
     const rows = document.querySelectorAll("#db .rowMain");
@@ -361,8 +369,8 @@ async function handleWSMessage(ev) {
 
             row.parentNode.classList.remove("row-highlight");
 
-            // Animation zuverlässig neu starten, auch wenn kurz hintereinander
-            // derselbe Eintrag gefunden wird.
+            // Reliably restart the animation even when the same entry
+            // is found shortly after itself.
             void row.parentNode.offsetWidth;
 
             row.parentNode.classList.add("row-highlight");
@@ -429,7 +437,7 @@ document.getElementById("importAllForm").addEventListener("submit", async e => {
             alert(t("txt_import_success"));
 
             await loadFilaments();
-            renderTable();
+            await renderTable();
             updateAddFormSamples();
             await loadConfig_V2(); 
         }
@@ -464,7 +472,7 @@ addForm.addEventListener("submit", async e => {
     const uid = newTagsSelect.value;
 
     if (!uid) {
-        alert("Kein Tag ausgewählt");
+        alert("No tag selected");
         return;
     }
 
@@ -481,7 +489,7 @@ addForm.addEventListener("submit", async e => {
     addForm.reset();
 
     await loadFilaments();
-    renderTable();
+    await renderTable();
     updateAddFormSamples();
 });
 
@@ -491,7 +499,7 @@ function getFormEntry(uid) {
     return {
         uid: uid,
         vendor: sanitizeInput(fd.get("vendor").trim()),
-        type: fd.get("type"), // falls Typ immer eine Auswahl ist, keine Sanitize nötig
+        type: fd.get("type"), // No sanitization needed if type is always a selection
         color: sanitizeInput(fd.get("color").trim()),
         ledIndex: Number(fd.get("ledIndex")),
         info1: sanitizeInput(fd.get("info1").trim()),
@@ -540,7 +548,7 @@ function removeTag(uid) {
 
 
 // -------------------- Table / LED --------------------
-function renderTable() {
+async function renderTable() {
 
     if (!Array.isArray(FILAMENT_DATA)) {
         dbDiv.innerHTML = "<p>Invalid filament data</p>";
@@ -657,10 +665,10 @@ function renderTable() {
 
     debugToggle.checked = !!(sys.debugMode);
     
-    loadHelpAndLang(CONFIGV2.system.defaultLanguage); // default language
+    await loadHelpAndLang(CONFIGV2.system.defaultLanguage); // default language
     selectLanguageSelect.value = CONFIGV2.system.defaultLanguage;
     setupLangSwitcher('langSelect');
-    // Help-Icons einfügen
+    // Insert help icons
     injectHelpIcons();
     
 
@@ -820,7 +828,7 @@ function activateButtons() {
             entry[field] = el.tagName === "SELECT" ? el.value : sanitizeInput(el.innerText.trim());
         });
         const res = await fetch("/api/update", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(entry) });
-        if (res.ok) { alert(t("txt_save_sample_success")); await loadFilaments(); renderTable(); updateAddFormSamples(); } else alert(t("txt_save_sample_failed"));
+        if (res.ok) { alert(t("txt_save_sample_success")); await loadFilaments(); await renderTable(); updateAddFormSamples(); } else alert(t("txt_save_sample_failed"));
     }));
 
     document.querySelectorAll(".deleteBtn").forEach(btn => btn.addEventListener("click", async () => {
@@ -833,7 +841,7 @@ function activateButtons() {
             body: `uid=${encodeURIComponent(uid)}`
         });
 
-        if (res.ok) { alert(t("txt_delete_sample_success")); await loadFilaments(); renderTable(); updateAddFormSamples(); }
+        if (res.ok) { alert(t("txt_delete_sample_success")); await loadFilaments(); await renderTable(); updateAddFormSamples(); }
         else alert(t("txt_delete_sample_failed"));
     }));
 }
@@ -1011,7 +1019,7 @@ async function loadConfig_V2() {
 
 
 // -------------------- Pin-Dropdowns: Helfer & Sperrlogik --------------------
-// ergänzt einen Wert, falls er noch nicht als <option> existiert
+// Add a value if it does not already exist as an <option>
 function ensureOption(select, value) {
     if (!select || value === undefined || value === null) return;
     const v = String(value);
@@ -1031,10 +1039,10 @@ function ensureOption(select, value) {
 // -------------------- Color Presets (HEX) --------------------
 const PRESET_COLORS = [
     "#ff0000", // Rot
-    "#00ff00", // Grün
+    "#00ff00", // Green
     "#0000ff", // Blau
     "#ffff00", // Gelb
-    "#ff7a00", // Orange (schön satt)
+    "#ff7a00", // Orange (rich)
     "#ff00ff", // Magenta
     "#00ffff"  // Cyan
 ];
@@ -1133,7 +1141,7 @@ function disableBuzzer() {
 }
 
 function isValidNFCUID(uid) {
-    // Großschreiben & Trim
+    // Uppercase and trim
     uid = String(uid).trim().toUpperCase();
 
     // Format: 7 Gruppen Hex (2 Zeichen) getrennt durch ":"
@@ -1161,7 +1169,7 @@ dbDiv.addEventListener('input', e => {
     if (e.target.matches('span.uid')) validateUIDSpan(e.target);
 });
 
-// Blur: optional abschließende Validierung + Großschreibung
+// Blur: optional final validation + uppercase
 dbDiv.addEventListener('blur', e => {
     if (e.target.matches('span.uid')) {
         e.target.textContent = e.target.textContent.trim().toUpperCase();
@@ -1169,7 +1177,7 @@ dbDiv.addEventListener('blur', e => {
     }
 }, true);
 
-// Paste: nach Einfügen prüfen
+// Paste: validate after inserting
 dbDiv.addEventListener('paste', e => {
     if (e.target.matches('span.uid')) {
         setTimeout(() => validateUIDSpan(e.target), 0);
@@ -1187,7 +1195,7 @@ dbDiv.addEventListener('keydown', e => {
 
 
 
-// Nur Klassenzuweisung, Text bleibt unverändert
+// Only assign the class; leave the text unchanged
 function validateUIDSpan(span) {
 
     const uid = span.textContent.trim().toUpperCase();
@@ -1203,7 +1211,7 @@ function validateUIDSpan(span) {
 
 
 
-// Eventlistener hinzufügen
+// Add event listener
 importFileInput.addEventListener("change", updateImportUI);
 
 
@@ -1299,7 +1307,7 @@ function updateRssiDisplay(rssi) {
 function updateRssiIcon(rssi) {
     const bars = document.querySelectorAll("#rssiIcon .bar");
 
-    // Alle Balken zurücksetzen
+    // Reset all bars
     bars.forEach(bar => bar.setAttribute("fill", "gray"));
 
     let color;
@@ -1333,7 +1341,7 @@ async function getVersion() {
             document.getElementById("fwVersion").textContent = "FW-Version: " + data.firmware;
             document.getElementById("build_date").textContent = "Build date: " + data.build_date_short;
 
-            BOARD_VARIANT = data.boardVariant; // global für andere Funktionen verfügbar
+            BOARD_VARIANT = data.boardVariant; // globally available to other functions
     
             infoChipName.textContent = data.chipName;
             infoBoardVariant.textContent = data.boardVariant;
@@ -1343,6 +1351,9 @@ async function getVersion() {
             infoFwVersion.textContent = data.firmware;
             infoGitHash.textContent = data.git_hash;
             infoBuildDate.textContent = data.build_date;
+            infoConfigVersion.textContent = data.config_version;
+
+
             infoHostname.textContent = data.hostname;
 
             infoHeapSize.textContent = data.heap_size + " bytes";
@@ -1488,7 +1499,7 @@ ledSelect.addEventListener("change", () => {
     if (!isNaN(ledIndex)) {
         highlightLedIndex(ledIndex);    // Funktion aufrufen
     } else {
-        console.warn("Ungültiger LED-Index:", value);
+        console.warn("Invalid LED index:", value);
     }
 });
 
@@ -1547,7 +1558,7 @@ document.querySelectorAll('#addForm input[data-max]').forEach(el => {
     el.addEventListener('input', () => {
         const max = parseInt(el.dataset.max || "60");
 
-        // überschüssige Zeichen abschneiden
+        // Trim excess characters
         if (el.value.length > max) {
             el.value = el.value.slice(0, max);
         }
@@ -1624,6 +1635,8 @@ function formatMinutesHuman(minutes) {
 
     let parts = [];
 
+    
+
     if (days > 0) {
         parts.push(`${days} ${days === 1 ? t("txt_day") : t("txt_day_plural")}`);
     }
@@ -1640,7 +1653,8 @@ function formatMinutesHuman(minutes) {
 }
 
 function updateIntervalDisplay() {
-    updateIntervalHuman.textContent = formatMinutesHuman(updateCheckIntervalInput.value);
+    updateIntervalHumanTxt.textContent = formatMinutesHuman(updateCheckIntervalInput.value);
+    
 }
 
 // Events
@@ -1668,8 +1682,8 @@ function updateLedColorOrderOptions() {
         option.hidden = isRGBW ? !isWhiteOrder : isWhiteOrder;
     });
 
-    // Falls die aktuell ausgewählte Option durch den Wechsel
-    // nicht mehr gültig ist, automatisch die erste sichtbare wählen.
+    // If the currently selected option is no longer valid after the change,
+    // automatically select the first visible option.
     const selectedOption = colorOrderSelect.options[colorOrderSelect.selectedIndex];
 
     if (selectedOption && selectedOption.hidden) {
@@ -1691,7 +1705,7 @@ async function init() {
     await loadConfig_V2();
     await loadFilaments();
     
-    renderTable();
+    await renderTable();
     updateAddFormSamples();
    
     updateImportUI();
@@ -1702,12 +1716,14 @@ async function init() {
     await getVersion();
     await getPinout();
 
-    updateIntervalDisplay();
+    
     updateLedColorOrderOptions();
 
     document.querySelectorAll('#addForm input[data-max]').forEach(el => updateCharsLeft(el));
     
-    
+    updateIntervalDisplay();
+
+
 }
 
 init();

@@ -11,6 +11,7 @@ extern AsyncWebSocket ws;
 
 extern volatile bool rebootPending;
 extern unsigned long rebootAt;
+extern bool rebootReason;
 
 extern uint32_t REBOOT_DELAY_MS;        // Button-Delay (ms)
 extern uint32_t REBOOT_DELAY_WEBIF_MS;  // WebIF-Delay (ms)
@@ -28,7 +29,7 @@ enum class UidSource {
     WEBIF
 };
 
-// NEU: WebIF Idle Timer (OLED Rücksprung)
+// NEW: Web interface idle timer (OLED return)
 void webifArmIdleTimeout(uint32_t ms);
 void webifCancelIdleTimeout();
 bool webifIdleDue(uint32_t now);

@@ -236,7 +236,7 @@ void publishUpdateStatus() {
     const UpdateInfo& info = getUpdateInfo();
     String base = CONFIGV2.mqttConfig.baseTopic;
 
-    // ON/OFF für HA Update Entity
+    // ON/OFF for HA update entity
     mqttClient.publish(
         (base + "/device/update").c_str(),
         info.updateAvailable ? "ON" : "OFF",

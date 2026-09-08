@@ -6,14 +6,14 @@
 
 
 // ============================================================================
-// Konfigurationsstrukturen
+// Configuration structures
 // ============================================================================
 
 /**
  * @brief Globale LED-Hardware-Konfiguration
  *
- * Gilt für alle adressierbaren LEDs des Geräts.
- * Die Defaults stammen aus platformio.ini.
+ * Applies to all addressable LEDs in the device.
+ * Defaults come from platformio.ini.
  */
 struct LedHardwareConfigV2 {
   LedType  type  = static_cast<LedType>(LED_TYPE);
@@ -25,53 +25,53 @@ struct LedHardwareConfigV2 {
  * @brief LED-Konfiguration (Filament-Stripe)
  */
 struct LedConfigV2 {
-  int      count;       ///< Anzahl LEDs
-  int      pin;         ///< GPIO-Pin
-  int      brightness;  ///< Helligkeit [0..255]
+  int      count;       ///< Number of LEDs
+  int      pin;         ///< GPIO pin
+  int      brightness;  ///< Brightness [0..255]
   int      timeout;     ///< Timeout in ms
-  uint32_t color;       ///< Standardfarbe 0xRRGGBB
-  uint32_t colorError;  ///< Fehlerfarbe 0xRRGGBB
-  uint32_t colorPulse;  ///< Idle-Pulse-Farbe 0xRRGGBB
+  uint32_t color;       ///< Default color 0xRRGGBB
+  uint32_t colorError;  ///< Error color 0xRRGGBB
+  uint32_t colorPulse;  ///< Idle pulse color 0xRRGGBB
 };
 
 /**
  * @brief NFC-LED-Konfiguration
  */
 struct NfcLedConfigV2 {
-  int      count;                 ///< Anzahl LEDs
-  int      pin;                   ///< GPIO-Pin
-  int      brightness;            ///< Helligkeit [0..255]
+  int      count;                 ///< Number of LEDs
+  int      pin;                   ///< GPIO pin
+  int      brightness;            ///< Brightness [0..255]
   int      timeout;               ///< Timeout in ms
-  uint32_t colorSuccess;          ///< Farbe für Erfolg 0xRRGGBB
-  uint32_t colorError;            ///< Farbe für Fehler 0xRRGGBB
-  uint32_t colorPulse;            ///< Idle-Pulse-Farbe 0xRRGGBB
-  bool     successBlinkEnabled;   ///< True = Erfolgsblinken aktiv
-  int      successBlinkCount;     ///< Anzahl Blink-Zyklen
-  int      successBlinkMs;        ///< Blink-Intervall in ms
+  uint32_t colorSuccess;          ///< Success color 0xRRGGBB
+  uint32_t colorError;            ///< Error color 0xRRGGBB
+  uint32_t colorPulse;            ///< Idle pulse color 0xRRGGBB
+  bool     successBlinkEnabled;   ///< True = success blinking enabled
+  int      successBlinkCount;     ///< Number of blink cycles
+  int      successBlinkMs;        ///< Blink interval in ms
 };
 
 /**
  * @brief Button-Konfiguration
  */
 struct ButtonConfigV2 {
-  bool enabled       = true; ///< Button aktiv?
-  int  pin           = -1;   ///< GPIO des Buttons (-1 = aus)
-  bool pullup        = true; ///< interner PullUp -> active-low
-  int  debounceMs    = 30;   ///< Entprellzeit
-  int  longMs        = 800;  ///< Schwelle Long-Press
-  int  doubleGapMs   = 400;  ///< Fenster für Double-Press
-  int  holdRepeatMs  = 250;  ///< Wiederholrate bei Hold
+  bool enabled       = true; ///< Button enabled?
+  int  pin           = -1;   ///< Button GPIO (-1 = off)
+  bool pullup        = true; ///< Internal pull-up -> active-low
+  int  debounceMs    = 30;   ///< Debounce time
+  int  longMs        = 800;  ///< Long-press threshold
+  int  doubleGapMs   = 400;  ///< Double-press window
+  int  holdRepeatMs  = 250;  ///< Hold repeat rate
 };
 
 /**
  * @brief Buzzer-Konfiguration
  */
 struct BuzzerConfigV2 {
-  bool enabled       = true; ///< Buzzer aktiv?
-  int  pin           = -1;    ///< GPIO des Buzzers (-1 = aus)
-  bool activeHigh    = true;  ///< Aktivpegel HIGH?
-  bool passive       = false; ///< false = aktiver Buzzer, true = passiver (PWM)
-  int  freqHz        = 4000;  ///< Frequenz für tone()
+  bool enabled       = true; ///< Buzzer enabled?
+  int  pin           = -1;    ///< Buzzer GPIO (-1 = off)
+  bool activeHigh    = true;  ///< Active level HIGH?
+  bool passive       = false; ///< false = active buzzer, true = passive (PWM)
+  int  freqHz        = 4000;  ///< Frequency for tone()
   int  singleMs      = 80;    ///< Dauer Single-Beep
   int  doubleOnMs    = 60;    ///< Ein-Zeit Double-Beep
   int  doubleGapMs   = 80;    ///< Pause Double-Beep
@@ -93,82 +93,82 @@ struct MqttConfigV2 {
   String baseTopic;
   String clientId;
   bool haDiscovery;          ///< Home Assistant Discovery aktiv
-  String haDiscoveryPrefix;  ///< Präfix für HA Discovery (z. B. "homeassistant")
+  String haDiscoveryPrefix;  ///< Prefix for HA Discovery (e.g. "homeassistant")
 };
 
-// OPTIONAL: Kennzeichen, damit gpio_hardware.cpp weiß,
-// dass Button/Buzzer in CONFIG vorhanden sind:
+// OPTIONAL: Marker so gpio_hardware.cpp knows that
+// Button/buzzer are present in CONFIG:
 #define CONFIG_HAS_GPIO
 
 struct systemConfig {
   String        version = "error";
-  bool          darkmode;    ///< Darkmode aktiv
-  bool          debugMode;   ///< Debug-Modus aktiv
-  uint32_t      webLEDTimeout;   // Default fürs Dashboard (ms)
-  String        hostname;    ///< Hostname für WLAN
-  bool          animationAfterBoot; ///< Startup-Animation nach Booten aktiv
-  String        defaultLanguage; ///< Standard-Sprache (z. B. "en" oder "de")
-  uint32_t      updateCheckInterval; ///< Sekunden bis zum Reboot nach Long-Press
+  bool          darkmode;    ///< Dark mode enabled
+  bool          debugMode;   ///< Debug mode enabled
+  uint32_t      webLEDTimeout;   // Dashboard default (ms)
+  String        hostname;    ///< Wi-Fi hostname
+  bool          animationAfterBoot; ///< Startup animation after boot enabled
+  String        defaultLanguage; ///< Default language (e.g. "en" or "de")
+  uint32_t      updateCheckInterval; ///< Seconds until reboot after long press
 };
 
 /**
  * @brief Haupt-Konfigurationsstruktur der App
  */
 struct AppConfigV2 {
-  systemConfig system;     ///< System-Konfiguration
-  uint32_t     webLEDTimeout;   // Default fürs Dashboard (ms)
-  String       hostname;    ///< Hostname für WLAN
+  systemConfig system;     ///< System configuration
+  uint32_t     webLEDTimeout;   // Dashboard default (ms)
+  String       hostname;    ///< Wi-Fi hostname
 
   LedHardwareConfigV2 ledHardware;
 
-  LedConfigV2    led;         ///< LED-Konfiguration (Filament)
-  NfcLedConfigV2 nfc;         ///< NFC-LED-Konfiguration
-  ButtonConfigV2 button;      ///< Pushbutton-Konfiguration
-  BuzzerConfigV2 buzzer;      ///< Buzzer-Konfiguration
-  MqttConfigV2   mqttConfig;  ///< MQTT-Konfiguration
+  LedConfigV2    led;         ///< LED configuration (filament)
+  NfcLedConfigV2 nfc;         ///< NFC LED configuration
+  ButtonConfigV2 button;      ///< Pushbutton configuration
+  BuzzerConfigV2 buzzer;      ///< Buzzer configuration
+  MqttConfigV2   mqttConfig;  ///< MQTT configuration
 };
 
-// Globale, aktuell geladene Konfiguration
+// Global, currently loaded configuration
 extern AppConfigV2 CONFIGV2;
 
 // ============================================================================
-// High-Level API
+// High-level API
 // ============================================================================
 
 /**
- * @brief Lädt die Konfiguration aus config_v2.json in CONFIGV2
- * @return true bei Erfolg, sonst false
+ * @brief Loads the configuration from config_v2.json into CONFIGV2
+ * @return true on success, otherwise false
  */
 bool loadConfigV2();
 
 /**
- * @brief Wendet die aktuelle CONFIG auf die Hardware/Module an
+ * @brief Applies the current CONFIG to the hardware/modules
  */
 void applyConfigV2();
 
 /**
- * @brief Speichert CONFIGV2 in /config_v2.json
- * @return true bei Erfolg, sonst false
+ * @brief Saves CONFIGV2 to /config_v2.json
+ * @return true on success, otherwise false
  */
 bool saveConfigV2();
 
 
 
 // ============================================================================
-// JSON Hilfs-API
+// JSON helper API
 // ============================================================================
 
 /**
- * @brief Aktualisiert CONFIG anhand eines JSON-Dokuments (doc["options"]…)
- * @param doc JSON-Dokument mit Konfigurationswerten
- * @return true bei Erfolg, sonst false
+ * @brief Updates CONFIG from a JSON document (doc["options"]...)
+ * @param doc JSON document with configuration values
+ * @return true on success, otherwise false
  */
 bool updateConfigFromJsonV2(JsonDocument& doc);
 
 /**
- * @brief Lädt die Konfiguration als JSON-Objekt in ein bestehendes Dokument
- * @param target Ziel-JsonObject (wird befüllt)
- * @return true bei Erfolg, sonst false
+ * @brief Loads the configuration as a JSON object into an existing document
+ * @param target Target JsonObject (will be populated)
+ * @return true on success, otherwise false
  */
 bool loadConfigAsJsonV2(JsonObject target);
 
@@ -176,26 +176,59 @@ bool loadConfigAsJsonV2(JsonObject target);
 
 
 /**
- * @brief Importiert eine Konfiguration aus einem JSON-Objekt (schreibt Datei)
- * @param src Quell-JsonObject
- * @return true bei Erfolg, sonst false
+ * @brief Imports a configuration from a JSON object (writes the file)
+ * @param src Source JsonObject
+ * @return true on success, otherwise false
  */
 bool importConfigJsonV2(JsonObject src);
 
 
 // ============================================================================
-// Sonstiges
+// Miscellaneous
 // ============================================================================
 
 
 
 /**
- * @brief Schreibt eine 0xRRGGBB-Farbe als [r,g,b]-Array in ein JsonObject
- * @param opt Ziel-JsonObject (z. B. "options")
- * @param key Schlüssel, unter dem das Array erzeugt wird
+ * @brief Writes a 0xRRGGBB color as an [r,g,b] array into a JsonObject
+ * @param opt Target JsonObject (e.g. "options")
+ * @param key Key under which the array is created
  * @param color 0xRRGGBB
  */
 
 uint32_t colorFromArrayV2(JsonArrayConst arr);
 
 // void setColorArrayV2(JsonObject& opt, const char* key, uint32_t color);
+
+
+
+
+// Migration routine
+// in config.h (IMPORTANT: in the header, not in the .cpp!)
+template<typename TCfg>
+bool migrateConfigV2(TCfg& cfg)
+{
+    String ver = cfg["version"] | "1.0";
+    bool changed = false;
+
+    if (ver == "1.0") {
+        if (cfg["system"]["updateCheckInterval"].isNull()) {
+            cfg["system"]["updateCheckInterval"] = 3;
+        }
+        Serial.println(F("[MIGRATION] 1.0 -> 2.0"));
+        ver = "2.0";
+        changed = true;
+    }
+    if (ver == "2.0") {
+        // Next step later
+        Serial.println(F("[MIGRATION] 2.0 -> 2.2"));
+        ver = "2.2";
+        changed = true;
+    }
+
+    if (changed) {
+        cfg["version"] = ver;
+        Serial.printf("Config Version  = '%s'\n", ver.c_str());
+    }
+    return changed;
+}

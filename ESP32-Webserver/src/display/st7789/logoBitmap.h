@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-// Größe anpassen: hier 200x87 Pixel
+// Adjust size: 200x87 pixels here
 extern const uint16_t logoBitmap[320*125];
 
 #endif

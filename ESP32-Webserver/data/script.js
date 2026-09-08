@@ -1,11 +1,11 @@
 // ============================================================================
 // Spot My Filament - script.js (WebIF Dashboard)
-// Fix: schnelles Durchklicken -> ACK + Retry + "nur letzter Klick zählt"
+// Fix: rapid clicking -> ACK + retry + "only the last click counts"
 // ============================================================================
 
 const activeTimers = {};     // UID -> TimeoutID (UI Highlight)
-const lastScanTimes = {};    // UID -> timestamp (Debounce für HighlightUID)
-const DEBOUNCE_MS = 2000;    // 2 Sekunden Entprellzeit für highlightUID (NFC/WS Events)
+const lastScanTimes = {};    // UID -> timestamp (debounce for HighlightUID)
+const DEBOUNCE_MS = 2000;    // 2-second debounce for highlightUID (NFC/WS events)
 
 let CONFIGV2 = null;
 const DEFAULT_LED_TIMEOUT_MS = 5000; // Fallback, falls config_v2.json fehlt
@@ -185,12 +185,12 @@ function scheduleReconnect() {
   }, reconnectDelay);
 }
 
-// ---------------- ACK/Retry für "highlightLED" ----------------
+// ---------------- ACK/retry for "highlightLED" ----------------
 let clickSeq = 0;
 let pending = null;          // { seq, uid, tries }
 let ackTimer = null;
 
-const ACK_TIMEOUT_MS = 250;  // erst nach 250ms überhaupt an Retry denken
+const ACK_TIMEOUT_MS = 250;  // consider retry only after 250 ms
 const ACK_RETRY_MS   = 180;  // Retry Abstand
 const ACK_MAX_TRIES  = 4;
 
@@ -276,10 +276,10 @@ function sendHighlight(uid) {
     console.log("Highlight UID:", uid);
   }
 
-  // wenn gerade kein Coalesce läuft: sofort senden
+  // If no coalescing is active, send immediately
   if (!sendCoalesceTimer) {
     flushCoalescedSend();
-    // aber ein kurzes Fenster öffnen, um Folge-Klicks zu bündeln
+    // Open a short window to bundle subsequent clicks
     sendCoalesceTimer = setTimeout(() => {
       sendCoalesceTimer = null;
       // falls in der Zeit noch was reinkam -> senden
@@ -299,7 +299,7 @@ function highlightUID(uid, opts = {}) {
   const { bypassDebounce = false } = opts;
   const now = Date.now();
 
-  // Debounce nur für NFC/WS-Events, NICHT für Klicks
+  // Debounce NFC/WS events only, NOT clicks
   if (!bypassDebounce) {
     if (lastScanTimes[uid] && now - lastScanTimes[uid] < DEBOUNCE_MS) return;
     lastScanTimes[uid] = now;
@@ -367,7 +367,7 @@ async function loadFilamentTiles() {
 
   
 
-  // Filter füllen
+  // Populate filters
   populateFilter("filterVendor", "vendor");
   populateFilter("filterColor", "color");
   populateFilter("filterType", "type");
@@ -462,7 +462,7 @@ function populateFilter(selectId, key) {
   // Vorherige Optionen entfernen
   select.innerHTML = "";
 
-  // Mapping für schöne Labels
+  // Mapping for friendly labels
   const FILTER_LABELS_DE = {
     vendor:   "Hersteller",
     color:    "Farben",
@@ -477,7 +477,7 @@ function populateFilter(selectId, key) {
     storage:  "storage"
   };
 
-  // Leere Option für „Alle“
+  // Empty option for "All"
   const emptyOpt = document.createElement("option");
   emptyOpt.value = "";
   if(CONFIGV2.system.defaultLanguage === "de") {
@@ -487,7 +487,7 @@ function populateFilter(selectId, key) {
   }
   select.appendChild(emptyOpt);
 
-  // Alle eindeutigen Werte für dieses Feld
+  // All unique values for this field
   const values = [...new Set(FILAMENTS.map(f => f[key]))].sort();
 
   values.forEach(v => {
@@ -660,7 +660,7 @@ document.getElementById("detailOverlay").addEventListener("click", (e) => {
 function updateRssiIcon(rssi) {
     const bars = document.querySelectorAll("#rssiIcon .bar");
 
-    // Alle Balken zurücksetzen
+    // Reset all bars
     bars.forEach(bar => bar.setAttribute("fill", "gray"));
 
     let color;

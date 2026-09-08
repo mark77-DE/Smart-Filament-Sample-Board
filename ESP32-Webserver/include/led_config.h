@@ -15,7 +15,7 @@ enum LedType {
 // ============================================================================
 // LED-Farbreihenfolge
 //
-// Aktuell unterstützte Reihenfolgen:
+// Currently supported orders:
 //
 //   GRB  -> WS2812B / SK6812 RGB
 //   RGB  -> RGB-LEDs mit RGB-Reihenfolge
@@ -51,7 +51,7 @@ enum LedOrder {
 #endif
 
 // ============================================================================
-// Typprüfung
+// Type checking
 // ============================================================================
 
 constexpr bool ledTypeIsRgbw()

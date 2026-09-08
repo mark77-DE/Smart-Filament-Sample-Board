@@ -1,5 +1,5 @@
 # scripts/gzip_assets.py
-# Automatisches Gzip für LittleFS-Assets vor buildfs/uploadfs
+# Automatically gzip LittleFS assets before buildfs/uploadfs
 
 Import("env")
 import os, gzip, shutil
@@ -18,7 +18,7 @@ def gzip_file(src, dst):
 
 def run_gzip_all(*args, **kwargs):
     if not os.path.isdir(DATA_DIR):
-        print("[gzip] data/-Ordner nicht gefunden – überspringe.")
+        print("[gzip] data directory not found - skipping.")
         return
     count = 0
     for root, _, files in os.walk(DATA_DIR):
@@ -35,6 +35,6 @@ def run_gzip_all(*args, **kwargs):
     if count == 0:
         print("[gzip] nichts zu tun – alle .gz aktuell.")
 
-# Vor dem Erstellen/Upload des LittleFS-Images ausführen
+# Run before creating/uploading the LittleFS image
 env.AddPreAction("buildfs", run_gzip_all)
 env.AddPreAction("uploadfs", run_gzip_all)

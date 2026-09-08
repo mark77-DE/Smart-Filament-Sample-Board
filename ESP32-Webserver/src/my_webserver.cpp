@@ -18,20 +18,64 @@
 #include "pins.h"
 #include "esp_system.h"
 #include "update_manager.h"
+#include "esp_chip_info.h"
 
-File fsFile; // global oder in cpp außerhalb des Lambdas
+File fsFile; // global or outside the lambda in this .cpp
 
 extern void webifArmIdleTimeout(uint32_t ms);
 
 unsigned long lastHeartbeatMs = 0;
 const unsigned long HEARTBEAT_INTERVAL_MS = 1000; // 1 Sekunde
 
-// Vorwärtsdeklaration
+// Forward declaration
 extern void renderRebootCountdown(unsigned long nowMs);
 
 extern void handleUID(const String &uid, UidSource source);
 
 const char *boardVariant = BOARD_VARIANT;
+
+
+// --- Chip-ID Mapping (aus esp_app_format.h) ---
+enum : uint16_t {
+    IMG_CHIP_ESP32   = 0x0000,
+    IMG_CHIP_ESP32S2 = 0x0002,
+    IMG_CHIP_ESP32C3 = 0x0005,
+    IMG_CHIP_ESP32S3 = 0x0009,
+    IMG_CHIP_ESP32C2 = 0x000C,
+    IMG_CHIP_ESP32C6 = 0x000D,
+    IMG_CHIP_ESP32H2 = 0x0010,
+};
+
+String chipIdToName(uint16_t id) {
+    switch (id) {
+        case IMG_CHIP_ESP32:   return "ESP32";
+        case IMG_CHIP_ESP32S2: return "ESP32-S2";
+        case IMG_CHIP_ESP32C3: return "ESP32-C3";
+        case IMG_CHIP_ESP32S3: return "ESP32-S3";
+        case IMG_CHIP_ESP32C2: return "ESP32-C2";
+        case IMG_CHIP_ESP32C6: return "ESP32-C6";
+        case IMG_CHIP_ESP32H2: return "ESP32-H2";
+        default: return "unbekannt (0x" + String(id, HEX) + ")";
+    }
+}
+
+uint16_t runningChipId() {
+    esp_chip_info_t info;
+    esp_chip_info(&info);
+    switch (info.model) {
+        case CHIP_ESP32:   return IMG_CHIP_ESP32;
+        case CHIP_ESP32S2: return IMG_CHIP_ESP32S2;
+        case CHIP_ESP32C3: return IMG_CHIP_ESP32C3;
+        case CHIP_ESP32S3: return IMG_CHIP_ESP32S3;
+        case CHIP_ESP32C2: return IMG_CHIP_ESP32C2;
+        case CHIP_ESP32C6: return IMG_CHIP_ESP32C6;
+        case CHIP_ESP32H2: return IMG_CHIP_ESP32H2;
+        default: return 0xFFFF;
+    }
+}
+
+static bool otaAborted = false;
+
 
 SysInfo getSysInfo()
 {
@@ -72,13 +116,13 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
 
     wsBuf.concat((const char *)data, len);
 
-    // Noch nicht komplett?
+    // Not complete yet?
     if (!(info->final && (info->index + len == info->len)))
     {
         return;
     }
 
-    // Jetzt ist wsBuf vollständig
+    // wsBuf is complete now
     JsonDocument doc;
     DeserializationError err = deserializeJson(doc, wsBuf);
     if (err)
@@ -102,8 +146,8 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
 
     if (strcmp(action, "highlightUIDLED") == 0)
     {
-        // --- ACK sofort zurück an genau diesen Client ---
-        // (damit JS nicht retry-spamt)
+        // --- Send ACK immediately back to this client ---
+        // (so JS does not spam retries)
         uint32_t seq = doc["seq"] | 0;
         if (seq != 0)
         {
@@ -128,7 +172,7 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
     else if (strcmp(action, "highlightMultiLED") == 0)
     {
 
-        // --- ACK sofort zurück an genau diesen Client ---
+        // --- Send ACK immediately back to this client ---
         uint32_t seq = doc["seq"] | 0;
         if (seq != 0)
         {
@@ -141,7 +185,7 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
             client->text(out);
         }
 
-        // --- Timeout bestimmen ---
+        // --- Determine timeout ---
         uint32_t t = (CONFIGV2.system.webLEDTimeout > 0)
                          ? CONFIGV2.system.webLEDTimeout
                          : (uint32_t)CONFIGV2.led.timeout;
@@ -212,7 +256,7 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
         int ledIndex = doc["led"] | -1; // Default -1, falls key fehlt
         if (ledIndex < 0)
         {
-            Serial.println("WS highlightSingleLed: LED index fehlt oder ungültig");
+            Serial.println("WS highlightSingleLed: LED index missing or invalid");
             return;
         }
 
@@ -250,7 +294,7 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
     //      (schneller, weniger LittleFS-Lesezugriffe, Browser-Caching)
     // Spezifische Routen zuerst:
     server.serveStatic("/settings", LittleFS, "/settings.html")
-        .setCacheControl("no-cache"); // HTML bewusst kurz cachen/prüfen
+        .setCacheControl("no-cache"); // Deliberately cache/check HTML briefly
 
     server.serveStatic("/script.js", LittleFS, "/script.js")
         .setCacheControl("public, max-age=604800"); // 7 Tage
@@ -293,6 +337,7 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
         doc["git_hash"]                 = GIT_HASH;
         doc["build_date"]               = BUILD_DATE;
         doc["build_date_short"]         = BUILD_DATE_SHORT;
+        doc["config_version"]           = CONFIGV2.system.version;
         doc["boardVariant"]             = boardVariant;
         doc["chipName"]                 = info.chipName;
         doc["cores"]                    = info.cores;
@@ -424,7 +469,7 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
         std::vector<FilamentEntry> list;
         FilamentDB::getAll(list);
 
-        // Dokument-Größe je nach Anzahl der Einträge anpassen
+        // Adjust document size based on the number of entries
         JsonDocument doc;
         JsonArray arr = doc.to<JsonArray>();
 
@@ -553,7 +598,7 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
             entry.info2     = doc["info2"].as<String>();
             entry.storage   = doc["storage"].as<String>();
 
-            // Update über Index
+            // Update by index
             if(FilamentDB::updateAtIndex(idx, entry)){
                 saveFilamentsToFile();
                 if(CONFIGV2.system.debugMode) {
@@ -783,88 +828,121 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
         // optional: Status-JSON zurückgeben
         request->send(200, "application/json", "{\"status\":\"ok\",\"pending\":true}"); });
 
-    server.on("/api/otaUpdate", HTTP_POST, [](AsyncWebServerRequest *req)
-              { req->send(200, "text/plain", "Upload started"); }, nullptr, [](AsyncWebServerRequest *req, uint8_t *data, size_t len, size_t index, size_t total)
-              {
+    server.on("/api/otaUpdate", HTTP_POST,
+    [](AsyncWebServerRequest *req) {
+        if (otaAborted) {
+            req->send(409, "application/json",
+                "{\"status\":\"error\",\"msg\":\"Update aborted\"}");
+        } else {
+            req->send(200, "text/plain", "Upload started");
+        }
+        otaAborted = false;
+    },
+    nullptr,
+    [](AsyncWebServerRequest *req, uint8_t *data, size_t len, size_t index, size_t total) {
+
+        if (otaAborted) return; // weitere Chunks ignorieren
 
         SysInfo info = getSysInfo();
 
-        if (req->hasParam("filename", true)) { // true = von FormData
+        if (req->hasParam("filename", true)) {
             String fname = req->getParam("filename", true)->value();
-
             if (!fname.startsWith("firmware") || !fname.endsWith(".bin")) {
                 req->send(400, "text/plain", "Wrong filename! Must start with 'firmware' and end with '.bin'");
-            return;
-            }
-        }
-
-
-        if (index == 0) {
-
-
-            // =====================================================
-            // 1) OTA START
-            // =====================================================
-            Serial.printf("Starting FW OTA update: %u bytes\n", total);
-
-            DisplayAnim::stop();
-            MYDISPLAY::showThreeLinesCentered(
-                F("started"),
-                F("FW OTA"),
-                F("update")
-            );
-
-            if (!Update.begin(total)) {
-                Serial.println("OTA begin failed");
-
-                MYDISPLAY::showThreeLinesCentered(
-                    F("FW OTA"),
-                    F("update"),
-                    F("failed")
-                );
+                otaAborted = true;
                 return;
             }
         }
 
-        // =====================================================
-        // 2) CHUNK SCHREIBEN
-        // =====================================================
+        if (index == 0) {
+            Serial.printf("Starting FW OTA update: %u bytes\n", total);
+
+            // --- Chip-Vorab-Check, BEVOR irgendetwas geflasht wird ---
+            if (len < 16 || data[0] != 0xE9) {
+                Serial.println("Invalid image: bad magic byte");
+                MYDISPLAY::showThreeLinesCentered(F("Ungueltige"), F("FW-Datei"), F(""));
+                req->send(400, "application/json",
+                    "{\"status\":\"error\",\"msg\":\"Kein gueltiges Firmware-Image\"}");
+                otaAborted = true;
+                return;
+            }
+
+            uint16_t imgChip = data[12] | (data[13] << 8);
+            uint16_t myChip  = runningChipId();
+
+            if (CONFIGV2.system.debugMode) {
+                Serial.printf("Header check: imgChip=%u (0x%04X), myChip=%u (0x%04X)\n",
+                              imgChip, imgChip, myChip, myChip);
+            }
+
+            if (imgChip != myChip) {
+                String msg = "FW fuer " + chipIdToName(imgChip) +
+                             ", Board ist " + chipIdToName(myChip);
+                Serial.println(msg);
+
+                DisplayAnim::stop();
+                MYDISPLAY::showThreeLinesCentered(
+                    F("Falsche FW!"),
+                    chipIdToName(imgChip),
+                    F("erwartet")
+                );
+                LEDCTRL_NFC::showError();        // NFC-Ring sofort rot (solid)
+                LEDCTRL_FILAMENT::errorBlink();  // Filament: blinkt -> rot (wie gewünscht)
+
+                req->send(409, "application/json",
+                    "{\"status\":\"error\",\"msg\":\"" + msg + "\"}");
+                otaAborted = true;
+                return;
+            }
+
+            DisplayAnim::stop();
+            MYDISPLAY::showThreeLinesCentered(F("started"), F("FW"), F("update"));
+
+            if (!Update.begin(total)) {
+                Serial.println("OTA begin failed");
+                MYDISPLAY::showThreeLinesCentered(F("FW OTA"), F("update"), F("failed"));
+                LEDCTRL_NFC::showError();        // NFC-Ring sofort rot (solid)
+                LEDCTRL_FILAMENT::errorAll();  // Filament: rot (wie gewünscht)
+                req->send(500, "application/json",
+                    "{\"status\":\"error\",\"msg\":\"Update.begin failed\"}");
+                otaAborted = true;
+                return;
+            }
+        }
+
         if (Update.write(data, len) != len) {
             Serial.printf("FW update write failed! Error: %d\n", Update.getError());
-
-            MYDISPLAY::showThreeLinesCentered(
-                F("FW OTA"),
-                F("update"),
-                F("failed")
-            );
+            MYDISPLAY::showThreeLinesCentered(F("FW OTA"), F("update"), F("failed"));
+            LEDCTRL_NFC::showError();        // NFC-Ring sofort rot (solid)
+            LEDCTRL_FILAMENT::errorAll();  // Filament: rot (wie gewünscht)
+            req->send(500, "application/json",
+                "{\"status\":\"error\",\"msg\":\"Write failed\"}");
+            otaAborted = true;
             return;
         }
 
-        // =====================================================
-        // 3) OTA FINALISIEREN
-        // =====================================================
         if (index + len == total) {
-
-            if (Update.end(false)) {   // kein Auto-Reboot
+            if (Update.end(false)) {
                 Serial.println("FW OTA applied successfully");
-
-                MYDISPLAY::showThreeLinesCentered(
-                    F("FW OTA"),
-                    F("update"),
-                    F("success")
-                );
-
+                MYDISPLAY::showThreeLinesCentered(F("FW OTA"), F("update"), F("success"));
+                LEDCTRL_FILAMENT::successAll();  // Filament: grün (wie gewünscht)
                 req->send(200, "application/json",
                     "{\"status\":\"ok\",\"msg\":\"FW update successful, rebooting\"}");
-
+                
+                rebootReason = true; // true = success
                 rebootPending = true;
-                rebootAt = millis() + 3000;
-
+                rebootAt = millis() + 1000;
+                
             } else {
+                Serial.printf("Update.end failed! Error: %d\n", Update.getError());
+                MYDISPLAY::showThreeLinesCentered(F("FW OTA"), F("update"), F("failed"));
+                LEDCTRL_FILAMENT::errorAll();  // Filament: rot (wie gewünscht)
                 req->send(500, "application/json",
                     "{\"status\":\"error\",\"msg\":\"FW update failed\"}");
             }
-        } });
+        }
+    }
+);
 
     server.on("/api/uploadFS", HTTP_POST, [](AsyncWebServerRequest *req)
               { req->send(200, "text/plain", "FS Upload started"); }, nullptr, [](AsyncWebServerRequest *req, uint8_t *data, size_t len, size_t index, size_t total)
@@ -918,10 +996,10 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
                 req->send(200, "application/json",
                     "{\"status\":\"ok\",\"msg\":\"FS update successful, rebooting\"}");
 
-                // Reboot verzögert auslösen
-        
+                // Reboot auslösen
+                rebootReason = true; // true = success
                 rebootPending = true;
-                rebootAt = millis() + 3000;
+                rebootAt = millis() + 1000;
             } else {
                 req->send(500, "application/json",
                     "{\"status\":\"error\",\"msg\":\"FS update failed\"}");

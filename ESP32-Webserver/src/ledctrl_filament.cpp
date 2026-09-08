@@ -21,24 +21,26 @@
 
 
 // ============================================================================
-// Öffentliche Konfig-Variablen (werden von loadLedConfig() überschrieben)
+// Public configuration variables (overwritten by loadLedConfig())
 // ============================================================================
 int       LED_COUNT       = 0;
-// int       LED_PIN         = 4;
 int       LED_TIMEOUT     = 3000;
 int       LED_BRIGHTNESS  = 50;
 
-// Standardfarbe für „normale“ Pixel (z. B. setPixel)
-uint32_t  LED_COLOR       = 0x00FF00;   // Beispiel: grün
+// Default color for "normal" pixels (e.g. setPixel)
+uint32_t  LED_COLOR       = 0x00FF00;   // Example: green
 
-// Eigenständige Error-Farbe (nur für errorBlink/errorAll)
-uint32_t  LED_COLOR_ERROR = 0xFF0000;   // rot
+// Dedicated error color (only for errorBlink/errorAll)
+uint32_t  LED_COLOR_ERROR = 0xFF0000;   // red
 
-// Farbe für den Idle-Breath-Pulse
+// Dedicated success color (only for successAll)
+uint32_t  LED_COLOR_SUCCESS = 0x00FF00;   // green
+
+// Color for the idle breathing pulse
 uint32_t  LED_COLOR_PULSE = 0x0033AA;   // blau-ish
 
 // ============================================================================
-// Private Members der Klasse (Definitionen für die static-Variablen)
+// Private class members (definitions for static variables)
 // ============================================================================
 Adafruit_NeoPixel* LEDCTRL_FILAMENT::_leds     = nullptr;
 
@@ -52,7 +54,7 @@ uint16_t           LEDCTRL_FILAMENT::_errBlinkMs     = 150; // Intervall (ms)
 uint8_t            LEDCTRL_FILAMENT::_errBlinkCount  = 3;   // 3x An-Aus
 uint8_t            LEDCTRL_FILAMENT::_errBlinkStep   = 0;
 
-// Vor-konvertierte Blinkfarbe (damit das Blinken NICHT vom Buffer abhängt)
+// Pre-converted blink color (so blinking does NOT depend on the buffer)
 static uint32_t    s_errBlinkColorNeo = 0;
 
 bool               LEDCTRL_FILAMENT::_errSolidActive = false;
@@ -71,7 +73,7 @@ const uint16_t     LEDCTRL_FILAMENT::HOLD_REFRESH_MS  = 25;
 bool               LEDCTRL_FILAMENT::_idlePulseEnabled = true;
 float              LEDCTRL_FILAMENT::_minBrightness    = 0.30f;
 unsigned long      LEDCTRL_FILAMENT::_lastPulseUpdate  = 0;
-// FIX: Idle-FPS entschärfen (ca. 30 FPS)
+// FIX: Reduce idle FPS (approximately 30 FPS)
 const uint16_t     LEDCTRL_FILAMENT::PULSE_INTERVAL_MS = 33;
 const uint16_t     LEDCTRL_FILAMENT::BREATHS_PER_MIN   = 15;
 uint8_t            LEDCTRL_FILAMENT::_ditherPhase      = 0;
@@ -79,10 +81,10 @@ uint8_t            LEDCTRL_FILAMENT::_ditherPhase      = 0;
 // Idle-Blocker (wirkt nur im Idle)
 unsigned long      LEDCTRL_FILAMENT::_idleBlockUntil   = 0;
 
-// FIX: Netzlast-Pause (Idle-Frames aussetzen)
+// FIX: Network-load pause (suspend idle frames)
 unsigned long      LEDCTRL_FILAMENT::_netPauseUntil    = 0;
 
-// WebIF-Hold: simulierte Präsenz (damit Timeout danach greift)
+// Web interface hold: simulated presence (so the timeout applies afterward)
 static unsigned long s_webifHoldUntil = 0;
 
 bool LEDCTRL_FILAMENT::_standby = false;
@@ -92,7 +94,7 @@ bool LEDCTRL_FILAMENT::_standby = false;
 // ============================================================================
 // Kleine Helper
 // ============================================================================
-// FIX: robustes Doppelt-Senden für kritische Frames (Transitions/Reassert)
+// FIX: robust double-send for critical frames (transitions/reassert)
 static inline void forceShow(Adafruit_NeoPixel* s) {
   if (!s) return;
   neopixelShowSafe(s);
@@ -356,6 +358,32 @@ void LEDCTRL_FILAMENT::errorAll() {
   FILDBG("errorAll (solid)\n");
 }
 
+
+// ----------------------------------------------------------------------------
+// SUCCESS SOLID: alle Pixel = LED_COLOR_SUCCESS
+// ----------------------------------------------------------------------------
+void LEDCTRL_FILAMENT::successAll() {
+  if (!_leds || !_buf) return;
+
+  LED_COLOR_ERROR = 0x00FF00; // grün
+
+  _errBlinkActive = false;
+  _errSolidActive = true;
+
+  // Alle rot/err füllen (Buffer + Ausgabe)
+  const uint32_t neoSuccess = rgbHexToNeo(_leds, LED_COLOR_SUCCESS);
+  for (int i = 0; i < _bufCount; ++i) _buf[i] = neoSuccess;
+  renderAllFromBuf(_leds); // (doppelt)
+
+  // Timeout ab Tag-Entfernung
+  _releaseTs = _tagHeld ? 0UL : millis();
+
+  // Idle kurz blocken
+  _idleBlockUntil = millis() + 2;
+  FILDBG("successAll (solid)\n");
+}
+
+
 // ----------------------------------------------------------------------------
 // ERROR BLINK: erst blinken (LED_COLOR_ERROR), dann – falls noch aktiv – solid-Error
 // ----------------------------------------------------------------------------
@@ -387,6 +415,41 @@ void LEDCTRL_FILAMENT::errorBlink() {
   _idleBlockUntil = millis() + 2;
   FILDBG("errorBlink start ms=%u count=%u\n", _errBlinkMs, _errBlinkCount);
 }
+
+// ----------------------------------------------------------------------------
+// SUCCESS BLINK: erst blinken (LED_COLOR_SUCCESS), dann – falls noch aktiv – solid-Success
+// ----------------------------------------------------------------------------
+void LEDCTRL_FILAMENT::successBlink() {
+  if (!_leds) return;
+
+  // Parameter (ggf. später aus Config herausziehbar)
+  static const uint16_t MIN_BLINK_MS = 25;
+  _errBlinkMs    = (uint16_t)max<int>(MIN_BLINK_MS, 150); // Standard 150 ms
+  _errBlinkCount = 3;                                     // 3x An-Aus
+
+  _errBlinkActive = true;
+  _errSolidActive = false;
+  _errBlinkStart  = millis();
+  _errBlinkStep   = 0;
+
+  // Blinkfarbe fest in Neo-Format (unabhängig vom Buffer)
+  s_errBlinkColorNeo = rgbHexToNeo(_leds, LED_COLOR_SUCCESS);
+
+  // Startframe = AN (direkt rendern, ohne Buffer)
+  for (int i = 0; i < _leds->numPixels(); ++i) _leds->setPixelColor(i, s_errBlinkColorNeo);
+  // FIX: Blink-Kante doppelt
+  forceShow(_leds);
+
+  // Timeout erst ab Entfernung
+  _releaseTs = _tagHeld ? 0UL : millis();
+
+  // Idle blocken
+  _idleBlockUntil = millis() + 2;
+  FILDBG("successBlink start ms=%u count=%u\n", _errBlinkMs, _errBlinkCount);
+}
+
+
+
 
 void LEDCTRL_FILAMENT::update() {
   if (!_leds) return;

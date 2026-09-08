@@ -11,7 +11,7 @@
 #include <Arduino.h>
 #include <math.h>
 #include <LovyanGFX.hpp>
-#include <cstdint>  // für uint8_t, uint16_t, uint32_t
+#include <cstdint>  // for uint8_t, uint16_t, uint32_t
 #include "display/st7789/logoBitmap.h"
 
 #include "update_manager.h"
@@ -235,17 +235,17 @@ void playThreeLineTypewriter(
     for (int i = totalLines - 1; i >= 0; i--) {
         int y = centerY + i * lineHeight;
 
-        // von voller Länge runterzählen
+        // Count down from the full length
         for (int c = lines[i].length(); c >= 0; c--) {
             String displayText = lines[i].substring(0, c);
 
             int textWidth = display.textWidth(displayText.c_str());
             int x = (display.width() - textWidth) / 2;
 
-            // Zeile sauber löschen
+            // Clear the line cleanly
             display.fillRect(0, y, display.width(), lineHeight, TFT_BLACK);
 
-            // gekürzten Text neu zeichnen
+            // Redraw the shortened text
             display.setCursor(x, y);
             display.print(displayText);
 

@@ -60,14 +60,14 @@
   static constexpr int SCREEN_HEIGHT  = 320;
 
 #else
-  #error "Ungültiger DISPLAY_TYPE! Bitte DISPLAY_TYPE_SH1106 oder ST7789 verwenden."
+  #error "Invalid DISPLAY_TYPE! Please use DISPLAY_TYPE_SH1106 or ST7789."
 #endif
 
 
 extern DisplayType display;              // LGFX-Objekt, global
 
 // -----------------------------
-// Helper für Initialisierung
+// Initialization helper
 // -----------------------------
 inline bool initDisplay(DisplayType &disp) {
 #if DISPLAY_TYPE == DISPLAY_TYPE_SH1106

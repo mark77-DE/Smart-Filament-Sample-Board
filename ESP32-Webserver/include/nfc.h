@@ -5,57 +5,57 @@
 
 /**
  * @file nfc.h
- * @brief Öffentliche NFC-Schnittstelle (PN532) + optionale Hooks.
+ * @brief Public NFC interface (PN532) + optional hooks.
  *
  * Diese API kapselt das nicht-blockierende Polling gegen den PN532 sowie
- * Guard-/Preemption-Logik. Die eigentliche Logik (LEDs/Display) wird über
+ * guard/preemption logic. The actual logic (LEDs/display) is handled through
  * handleUID() in der Anwendung bedient; hier stellen wir nur das Polling
- * und die Statussignale bereit.
+ * and the status signals are provided here.
  *
- * Wichtige Hinweise:
+ * Important notes:
  *  - Alle Funktionen sind *single-threaded* gedacht (typischer Arduino-Loop).
- *  - `tick()` ist nicht-blockierend und soll regelmäßig im `loop()` aufgerufen werden.
- *  - `init()` übernimmt *keine* Ownership des übergebenen PN532-Zeigers.
+ *  - `tick()` is non-blocking and should be called regularly from `loop()`.
+ *  - `init()` does *not* take ownership of the supplied PN532 pointer.
  */
 
 namespace NFC {
 
   /**
-   * @brief Initialisiert den PN532 und internen Guard-State.
+  * @brief Initializes the PN532 and internal guard state.
    *
-   * Ruft intern `begin()` und `SAMConfig()` auf und loggt (falls verfügbar)
-   * die Firmware-Version. Der Pointer bleibt im Besitz des Aufrufers.
+  * Internally calls `begin()` and `SAMConfig()` and logs (when available)
+  * the firmware version. The pointer remains owned by the caller.
    *
-   * @param nfc  Gültiger Zeiger auf eine initialisierbare `Adafruit_PN532`-Instanz.
+  * @param nfc  Valid pointer to an initializable `Adafruit_PN532` instance.
    */
-  void init(Adafruit_PN532* nfc);
+  uint32_t init(Adafruit_PN532* nfc);
 
   /**
-   * @brief Einmalige, eher „synchrone“ UID-Abfrage (Debug/Tools).
+  * @brief One-time, mostly "synchronous" UID query (debug/tools).
    *
-   * Liest per `readPassiveTargetID(...)` eine UID und gibt sie als
-   * Hex-String mit Doppelpunkten (z. B. "04:F5:8E:52:6F:61:80") zurück.
-   * Wenn nichts erkannt wurde, wird `""` zurückgegeben.
+  * Reads a UID using `readPassiveTargetID(...)` and returns it as a
+  * hexadecimal string with colons (e.g. "04:F5:8E:52:6F:61:80").
+  * Returns `""` when nothing was detected.
    *
-   * @return UID-String oder leerer String.
+  * @return UID string or an empty string.
    */
   String checkTag();
 
   /**
-   * @brief Setzt alle internen Guards/State zurück.
+  * @brief Resets all internal guards/state.
    *
-   * Nützlich nach globalen Resets oder wenn externe Logik die
-   * Edge-/Hold-Erkennung sicher neu starten möchte.
+  * Useful after global resets or when external logic needs to
+  * safely restart edge/hold detection.
    */
   void resetGuard();
 
   /**
-   * @brief Nicht-blockierendes NFC-Polling + Guard/Preempt-Logik.
+  * @brief Non-blocking NFC polling + guard/preemption logic.
    *
-   * Diese Funktion wird idealerweise in jeder Loop-Iteration aufgerufen.
-   * Sie liest einen evtl. erkannten Tag *non-blocking* aus, entprellt,
-   * führt „Sticky Presence“ (Grace) aus und triggert bei Rising-Edges
-   * über die externe `handleUID()`-Funktion (definiert in der App).
+  * Ideally call this function on every loop iteration.
+  * It reads a detected tag *non-blocking*, debounces it,
+  * applies "Sticky Presence" (grace), and triggers on rising edges
+  * through the external `handleUID()` function (defined in the app).
    *
    * @param now            Aktuelle Zeit in Millisekunden (typisch: `millis()`).
    * @param[out] isActive  Wird auf `true` gesetzt, wenn aktuell ein Tag präsent ist.

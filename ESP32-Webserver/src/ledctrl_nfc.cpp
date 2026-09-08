@@ -29,11 +29,11 @@
 #endif
 
 // ============================================================================
-// Öffentliche Konfiguration (via loadNfcLedConfigV2 / config_v2.json)
+// Public configuration (via loadNfcLedConfigV2 / config_v2.json)
 // ============================================================================
 int           NFC_LED_COUNT       = 8;
 int           NFC_LED_BRIGHTNESS  = 255;
-unsigned long NFC_LED_TIMEOUT     = 6000;     // Timeout in ms (erst ab Tag-Entfernung)
+unsigned long NFC_LED_TIMEOUT     = 6000;     // Timeout in ms (starts after tag removal)
 
 uint32_t NFC_LED_COLOR_SUCCESS = 0x00FF00;    // 0xRRGGBB
 uint32_t NFC_LED_COLOR_ERROR   = 0xFF0000;    // 0xRRGGBB
@@ -44,23 +44,23 @@ uint8_t  NFC_LED_SUCCESS_BLINK_COUNT   = 3;
 uint16_t NFC_LED_SUCCESS_BLINK_MS      = 150;
 
 // ============================================================================
-// Interner Zustand
+// Internal state
 // ============================================================================
 enum LedState : uint8_t { LED_OFF, LED_SUCCESS_BLINK, LED_SUCCESS, LED_ERROR };
 static LedState currentState = LED_OFF;
 
-// --- Blink (phasenbasiert) ---
-static uint8_t       s_successBlinkStep = 0;     // Half-steps seit Start
-static bool          s_successBlinkOn   = false; // gerade=AN / ungerade=AUS
-static unsigned long s_blinkStartTs     = 0;     // feste Startzeit (Phasenanker)
-static uint16_t      s_blinkMs          = 150;   // verwendetes Blink-Intervall
-static constexpr uint16_t MIN_BLINK_MS  = 25;    // Untergrenze für Blink-Intervall
-static constexpr uint8_t  MAX_BLINK_COUNT = 10;  // Obergrenze Blink-Zyklen
+// --- Blinking (phase-based) ---
+static uint8_t       s_successBlinkStep = 0;     // Half-steps since start
+static bool          s_successBlinkOn   = false; // even=ON / odd=OFF
+static unsigned long s_blinkStartTs     = 0;     // fixed start time (phase anchor)
+static uint16_t      s_blinkMs          = 150;   // active blink interval
+static constexpr uint16_t MIN_BLINK_MS  = 25;    // Lower bound for blink interval
+static constexpr uint8_t  MAX_BLINK_COUNT = 10;  // Upper limit for blink cycles
 
-// --- Präsenz/Sticky-Hold ---
+// --- Presence/sticky hold ---
 static bool          s_tagHeld          = false; // Tag physisch vor Ort (mit Grace)
 static unsigned long s_lastTagSeen      = 0;     // Zeitpunkt der letzten Roh-Erkennung
-static const uint16_t TAG_HELD_GRACE_MS = 200;   // gegen kurze Mess-Lücken
+static const uint16_t TAG_HELD_GRACE_MS = 200;   // protection against short measurement gaps
 
 // --- Reassert (gegen halbe Frames / RMT-Glitches) ---
 static bool          s_holdActive       = false;
@@ -75,7 +75,7 @@ static unsigned long s_releaseTs        = 0;     // 0 = kein Timeout aktiv
 static bool          idlePulseEnabled   = true;
 static float         minBrightness      = 0.30f; // minimaler Helligkeitsfaktor [0..1]
 static unsigned long s_lastPulseUpdate  = 0;
-// FIX: Idle-FPS entschärfen (ca. 40 FPS)
+// FIX: Reduce idle FPS (approximately 40 FPS)
 static const uint16_t PULSE_INTERVAL_MS = 25;
 static const uint16_t BREATHS_PER_MIN   = 15;
 static const uint8_t  BAYER4[16]        = {
@@ -86,7 +86,7 @@ static uint8_t ditherPhase = 0;
 // --- Idle-Blocker (wirkt NUR im Idle) ---
 static unsigned long s_idleBlockUntil   = 0;
 
-// --- Debounce für Success-Trigger (gegen Doppeltrigger) ---
+// --- Debounce for success trigger (against duplicate triggers) ---
 static unsigned long s_lastSuccessCmdTs = 0;
 static const uint16_t SUCCESS_DEBOUNCE_MS = 200;
 
@@ -214,7 +214,7 @@ void LEDCTRL_NFC::init(int count, int timeout_ms, int brightness,
   NFC_LED_SUCCESS_BLINK_COUNT   = min<uint8_t>(successBlinkCount, MAX_BLINK_COUNT);
   NFC_LED_SUCCESS_BLINK_MS      = successBlinkMs;
 
-  // Vorherigen Strip aufräumen
+  // Clear the previous strip
   if (_leds) {
     _leds->setBrightness(255);
     _leds->clear();
@@ -243,7 +243,7 @@ void LEDCTRL_NFC::init(int count, int timeout_ms, int brightness,
   _leds->setBrightness(NFC_LED_BRIGHTNESS);
   neopixelShowSafe(_leds);
 
-  // Zustand zurücksetzen
+  // Reset state
   s_lastPulseUpdate  = millis();
   s_lastSuccessCmdTs = 0;
   s_holdActive       = false;
@@ -282,7 +282,7 @@ void LEDCTRL_NFC::allOff() {
 }
 
 // ---------------------------------------------------------------------------
-// Präsenz-Tracking (Timeout startet erst bei echter Entfernung)
+// Presence tracking (timeout starts only after actual removal)
 // ---------------------------------------------------------------------------
 void LEDCTRL_NFC::tagPresenceTick(bool present) {
 
