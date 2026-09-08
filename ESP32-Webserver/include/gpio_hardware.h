@@ -4,13 +4,13 @@
 
 // ============================================================================
 // GPIO-Hardware-Modul: Button (entprellt + Events) & Buzzer (Sequenzen, non-blocking)
-// - Greift auf CONFIG.button / CONFIG.buzzer zu, fällt aber auf Defaults zurück,
+// - Uses CONFIG.button / CONFIG.buzzer, but falls back to defaults,
 //   wenn Keys in /config.json fehlen.
 // - ESP32: passiver Buzzer via LEDC (PWM), aktiver via digitalWrite.
 // ============================================================================
 
 /**
- * @brief Initialisiert Button & Buzzer gemäß Konfiguration.
+ * @brief Initializes the button and buzzer according to the configuration.
  *        Mehrfachaufruf ist erlaubt (re-init).
  */
 void gpiohw_init();
@@ -33,13 +33,13 @@ void gpiohw_tick(unsigned long now);
 
 /** @brief Ein kurzer Pieps. */
 void buzzer_single_beep();
-/** @brief Zwei kurze Pieptöne mit kleiner Pause. */
+/** @brief Two short beeps with a short pause. */
 void buzzer_double_beep();
 /** @brief Fehlersequenz: mehrere kurze Pieps (konfigurierbar). */
 void buzzer_error_beep();
 /** @brief Sequenz sofort abbrechen (Buzzer aus). */
 void buzzer_stop();
-/** @brief true, solange eine Sequenz läuft. */
+/** @brief true while a sequence is running. */
 bool buzzer_busy();
 
 // ---------------------------------------------------------------------------
@@ -56,6 +56,6 @@ bool button_double_press();
 bool button_hold();
 
 // Feuert SOFORT beim Loslassen (wenn kein Long erkannt wurde).
-// Unabhängig vom Double-Fenster. Einmalig true (auto-reset).
+// Independent of the double-press window. True once (auto-reset).
 bool button_tap_release();
 void gpiohw_reset_click_state(); // Click/Double/Long-Logik komplett flushen

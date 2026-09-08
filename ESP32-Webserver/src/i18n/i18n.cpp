@@ -60,7 +60,7 @@ const char *I18N::get(const char *key)
     {
         return val.as<const char *>();
     }
-    return key; // fallback: Key zurückgeben
+    return key; // fallback: return key
 }
 
 const char *I18N::getNested(const char *path)

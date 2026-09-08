@@ -1,15 +1,15 @@
 #pragma once
 /**
  * @file neopixel_guard.h
- * @brief Thread-sichere (oder optionale) Hüllfunktionen um Adafruit_NeoPixel::show().
+ * @brief Thread-safe (or optional) wrapper functions around Adafruit_NeoPixel::show().
  *
  * Hintergrund:
  *  - Die Adafruit-NeoPixel-Implementierung bzw. der darunterliegende RMT-Treiber
  *    ist nicht reentrant. Parallele show()-Aufrufe aus unterschiedlichen Tasks
- *    oder für mehrere Stripes können Glitches erzeugen.
+ *    or multiple strips can cause glitches.
  *  - Dieses Modul stellt wahlweise blockierende, non-blocking oder „direct“
- *    (ohne Schutz) Varianten bereit und ermöglicht ein möglichst synchrones
- *    Aktualisieren von zwei Stripes unter einem globalen Lock.
+ *    (without protection) variants and enables updates that are as synchronized
+ *    as possible for two strips under a global lock.
  *
  * Build-Optionen (GENAU EINE definieren – oder keine, dann Default):
  *
@@ -21,11 +21,11 @@
  *   - NEOPIXEL_SHOW_NONBLOCK
  *       * Non-Blocking: sendet nur, wenn canShow() SOFORT true ist und der globale Lock
  *         ohne Warten verfügbar ist. Andernfalls wird nicht gesendet.
- *       * Nützlich, wenn harte Timing-Deadlines existieren und Blockieren tabu ist.
+ *       * Useful when hard timing deadlines exist and blocking is not allowed.
  *
  *   - (Default, wenn keine der obigen Optionen definiert ist)
  *       * Blocking & threadsafe: globaler Mutex + aktives, kurzes Warten auf canShow().
- *       * Empfohlen für „normale“ Anwendungen mit mehreren Tasks/Stripes.
+ *       * Recommended for "normal" applications with multiple tasks/strips.
  */
 
 #include <Adafruit_NeoPixel.h>
@@ -63,14 +63,14 @@ void neopixelShowSafe(Adafruit_NeoPixel* strip);
 bool neopixelTryShow(Adafruit_NeoPixel* strip);
 
 /**
- * @brief Aktualisiert zwei Stripes unter EINEM globalen Lock (so „gleichzeitig“ wie möglich).
+ * @brief Updates two strips under ONE global lock (as "simultaneously" as possible).
  *
  * Reihenfolge ist stets A dann B. Im Blocking-Default wird der globale Lock einmal
- * genommen, auf canShow() für beide gewartet, anschließend show() für A und dann B
+ * taken, waits for canShow() on both, then calls show() for A and then B
  * aufgerufen — minimaler zeitlicher Versatz innerhalb eines „Frames“.
  *
  * In NEOPIXEL_SHOW_NONBLOCK wird nur gesendet, wenn beide Stripes sofort senden dürfen
- * und der Lock ohne Warten verfügbar ist. In NEOPIXEL_SHOW_DIRECT wird ohne Lock gesendet.
+ * and the lock is available without waiting. NEOPIXEL_SHOW_DIRECT sends without a lock.
  *
  * @param a Erster Strip (darf nullptr sein; dann wird nur B gesendet).
  * @param b Zweiter Strip (darf nullptr sein; dann wird nur A gesendet).

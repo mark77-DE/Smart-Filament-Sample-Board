@@ -155,7 +155,7 @@ void gpiohw_init() {
 
     // Button-Events/Click-State hart resetten (gegen Phantom-Events nach ReInit)
     gpiohw_reset_click_state();
-  // --- Button aus CONFIG übernehmen (falls vorhanden); sonst Defaults ---
+  // --- Apply button from CONFIG when available; otherwise use defaults ---
   #ifdef CONFIG_HAS_GPIO
    
     CFG_BTN_PULLUP      = CONFIGV2.button.pullup;
@@ -196,7 +196,7 @@ void gpiohw_init() {
 
     s_evShort = s_evLong = s_evDouble = s_evHold = false;
     s_evTapRelease = false;
-        // Wenn Button beim Init gerade gedrückt ist -> Events blocken bis Release
+        // If the button is pressed during init, block events until release
     if (s_btnStable) {
       s_pressStartTs = 0;
       s_longFired = true;
@@ -266,13 +266,13 @@ void gpiohw_tick(unsigned long now) {
       s_btnChangeTs = now; // Beginn einer potenziellen Flanke
     }
 
-    // Entprellung: Zustand erst übernehmen, wenn stabil > debounce
+    // Debounce: accept the state only when stable for longer than debounce
     if ( (now - s_btnChangeTs) >= (unsigned long)CFG_BTN_DEBOUNCE_MS && raw != s_btnStable ) {
       s_btnPrevStable = s_btnStable;
       s_btnStable     = raw;
 
       if (s_btnStable) {
-        // ---------------- Rising (gedrückt) ----------------
+        // ---------------- Rising (pressed) ----------------
         s_pressStartTs   = now;
         s_longFired      = false;
         s_lastHoldTick   = now;
@@ -286,7 +286,7 @@ void gpiohw_tick(unsigned long now) {
       } else {
         // ---------------- Falling (losgelassen) ----------------
         if (!s_longFired) {
-          // <<< sofortiges Release-Event setzen (für "Cancel now")
+          // <<< Set release event immediately (for "Cancel now")
           s_evTapRelease = true;
 
           // vorhandene Short/Double-Logik beibehalten
@@ -304,7 +304,7 @@ void gpiohw_tick(unsigned long now) {
       }
     }
 
-    // Long / Hold während gedrückt
+    // Long / hold while pressed
     if (s_btnStable) {
       if (s_pressStartTs != 0 &&
           !s_longFired &&
@@ -322,7 +322,7 @@ void gpiohw_tick(unsigned long now) {
         s_evHold       = true;
       }
     } else {
-      // nicht gedrückt -> Double-Click Fenster verwalten
+      // Not pressed -> manage double-click window
       if (s_doubleArmed && now > s_doubleUntilTs) {
         s_doubleArmed = false;
         if (s_shortCandidate) {
@@ -361,7 +361,7 @@ bool button_tap_release()   { bool v = s_evTapRelease; s_evTapRelease = false; r
 // Public: Click-Logik hart zurücksetzen (Quality-of-Life für Cancel)
 // ============================================================================
 void gpiohw_reset_click_state() {
-  // <<< FIX 2: Alles, was einen Folge-Long stören könnte, wird gelöscht
+  // <<< FIX 2: Clear everything that could interfere with a subsequent long press
   s_doubleArmed    = false;
   s_shortCandidate = false;
   s_evShort        = false;

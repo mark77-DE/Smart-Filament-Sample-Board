@@ -29,7 +29,7 @@ enum class UidSource {
     WEBIF
 };
 
-// NEU: WebIF Idle Timer (OLED Rücksprung)
+// NEW: Web interface idle timer (OLED return)
 void webifArmIdleTimeout(uint32_t ms);
 void webifCancelIdleTimeout();
 bool webifIdleDue(uint32_t now);

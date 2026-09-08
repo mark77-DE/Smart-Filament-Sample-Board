@@ -80,10 +80,10 @@ static String fixUmlauts(String s) {
 }
 
 // ------------------------------------------------------------
-// Auto-Fit für eine einzelne Zeile, horizontal zentriert.
-// Berücksichtigt 32px-Displays (Standardfont) und 64px mit DISPLAY_FONT.
+// Auto-fit for a single horizontally centered line.
+// Supports 32px displays (standard font) and 64px displays with DISPLAY_FONT.
 // yBaselineOrTop: bei 32px = top (wir addieren STD_FONT_HEIGHT), bei 64px = baseline.
-// lineHeight: verteilte Zeilenhöhe (für 64px: abgeleitet aus DISPLAY_FONT)
+// lineHeight: distributed line height (for 64px: derived from DISPLAY_FONT)
 // ------------------------------------------------------------
 static void printLineAutoFitCenteredGfx(DisplayType* d, const String& raw,
                                         int16_t yBaselineOrTop,
@@ -95,7 +95,7 @@ static void printLineAutoFitCenteredGfx(DisplayType* d, const String& raw,
   int16_t x1, y1; uint16_t w, h;
 
   if (smallDisplay) {
-    // Immer Standard-Font, yBaseline = yTop + STD_FONT_HEIGHT
+    // Always use the standard font, yBaseline = yTop + STD_FONT_HEIGHT
     d->setFont(nullptr);
     d->setTextSize(1);
     int16_t yBase = yBaselineOrTop + STD_FONT_HEIGHT;
@@ -107,7 +107,7 @@ static void printLineAutoFitCenteredGfx(DisplayType* d, const String& raw,
       d->print(t);
       return;
     }
-    // kürzen + "..."
+    // Truncate + "..."
     String base = t, out;
     while (base.length() > 0) {
       out = base + "...";
@@ -139,7 +139,7 @@ static void printLineAutoFitCenteredGfx(DisplayType* d, const String& raw,
   if (useStd) {
     d->setFont(nullptr);
     d->setTextSize(1);
-    // baseline für Standardfont optisch in die Zeilenhöhe mittig setzen
+    // Center the standard-font baseline visually within the line height
     int16_t yBase = yBaselineOrTop - (lineHeight - STD_FONT_HEIGHT)/2;
 
     d->getTextBounds(t, 0, 0, &x1, &y1, &w, &h);
@@ -176,7 +176,7 @@ static void printLineAutoFitCenteredGfx(DisplayType* d, const String& raw,
 }
 
 // ------------------------------------------------------------
-// Anzeige der 3 Zeilen: vendor / type / color (DEIN ORIGINAL, unverändert)
+// Display the 3 lines: vendor / type / color (original, unchanged)
 // ------------------------------------------------------------
 void MYDISPLAY::show(const FilamentEntry& entry) {
   if (!_display) return;
@@ -187,7 +187,7 @@ void MYDISPLAY::show(const FilamentEntry& entry) {
 
   const bool smallDisplay = (SCREEN_HEIGHT <= 32);
 
-  // Zeilenhöhe bestimmen
+  // Determine line height
   int16_t x1=0, y1=0; uint16_t w=0, h=0;
   int16_t lineHeight = 0;
 
@@ -203,7 +203,7 @@ void MYDISPLAY::show(const FilamentEntry& entry) {
   // Start-Y
   int16_t y = smallDisplay ? 0 : lineHeight;
 
-  // Hilfsfunktion: eine Zeile linksbündig (deine Original-Logik)
+  // Helper function: one left-aligned line (original logic)
   auto printLineAutoFit = [&](const String& rawText, int16_t yLine) {
     String t = fixUmlauts(rawText);
 
@@ -296,7 +296,7 @@ void MYDISPLAY::show(const FilamentEntry& entry) {
 }
 
 // ------------------------------------------------------------
-// Eine zentrierte Zeile (deine Original-Funktion, unverändert)
+// One centered line (original function, unchanged)
 // ------------------------------------------------------------
 void MYDISPLAY::showCentered(const String& msg, const int FOREGROUND_COLOR, const int BACKGROUND_COLOR) {
   if (!_display) return;
@@ -321,7 +321,7 @@ void MYDISPLAY::showCentered(const String& msg, const int FOREGROUND_COLOR, cons
 }
 
 // ------------------------------------------------------------
-// Zwei zentrierte Zeilen (bestehende API wieder explizit verfügbar)
+// Two centered lines (existing API explicitly available again)
 // ------------------------------------------------------------
 void MYDISPLAY::showCenteredTwoLines(const String& line1, const String& line2) {
   if (!_display) return;
@@ -357,7 +357,7 @@ void MYDISPLAY::showCenteredTwoLines(const String& line1, const String& line2) {
 }
 
 // ------------------------------------------------------------
-// Drei zentrierte Zeilen (neu – für Reboot/Countdown/Prompts)
+// Three centered lines (new - for reboot/countdown/prompts)
 // ------------------------------------------------------------
 void MYDISPLAY::showThreeLinesCentered(const String& line1, const String& line2, const String& line3, int foregroundColor, int backgroundColor) {
   if (!_display) return;
@@ -394,7 +394,7 @@ void MYDISPLAY::showThreeLinesCentered(const String& line1, const String& line2,
 }
 
 // ------------------------------------------------------------
-// Drei zentrierte Zeilen (neu – für Reboot/Countdown/Prompts)
+// Three centered lines (new - for reboot/countdown/prompts)
 // ------------------------------------------------------------
 void MYDISPLAY::showFourLinesCentered(const String& line1, const String& line2, const String& line3, const String& line4) {
   if (!_display) return;
@@ -405,7 +405,7 @@ void MYDISPLAY::showFourLinesCentered(const String& line1, const String& line2, 
 
   const bool smallDisplay = (SCREEN_HEIGHT <= 32);
 
-  // Zeilenhöhe bestimmen
+  // Determine line height
   int16_t x1=0, y1=0; uint16_t w=0, h=0;
   int16_t lineHeight = 0;
   if (smallDisplay) {

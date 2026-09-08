@@ -6,11 +6,8 @@
 #include "ledctrl_filament.h"
 #include "ledctrl_nfc.h"
 #include "filament_db.h"
-#include "gpio_hardware.h"   // für gpiohw_init()
-#include "config.h"        // für CONFIGV2
-
-
-
+#include "gpio_hardware.h"   // for gpiohw_init()
+#include "config.h"        // for CONFIGV2
 
 
 // ============================================================================
@@ -21,7 +18,16 @@ bool loadFilaments() {
   JsonDocument doc;
   JsonArray arr = doc.to<JsonArray>();
   if (!loadFilamentsAsJson(arr)) return false;
-  return FilamentDB::loadFromJsonArray(arr);
+
+  bool changed = migrateFilamentArray(arr, CONFIGV2.system.version);  // NEU
+
+  bool ok = FilamentDB::loadFromJsonArray(arr);
+
+  if (ok && changed) {
+    saveFilamentsToFile();  // nur schreiben, wenn wirklich migriert wurde
+  }
+
+  return ok;
 }
 
 bool saveFilamentsToFile() {
@@ -79,7 +85,9 @@ bool importFilamentsJson(JsonArray src) {
     Serial.printf("Importing %u filaments...\n", src.size());
   }
 
-  // 1) In DB laden (überschreibt intern die bestehende DB)
+  migrateFilamentArray(src, CONFIGV2.system.version);  // NEU – genau hier, vor FilamentDB::loadFromJsonArray
+
+  // 1) Load into the database (internally replaces the existing database)
   if (!FilamentDB::loadFromJsonArray(src)) {
     if (CONFIGV2.system.debugMode) {
       Serial.println(F("importFilamentsJson: FilamentDB loadFromJsonArray failed"));
@@ -103,31 +111,6 @@ bool importFilamentsJson(JsonArray src) {
   return true;
 }
 
-// // Optional-Hilfsfunktion (falls in filehandling.h deklariert)
-// bool loadFilamentDB(FilamentEntry* dst, size_t maxEntries, size_t& outCount) {
-//   outCount = 0;
-
-//   // Hole DB als JSON-Array (verlustfrei aus dem Namespace)
-//   JsonDocument doc;
-//   JsonArray arr = FilamentDB::toJsonArray(doc);
-
-//   for (JsonObject obj : arr) {
-//     if (outCount >= maxEntries) break;
-
-//     FilamentEntry e{};
-//     // Felder gemäß bisheriger Verwendung in handleUID()
-//     e.ledIndex  = obj["ledIndex"] | -1;
-//     e.vendor    = obj["vendor"]   | String();
-//     e.type      = obj["type"]     | String();
-//     e.color     = obj["color"]    | String();
-//     e.info1     = obj["info1"]    | String();
-//     e.info2     = obj["info2"]    | String();
-//     // ggf. weitere Felder analog ergänzen
-
-//     dst[outCount++] = e;
-//   }
-//   return (outCount > 0);
-// }
 
 // ============================================================================
 // Utilities

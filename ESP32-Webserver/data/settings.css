@@ -1,4 +1,4 @@
-/* -------------------- Grundlayout -------------------- */
+/* -------------------- Base layout -------------------- */
 body {
     font-family: sans-serif;
     margin: 0;
@@ -12,11 +12,11 @@ body {
 .ws-status {
     display: flex;
     align-items: center;
-    /* vertikal zentrieren */
+        /* Center vertically */
     justify-content: center;
-    /* optional, Text mittig horizontal */
+    /* Optional, center text horizontally */
     height: 36px;
-    /* gleiche Höhe wie Buttons */
+    /* Same height as buttons */
     padding: 0 12px;
     border-radius: 6px;
     font-weight: bold;
@@ -90,7 +90,7 @@ input:checked+.slider::after {
     left: 21px;
 }
 
-/* -------------------- Tabelle -------------------- */
+/* -------------------- Table -------------------- */
 
 
 
@@ -303,65 +303,65 @@ input[type="color"] {
 
 .tableRow.highlight {
     background-color: yellow;
-    /* Markierung sichtbar */
+    /* Make highlight visible */
     transition: background-color 0.3s ease;
-    /* optional: sanftes Einblenden */
+    /* Optional: fade in smoothly */
 }
 
 #sectionSettings {
     display: flex;
-    /* Flexbox aktivieren */
+    /* Enable Flexbox */
     flex-wrap: wrap;
-    /* NEU: erlaubt Umbruch bei 4 Karten */
+    /* NEW: allow wrapping for 4 cards */
     gap: 20px;
-    /* Abstand zwischen den Karten */
+    /* Space between cards */
     margin-bottom: 20px;
-    /* Abstand nach unten zur Tabelle */
+    /* Space below before the table */
 }
 
 #sectionSettings .card {
     flex: 1;
-    /* beide/alle Cards gleich breit */
+    /* Make all cards the same width */
     min-width: 300px;
-    /* minimal sinnvoll */
+    /* Sensible minimum */
 }
 
 #header {
     display: flex;
     align-items: center;
-    /* vertikal zentrieren */
+    /* Center vertically */
     gap: 15px;
-    /* Abstand zwischen Logo und Headline */
+    /* Space between logo and headline */
     padding: 10px 20px;
-    /* optional, innen Abstand */
+    /* Optional inner spacing */
 }
 
 #headline {
     font-size: 24px;
-    /* Haupttextgröße */
+    /* Main text size */
     font-weight: bold;
     text-align: center;
 }
 
 #subheadline {
     font-size: 50%;
-    /* halbe Schriftgröße des Elterntexts */
+    /* Half the parent text size */
     font-weight: normal;
     text-align: center;
     color: #666;
-    /* optional etwas dezenter */
+    /* Optional, slightly more subtle */
 }
 
 .logo {
     width: 150px;
-    /* z.B. feste Breite */
+    /* E.g. fixed width */
     height: auto;
-    /* Höhe proportional */
+    /* Proportional height */
     margin: 10px auto;
-    /* zentrieren */
+    /* Center */
 }
 
-/* --- Color Presets unter HEX Feldern --- */
+/* --- Color presets below HEX fields --- */
 .hexField {
     display: flex;
     flex-direction: column;
@@ -428,21 +428,21 @@ input[type="color"] {
 
 
 
-/* -------------------- Kleine, hilfreiche Extras -------------------- */
+/* -------------------- Small, helpful extras -------------------- */
 
-/* disabled-Optik für gesperrte Felder */
+/* Disabled appearance for locked fields */
 .card .formGrid :disabled {
     opacity: 0.6;
     cursor: not-allowed;
 }
 
-/* Checkbox leicht größer & sauber ausgerichtet */
+/* Checkbox slightly larger and neatly aligned */
 .card .formGrid input[type="checkbox"] {
     transform: scale(1.1);
     vertical-align: middle;
 }
 
-/* Deaktivierte Optionen im Dropdown optisch absetzen */
+/* Highlight disabled drop-down options */
 .card .formGrid select option:disabled {
     color: #9aa0a6;
 }
@@ -467,12 +467,12 @@ input[type="color"] {
 #buttonEnabledDiv,
 #buzzerEnabledDiv {
     grid-column: 1 / -1;
-    /* volle Breite im äußeren Grid */
+    /* Full width in the outer grid */
     display: grid;
     grid-template-columns: 1fr 1fr;
-    /* zwei Spalten für Label + Input */
+    /* Two columns for label + input */
     gap: 10px 14px;
-    /* Abstand wie im Haupt-FormGrid */
+    /* Same spacing as the main form grid */
 }
 
 
@@ -481,9 +481,9 @@ input[type="color"] {
 
 span.uid.invalid {
     background-color: #fee;
-    /* Optional leicht rot hinterlegt */
+    /* Optional light red background */
     color: #900;
-    /* Textfarbe rot */
+    /* Red text color */
 }
 
 #about {
@@ -524,16 +524,16 @@ span.uid.invalid {
 /* Info-Box */
 #sysInfoContentDiv {
     position: relative;
-    /* damit der Button sich daran orientiert */
+    /* So the button can align to it */
     display: flex;
     flex-direction: column;
-    /* Inhalte untereinander */
+    /* Stack contents vertically */
     justify-content: flex-start;
-    /* Box-Inhalt oben anfangen */
+    /* Start box content at the top */
     background: #1e1e1e;
     color: #f1f1f1;
     padding: 24px 28px 64px;
-    /* extra Platz unten für Button */
+    /* Extra space below for the button */
     border-radius: 14px;
     box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
     width: 420px;
@@ -541,14 +541,14 @@ span.uid.invalid {
     max-height: 90%;
 }
 
-/* Info-Zeilen */
+/* Info rows */
 #sysInfoContentDiv span {
     display: block;
     margin-bottom: 6px;
     font-size: 14px;
 }
 
-/* Sektionstitel */
+/* Section title */
 .infoTitle {
     font-weight: bold;
     font-size: 16px;
@@ -558,7 +558,7 @@ span.uid.invalid {
     padding-bottom: 4px;
 }
 
-/* Zeilen wie gehabt */
+/* Rows as before */
 .infoSection {
     display: flex;
     justify-content: flex-start;
@@ -641,7 +641,7 @@ span.uid.invalid {
     background: rgba(0, 0, 0, 0.6);
     display: none;
     align-items: stretch;
-    /* volle Höhe */
+    /* Full height */
     justify-content: center;
     z-index: 1000;
 }
@@ -672,7 +672,7 @@ span.uid.invalid {
     border-right: 1px solid #333;
 }
 
-/* Sidebar Buttons oben */
+/* Sidebar buttons at the top */
 .settingsSidebar .navItem {
     padding: 14px 18px;
     background: none;
@@ -698,27 +698,27 @@ span.uid.invalid {
 
 
 
-/* Save/Close Buttons unten in Sidebar */
+/* Save/close buttons at the bottom of the sidebar */
 .settingsSidebar #closeSettings,
 .settingsSidebar #saveConfig,
 .settingsSidebar #rebootBtn {
     margin: 2px 18px;
-    /* etwas Abstand zur Sidebarkante */
+    /* Some space from the sidebar edge */
     width: calc(100% - 36px);
-    /* Sidebar-Breite minus Padding */
+    /* Sidebar width minus padding */
 }
 
-/* Footer-Bereich sticky unten */
+/* Footer area, sticky at the bottom */
 .settingsSidebar .sidebarFooter {
     margin-top: auto;
-    /* schiebt nach unten */
+    /* Push down */
     display: flex;
     flex-direction: column;
     gap: 10px;
     padding-bottom: 20px;
 }
 
-/* Content-Bereich */
+/* Content area */
 .settingsContent {
     flex: 1;
     padding: 40px;
@@ -726,12 +726,12 @@ span.uid.invalid {
     overflow-y: auto;
 }
 
-/* Fixe Content-Breite */
+/* Fixed content width */
 .settingsPanel {
     display: none;
     width: 100%;
     max-width: 850px;
-    /* HIER wird alles stabilisiert */
+    /* Stabilize everything here */
 }
 
 .settingsPanel.active {
@@ -778,7 +778,7 @@ span.uid.invalid {
     white-space: nowrap;
 }
 
-/* optische Linie */
+/* Visual divider */
 .divider {
     height: 1px;
     background: #444;
@@ -786,8 +786,8 @@ span.uid.invalid {
 
 
 span[contenteditable="true"] {
-    white-space: pre-wrap;   /* Zeilenumbruch an Wortgrenzen */
-    word-wrap: break-word;   /* lange Wörter umbrechen */
+    white-space: pre-wrap;   /* Wrap at word boundaries */
+    word-wrap: break-word;   /* Wrap long words */
     overflow-wrap: break-word;
 }
 
@@ -814,7 +814,7 @@ body.daymode #subheadline {
     color: #6c7a89;
 }
 
-/* Tabellen */
+/* Tables */
 
 
 
@@ -985,7 +985,7 @@ body.daymode .rowInfo {
 
 
 /*   HELP Section */
-/* Fragezeichen */
+/* Question mark */
 .helpIcon {
     margin-left: 10px;
     font-size: 14px;
@@ -1057,11 +1057,11 @@ body.daymode .rowInfo {
 }
 
 
-/* neues Layout */
+/* New layout */
 
 .itemBlock {
     max-width: 1200px;
-    margin: 20px auto;                /* zentriert */
+    margin: 20px auto;                /* Centered */
     padding: 16px 20px;
 
     background: #0e1c2f;
@@ -1106,33 +1106,33 @@ body.daymode .rowInfo {
     font-size: 0.85em;
 }
 
-/* neues Layout Ende */
+/* End of new layout */
 
 
 
 span[contenteditable][data-max]::after {
     content: attr(data-chars-left) " chars left";
-    display: block;       /* unter dem Text */
+    display: block;       /* Below the text */
     font-size: 0.7em;
     color: #aaa;
     margin-top: 2px;
 }
 
-/* Wrapper Span für Input + CharsLeft */
+/* Wrapper span for input + CharsLeft */
 #addForm span {
     display: inline-block;
     vertical-align: top;
-    margin-right: 10px; /* Abstand zwischen Spalten */
+    margin-right: 10px; /* Space between columns */
     position: relative;
 }
 
-/* Input Styling optional */
+/* Optional input styling */
 #addForm input[type="text"] {
     padding: 4px 6px;
     box-sizing: border-box;
 }
 
-/* Chars Left Anzeige */
+/* Chars left display */
 #addForm .charsLeft {
     display: block;
     font-size: 0.7em;

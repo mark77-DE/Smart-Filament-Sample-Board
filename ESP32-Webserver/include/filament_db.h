@@ -4,21 +4,21 @@
 #include <ArduinoJson.h>
 
 /**
- * @brief Ein einzelner Filament-Eintrag bestehend aus:
+ * @brief A single filament entry consisting of:
  * - LED-Index
  * - UID
- * - Hersteller
- * - Typ
- * - Farbe
+ * - Vendor
+ * - Type
+ * - Color
  */
 struct FilamentEntry {
-    uint16_t ledIndex;   ///< LED-Index (0..n), uint16_t um Überlauf zu vermeiden
-    String uid;          ///< Eindeutige ID des Filaments
-    String vendor;       ///< Hersteller
-    String type;         ///< Filament-Typ (z.B. PLA, PETG)
-    String color;        ///< Farbe (String)
-    String info1;         ///< Info Text
-    String info2;         ///< link zum Hersteller oder ähnlichen
+    uint16_t ledIndex;   ///< LED index (0..n), uint16_t prevents overflow
+    String uid;          ///< Unique filament ID
+    String vendor;       ///< Vendor
+    String type;         ///< Filament type (e.g. PLA, PETG)
+    String color;        ///< Color (string)
+    String info1;         ///< Info text
+    String info2;         ///< Link to the vendor or similar
     String storage;
 };
 
@@ -26,81 +26,81 @@ namespace FilamentDB {
 
     // --------------------------------------------------------------------------
     /**
-     * @brief Alle Einträge der Datenbank abrufen
-     * @param list  Ziel-Vektor, der mit allen Filament-Einträgen gefüllt wird
+    * @brief Retrieves all database entries
+    * @param list  Target vector populated with all filament entries
      */
     // --------------------------------------------------------------------------
     void getAll(std::vector<FilamentEntry> &list);
 
     // --------------------------------------------------------------------------
     /**
-     * @brief Ein Filament-Eintrag anhand seiner UID suchen
-     * @param uid    UID des gesuchten Filaments
-     * @param entry  Referenz zum Eintrag, der gefunden wird
-     * @return true, wenn das Filament gefunden wurde; false sonst
+    * @brief Finds a filament entry by its UID
+    * @param uid    UID of the filament to find
+    * @param entry  Reference to the found entry
+    * @return true when the filament was found; false otherwise
      */
     // --------------------------------------------------------------------------
     bool findByUID(const String &uid, FilamentEntry &entry);
 
     // --------------------------------------------------------------------------
     /**
-     * @brief Einen neuen Filament-Eintrag hinzufügen
-     * @param entry  Eintrag, der hinzugefügt werden soll
-     * @return true bei Erfolg, false, wenn Maximalanzahl erreicht ist
+    * @brief Adds a new filament entry
+    * @param entry  Entry to add
+    * @return true on success, false when the maximum count is reached
      */
     // --------------------------------------------------------------------------
     bool add(const FilamentEntry &entry);
 
     // --------------------------------------------------------------------------
     /**
-     * @brief Einen bestehenden Eintrag anhand der UID aktualisieren
-     * @param entry  Eintrag mit UID, die ersetzt werden soll
-     * @return true, wenn erfolgreich aktualisiert, false wenn UID nicht gefunden
+    * @brief Updates an existing entry by UID
+    * @param entry  Entry with the UID to replace
+    * @return true when updated successfully, false when the UID was not found
      */
     // --------------------------------------------------------------------------
     bool update(const FilamentEntry &entry);
 
     // --------------------------------------------------------------------------
     /**
-     * @brief Einen Eintrag anhand der UID löschen
-     * @param uid  UID des zu löschenden Eintrags
-     * @return true, wenn erfolgreich gelöscht, false wenn UID nicht gefunden
+    * @brief Deletes an entry by UID
+    * @param uid  UID of the entry to delete
+    * @return true when deleted successfully, false when the UID was not found
      */
     // --------------------------------------------------------------------------
     bool remove(const String &uid);
 
     // --------------------------------------------------------------------------
     /**
-     * @brief Die gesamte Datenbank als JsonArray erzeugen
-     * @param doc  JsonDocument, in das das Array eingefügt wird
-     * @return JsonArray mit allen Filament-Einträgen
+    * @brief Creates the entire database as a JsonArray
+    * @param doc  JsonDocument into which the array is inserted
+    * @return JsonArray containing all filament entries
      */
     // --------------------------------------------------------------------------
     JsonArray toJsonArray(JsonDocument &doc);
 
     // --------------------------------------------------------------------------
     /**
-     * @brief Einen Eintrag anhand seines Index in der DB aktualisieren
-     * @param idx    Index des Eintrags
-     * @param entry  Neuer Eintrag
-     * @return true bei Erfolg, false bei ungültigem Index
+    * @brief Updates an entry by its database index
+    * @param idx    Entry index
+    * @param entry  New entry
+    * @return true on success, false for an invalid index
      */
     // --------------------------------------------------------------------------
     bool updateAtIndex(int idx, const FilamentEntry &entry);
 
     // --------------------------------------------------------------------------
     /**
-     * @brief Die DB aus einem JsonArray laden
-     * @param arr  JsonArray mit den Filament-Einträgen
-     * @return true, wenn mindestens ein Eintrag geladen wurde, false sonst
+    * @brief Loads the database from a JsonArray
+    * @param arr  JsonArray containing the filament entries
+    * @return true when at least one entry was loaded, false otherwise
      */
     // --------------------------------------------------------------------------
     bool loadFromJsonArray(JsonArray arr);
 
     // --------------------------------------------------------------------------
     /**
-     * @brief Anzahl der Einträge in der DB abrufen
-     * @return Anzahl der gespeicherten Filament-Einträge
+    * @brief Retrieves the number of database entries
+    * @return Number of stored filament entries
      */
     // --------------------------------------------------------------------------
     int getAllCount();

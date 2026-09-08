@@ -150,16 +150,16 @@ bool webifIdleDue(uint32_t now)
 // ----------------- Hilfsfunktionen -----------------
 
 // WiFiManager: wird aufgerufen, sobald das Config-Portal/AP gestartet ist.
-// Zweck: Wenn der ESP "neu" ist und (noch) nicht am Router hängt, soll sofort die AP-IP angezeigt werden,
-// damit der User weiß, wo er verbinden muss (typisch: http://192.168.4.1).
-// NEU: Zusätzlich die SSID in der zweiten Zeile anzeigen.
+// Purpose: when the ESP is new and not yet connected to the router, show the AP IP immediately
+// so the user knows where to connect (typically: http://192.168.4.1).
+// NEW: Also show the SSID on the second line.
 static void onWiFiManagerConfigPortalStarted(WiFiManager *wm)
 {
   (void)wm;
   const IPAddress apIp = WiFi.softAPIP();
   Serial.printf("WiFiManager AP started. AP IP: %s\n", apIp.toString().c_str());
 
-  // Anzeige NICHT blockieren: autoConnect() läuft weiter; Display bleibt bis zur nächsten Anzeigeänderung so stehen.
+  // Do NOT block display updates: autoConnect() continues; the display remains until the next change.
   MYDISPLAY::showThreeLinesCentered(
       F("WLAN-SETUP AP"),
       F("SSID: SpotMyFilament"), // SpotMyFilament AP
@@ -178,7 +178,7 @@ void renderRebootCountdown(unsigned long nowMs)
     {
       inReboot = false;
 
-      // Präsenz freigeben + sauber resetten, damit nächster Start bei Null beginnt
+      // Release presence and reset cleanly so the next start begins from zero
       LEDCTRL_NFC::tagPresenceTick(false);
       LEDCTRL_FILAMENT::tagPresenceTick(false);
       LEDCTRL_NFC::allOff();
@@ -199,8 +199,8 @@ void renderRebootCountdown(unsigned long nowMs)
 
     if (rebootReason)
     {
-      LEDCTRL_NFC::showSuccess();       // NFC-Ring sofort grün (solid)
-      LEDCTRL_FILAMENT::successBlink(); // Filament: blinkt -> grün (
+      LEDCTRL_NFC::showSuccess();       // NFC ring immediately green (solid)
+      LEDCTRL_FILAMENT::successBlink(); // Filament: blinks -> green (
       if (CONFIGV2.system.debugMode)
       {
         Serial.println("Reboot countdown: SUCCESS");
@@ -210,7 +210,7 @@ void renderRebootCountdown(unsigned long nowMs)
     {
       // Beim Start des Countdowns IMMER auf Error umschalten (einmalig)
       LEDCTRL_NFC::showError();       // NFC-Ring sofort rot (solid)
-      LEDCTRL_FILAMENT::errorBlink(); // Filament: blinkt -> rot (wie gewünscht)
+      LEDCTRL_FILAMENT::errorBlink(); // Filament: blinks -> red (as intended)
       if (CONFIGV2.system.debugMode)
       {
         Serial.println("Reboot countdown: ERROR or user reboot");
@@ -224,7 +224,7 @@ void renderRebootCountdown(unsigned long nowMs)
 
   }
 
-  // Präsenz „halten“, damit Solid/Error nicht aus-Timeouten
+  // Hold presence so solid/error does not time out
   LEDCTRL_NFC::tagPresenceTick(true);
   LEDCTRL_FILAMENT::tagPresenceTick(true);
 
@@ -307,7 +307,7 @@ void handleUID(const String &uid, UidSource source)
       publishFilamentState(entry);
     }
 
-    // NFC-Feedback (grün mit optionalem Blink → solid → Timeout ab Entfernung)
+    // NFC feedback (green with optional blink -> solid -> timeout after removal)
     if (isNfc)
     {
       LEDCTRL_NFC::showSuccess();
@@ -319,7 +319,7 @@ void handleUID(const String &uid, UidSource source)
       buzzer_single_beep();
     }
 
-    // Event fürs Websocket
+    // Event for the WebSocket
     doc["action"] = "knownUID";
     doc["ledIndex"] = entry.ledIndex;
     doc["vendor"] = entry.vendor;
@@ -330,7 +330,7 @@ void handleUID(const String &uid, UidSource source)
   {
     // --- UNBEKANNTES TAG ---
 
-    // Falls vorher ein Zielpixel gesetzt war: ausmachen & zurücksetzen
+    // If a target pixel was previously set: turn it off and reset it
     if (targetLed != -1)
     {
       LEDCTRL_FILAMENT::setPixel(targetLed, 0);
@@ -351,7 +351,7 @@ void handleUID(const String &uid, UidSource source)
       LEDCTRL_FILAMENT::errorBlink();
     }
 
-    // Event fürs Websocket
+    // Event for the WebSocket
     doc["action"] = "unknownUID";
   }
 
@@ -394,7 +394,7 @@ void setup()
 
   Serial.println();
   Serial.printf("FW version: %s\n", FIRMWARE_VERSION);
-  Serial.printf("Build date: %s\n", BUILD_DATE_SHORT);
+  Serial.printf("Build date: %s\n", BUILD_DATE);
   Serial.println();
 
   g_sysInfo = getSysInfo();
@@ -420,11 +420,11 @@ void setup()
   displayInit();
 
   // 3) WLAN verbinden
-  //    Gewünschtes Verhalten:
+  //    Desired behavior:
   //    - Wenn er NICHT verbunden ist und WiFiManager das AP-Config-Portal startet:
-  //      -> AP-IP sofort anzeigen (Callback), damit der User weiß, wo er verbinden muss.
+  //      -> Show the AP IP immediately (callback), so the user knows where to connect.
   //    - Erst WENN er mit dem Router verbunden ist:
-  //      -> "VERBINDUNG..." zeigen und anschließend die Router-IP.
+  //      -> Show "CONNECTING..." and then the router IP.
   WiFiManager wifiManager;
   wifiManager.setDebugOutput(CONFIGV2.system.debugMode);
 
@@ -436,8 +436,8 @@ void setup()
     Serial.printf("Hostname: %s\n", CONFIGV2.system.hostname.c_str());
   }
 
-  // Optional: neutrale Anzeige während autoConnect() entscheidet (Router vs. AP-Portal).
-  // Wenn AP startet, überschreibt der Callback diese Anzeige automatisch.
+  // Optional: neutral display while autoConnect() decides (router vs. AP portal).
+  // If the AP starts, the callback automatically overrides this display.
   MYDISPLAY::showCentered("WLAN...");
 
   if (!wifiManager.autoConnect("SpotMyFilament"))
@@ -526,7 +526,7 @@ else
   DisplayAnim::startIdleTextFirst(millis());
 
   // 5) WebSocket + Webserver starten (WebIF nun sofort erreichbar)
-  // FIX: doppelte WS-Registrierung vermeiden – nur im Webserver-Modul hinzufügen
+  // FIX: avoid duplicate WS registration - add it only in the web server module
   // server.addHandler(&ws); // <-- ENTFERNT, Registrierung erfolgt in initWebServer()
   initWebServer(server, ws);
   WiFi.setSleep(false);
@@ -556,7 +556,7 @@ void loop()
   // 0a) Button/Buzzer tick (Entprellung, Sequencer, Events)
   gpiohw_tick(now);
 
-  // 0b) Double-Press → Reboot starten (nur, wenn keiner läuft)
+  // 0b) Double press -> start reboot (only if none is running)
   if (!rebootPending && button_long_press())
   {
     buzzer_double_beep();
@@ -565,7 +565,7 @@ void loop()
     renderRebootCountdown(now);
   }
 
-  // 0c) Cancel per Single-Press während Countdown
+  // 0c) Cancel via single press during countdown
   if (rebootPending && (button_tap_release() || button_short_press()))
   {
     rebootPending = false;
@@ -603,7 +603,7 @@ void loop()
   bool tagPresent = false;
   NFC::tick(now, isActive, lastTagTime, tagPresent);
 
-  // WebIF kann Idle auslösen (aber NICHT wenn Tag wirklich präsent ist)
+  // Web interface can trigger idle (but NOT when a tag is truly present)
   if (!rebootPending && !tagPresent && webifIdleDue(now))
   {
     webifCancelIdleTimeout();
@@ -612,7 +612,7 @@ void loop()
   }
 
   // ---------------------------------------------------------------------------
-  // 1b) Präsenz auch an den FILAMENT-Controller geben
+  // 1b) Also pass presence to the filament controller
   // ---------------------------------------------------------------------------
   LEDCTRL_FILAMENT::tagPresenceTick(tagPresent);
 
@@ -654,7 +654,7 @@ void loop()
   LEDCTRL_NFC::update();
 
   // ---------------------------------------------------------------------------
-  // 6) Übergang „aktiv → Idle“ (NFC-Controller bestimmt's)
+  // 6) Transition "active -> idle" (determined by the NFC controller)
   // ---------------------------------------------------------------------------
   static bool prevIdle = false;
   const bool idleNow = LEDCTRL_NFC::isIdle();

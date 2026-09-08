@@ -21,7 +21,7 @@ void updateInit() {
     g_updateInfo.latestVersion = "";
     g_updateInfo.updateAvailable = false;
 
-    // 🔹 Config übernehmen
+    // Apply configuration
     if (CONFIGV2.system.updateCheckInterval > 0) {
         updateIntervalMs = CONFIGV2.system.updateCheckInterval * 60 * 1000UL;
     }
@@ -58,7 +58,7 @@ bool checkForUpdate(String& latestVersion) {
     client.setInsecure();
 
     HTTPClient http;
-    http.setTimeout(2000); // 🔹 wichtig gegen lange Hänger
+    http.setTimeout(2000); // Important to prevent long hangs
 
     const char* url = "https://raw.githubusercontent.com/mark77-DE/Smart-Filament-Sample-Board/refs/heads/main/ESP32-Webserver/version.txt";
     http.begin(client, url);
@@ -164,7 +164,7 @@ void startUpdateTask() {
 void updateLoop() {
     uint32_t now = millis();
 
-    // 🔹 Config-Änderung
+    // Configuration change
     if (CONFIGV2.system.updateCheckInterval != updateIntervalMs / (60 * 1000UL)) {
         updateIntervalMs = CONFIGV2.system.updateCheckInterval * 60 * 1000UL;
         Serial.println("[UPDATE-CHECK] Update interval changed to " + String(updateIntervalMs) + " ms");

@@ -20,14 +20,14 @@
 #include "update_manager.h"
 #include "esp_chip_info.h"
 
-File fsFile; // global oder in cpp außerhalb des Lambdas
+File fsFile; // global or outside the lambda in this .cpp
 
 extern void webifArmIdleTimeout(uint32_t ms);
 
 unsigned long lastHeartbeatMs = 0;
 const unsigned long HEARTBEAT_INTERVAL_MS = 1000; // 1 Sekunde
 
-// Vorwärtsdeklaration
+// Forward declaration
 extern void renderRebootCountdown(unsigned long nowMs);
 
 extern void handleUID(const String &uid, UidSource source);
@@ -116,13 +116,13 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
 
     wsBuf.concat((const char *)data, len);
 
-    // Noch nicht komplett?
+    // Not complete yet?
     if (!(info->final && (info->index + len == info->len)))
     {
         return;
     }
 
-    // Jetzt ist wsBuf vollständig
+    // wsBuf is complete now
     JsonDocument doc;
     DeserializationError err = deserializeJson(doc, wsBuf);
     if (err)
@@ -146,8 +146,8 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
 
     if (strcmp(action, "highlightUIDLED") == 0)
     {
-        // --- ACK sofort zurück an genau diesen Client ---
-        // (damit JS nicht retry-spamt)
+        // --- Send ACK immediately back to this client ---
+        // (so JS does not spam retries)
         uint32_t seq = doc["seq"] | 0;
         if (seq != 0)
         {
@@ -172,7 +172,7 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
     else if (strcmp(action, "highlightMultiLED") == 0)
     {
 
-        // --- ACK sofort zurück an genau diesen Client ---
+        // --- Send ACK immediately back to this client ---
         uint32_t seq = doc["seq"] | 0;
         if (seq != 0)
         {
@@ -185,7 +185,7 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
             client->text(out);
         }
 
-        // --- Timeout bestimmen ---
+        // --- Determine timeout ---
         uint32_t t = (CONFIGV2.system.webLEDTimeout > 0)
                          ? CONFIGV2.system.webLEDTimeout
                          : (uint32_t)CONFIGV2.led.timeout;
@@ -256,7 +256,7 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
         int ledIndex = doc["led"] | -1; // Default -1, falls key fehlt
         if (ledIndex < 0)
         {
-            Serial.println("WS highlightSingleLed: LED index fehlt oder ungültig");
+            Serial.println("WS highlightSingleLed: LED index missing or invalid");
             return;
         }
 
@@ -294,7 +294,7 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
     //      (schneller, weniger LittleFS-Lesezugriffe, Browser-Caching)
     // Spezifische Routen zuerst:
     server.serveStatic("/settings", LittleFS, "/settings.html")
-        .setCacheControl("no-cache"); // HTML bewusst kurz cachen/prüfen
+        .setCacheControl("no-cache"); // Deliberately cache/check HTML briefly
 
     server.serveStatic("/script.js", LittleFS, "/script.js")
         .setCacheControl("public, max-age=604800"); // 7 Tage
@@ -337,6 +337,7 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
         doc["git_hash"]                 = GIT_HASH;
         doc["build_date"]               = BUILD_DATE;
         doc["build_date_short"]         = BUILD_DATE_SHORT;
+        doc["config_version"]           = CONFIGV2.system.version;
         doc["boardVariant"]             = boardVariant;
         doc["chipName"]                 = info.chipName;
         doc["cores"]                    = info.cores;
@@ -468,7 +469,7 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
         std::vector<FilamentEntry> list;
         FilamentDB::getAll(list);
 
-        // Dokument-Größe je nach Anzahl der Einträge anpassen
+        // Adjust document size based on the number of entries
         JsonDocument doc;
         JsonArray arr = doc.to<JsonArray>();
 
@@ -597,7 +598,7 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
             entry.info2     = doc["info2"].as<String>();
             entry.storage   = doc["storage"].as<String>();
 
-            // Update über Index
+            // Update by index
             if(FilamentDB::updateAtIndex(idx, entry)){
                 saveFilamentsToFile();
                 if(CONFIGV2.system.debugMode) {

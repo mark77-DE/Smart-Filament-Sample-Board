@@ -2,31 +2,31 @@
 #include <Arduino.h>
 #include "led_config.h"
 
-// Vorwärtsdeklaration genügt hier (die eigentliche Header-Datei wird in der .cpp inkludiert)
+// A forward declaration is sufficient here (the actual header is included in the .cpp)
 class Adafruit_NeoPixel;
 
 // ============================================================================
-// Öffentliche Konfig-Variablen
-//  -> werden von loadLedConfigV2() aus /config_v2.json (oder /filament_default.json)
-//     gelesen und anschließend per LEDCTRL_FILAMENT::init(...) angewendet
+// Public configuration variables
+//  -> loaded by loadLedConfigV2() from /config_v2.json (or /filament_default.json)
+//     and then applied by LEDCTRL_FILAMENT::init(...)
 // ============================================================================
-extern int      LED_COUNT;        // Anzahl Pixel des Filament-Strips
-extern int      LED_TIMEOUT;      // Timeout in ms (erst ab Tag-Entfernung)
-extern int      LED_BRIGHTNESS;   // Helligkeit [0..255]
+extern int      LED_COUNT;        // Number of pixels in the filament strip
+extern int      LED_TIMEOUT;      // Timeout in ms (starts after tag removal)
+extern int      LED_BRIGHTNESS;   // Brightness [0..255]
 
-// Standardfarbe für „normale“ Pixel (z. B. setPixel)
+// Default color for "normal" pixels (e.g. setPixel)
 extern uint32_t LED_COLOR;        // 0xRRGGBB
 
-// Eigenständige Fehlerfarbe (für errorBlink/errorAll)
+// Dedicated error color (for errorBlink/errorAll)
 extern uint32_t LED_COLOR_ERROR;  // 0xRRGGBB
 
-// Farbe für den Idle-Breath-Pulse
+// Color for the idle breathing pulse
 extern uint32_t LED_COLOR_PULSE;  // 0xRRGGBB
 
 // ============================================================================
 // LEDCTRL_FILAMENT – Steuerung für den Filament-LED-Strip
-//  - Unterstützt: Einzelpixel setzen, Fehler-Blink/Solid, Idle-Breath
-//  - Timeout-Handling wird an NFC-Präsenz-Events gekoppelt (tagPresenceTick)
+//  - Supports setting individual pixels, error blink/solid, and idle breathing
+//  - Timeout handling is coupled to NFC presence events (tagPresenceTick)
 // ============================================================================
 class LEDCTRL_FILAMENT {
 public:
@@ -35,31 +35,31 @@ public:
   // --------------------------------------------------------------------------
 
   /**
-   * @brief Strip initialisieren und internen Zustand zurücksetzen.
-   * @param count       Anzahl Pixel
-   * @param timeout_ms  Timeout in Millisekunden (wirkt erst ab Tag-Entfernung)
-   * @param brightness  Helligkeit [0..255]
-   * @param color       Standardfarbe 0xRRGGBB
-   * @param colorError  Fehlerfarbe 0xRRGGBB
-   * @param colorPulse  Idle-Pulse-Farbe 0xRRGGBB
-   * @param type        NeoPixel-Typ (z. B. NEO_GRBW + NEO_KHZ800)
+  * @brief Initializes the strip and resets internal state.
+  * @param count       Number of pixels
+  * @param timeout_ms  Timeout in milliseconds (starts after tag removal)
+  * @param brightness  Brightness [0..255]
+  * @param color       Default color 0xRRGGBB
+  * @param colorError  Error color 0xRRGGBB
+  * @param colorPulse  Idle pulse color 0xRRGGBB
+  * @param type        NeoPixel type (e.g. NEO_GRBW + NEO_KHZ800)
    */
   static void init(int count, int timeout_ms, int brightness, uint32_t color, uint32_t colorError, uint32_t colorPulse, neoPixelType pixelType);
 
   /**
-   * @brief In der main-Loop zyklisch aufrufen.
-   *        Aktualisiert Blink/Solid/Idle-Animationen und Timeout-Logik.
+  * @brief Call periodically from the main loop.
+  *        Updates blink/solid/idle animations and timeout logic.
    */
   static void update();
 
   // --------------------------------------------------------------------------
-  // Präsenz-Tracking (kopplung an NFC-Tag-Halten/Entfernen)
+  // Presence tracking (coupled to NFC tag hold/removal)
   // --------------------------------------------------------------------------
 
   /**
-   * @brief NFC-Tag-Präsenz melden (true = Tag da, false = entfernt).
-   *        Der Timeout wird erst gestartet, wenn das Tag entfernt wurde
-   *        (unter Berücksichtigung einer kleinen Grace-Zeit).
+  * @brief Reports NFC tag presence (true = tag present, false = removed).
+  *        The timeout starts only after the tag has been removed
+  *        (allowing for a short grace period).
    */
   static void tagPresenceTick(bool present);
 
@@ -68,15 +68,15 @@ public:
   // --------------------------------------------------------------------------
 
   /**
-   * @brief Einzelnen Pixel in gewünschter NeoPixel-Farbe setzen.
-   *        Beendet aktive Error-Anzeigen (Blink/Solid) und löscht ggf. Restzustände.
+  * @brief Sets an individual pixel to the requested NeoPixel color.
+  *        Ends active error displays (blink/solid) and clears residual state if needed.
    * @param index  Pixelindex [0..count-1]
    * @param color  0x00RRGGBB im NeoPixel-Format des Strips
    */
   static void setPixel(int index, uint32_t color);
 
   /**
-   * @brief Alle Pixel ausschalten, internen Buffer löschen und auf Idle-Pulse gehen.
+  * @brief Turns off all pixels, clears the internal buffer, and switches to the idle pulse.
    */
   static void allOff();
 
@@ -86,25 +86,25 @@ public:
 
   /**
    * @brief Sofort alle Pixel in LED_COLOR_SUCCESS setzen (Solid).
-   *        Timeout läuft erst nach Tag-Entfernung.
+  *        Timeout starts only after tag removal.
    */
   static void successAll();
 
   /**
    * @brief Erst LED_COLOR_ERROR blinken lassen, danach – sofern noch aktiv –
-   *        in errorAll() (Solid) übergehen.
+  *        transitions to errorAll() (solid).
    */
   static void successBlink();
 
   /**
    * @brief Sofort alle Pixel in LED_COLOR_ERROR setzen (Solid).
-   *        Timeout läuft erst nach Tag-Entfernung.
+  *        Timeout starts only after tag removal.
    */
   static void errorAll();
 
   /**
    * @brief Erst LED_COLOR_ERROR blinken lassen, danach – sofern noch aktiv –
-   *        in errorAll() (Solid) übergehen.
+  *        transitions to errorAll() (solid).
    */
   static void errorBlink();
 
@@ -114,7 +114,7 @@ public:
 
   /**
    * @brief True, wenn keine Error-Anzeige aktiv ist und der Buffer dunkel ist.
-   *        (Dann läuft ggf. der Idle-Breath-Pulse.)
+  *        (The idle breathing pulse may then run.)
    */
   static bool isIdle();
 
@@ -127,11 +127,11 @@ public:
   // Netzlast-Hinweis (Idle kurz pausieren)
   // --------------------------------------------------------------------------
   /**
-   * @brief Hinweis vom Webserver/WS: Netzwerk ist gerade beschäftigt.
-   *        Pausiert IDLE-Frames für die nächsten @p ms Millisekunden.
+  * @brief Notification from the web server/WS that the network is busy.
+  *        Pauses IDLE frames for the next @p ms milliseconds.
    *        Transitions (Blink/Solid/Reassert) bleiben unbeeinflusst.
    */
-  static void netBusyHint(uint16_t ms); // FIX: hinzugefügt
+  static void netBusyHint(uint16_t ms); // FIX: added
 
   // WebIF: virtuellen "Tag-Hold" starten, damit Timeout/Idle wieder greifen
   static void webifHoldFor(uint16_t ms);
@@ -140,13 +140,13 @@ public:
 
    /**
     * @brief Alle Anzeigen ausschalten und in einen passiven Standby-Zustand wechseln.
-    *        (Derzeit: Idle-Pulse deaktivieren, damit bei längerer Inaktivität nicht
-    *        ständig die LEDs an- und ausgehen.)
+    *        (Currently: disable idle pulses so the LEDs do not continuously
+    *        turn on and off during extended inactivity.)
     */
     static void standBy(bool state);
     
-    static bool _standby;            // Standby-Zustand aktiv?
-    static bool _idlePulseEnabled;   // Idle-Pulse aktiv?
+    static bool _standby;            // Standby state active?
+    static bool _idlePulseEnabled;   // Idle pulse active?
 
 private:
   // --------------------------------------------------------------------------
@@ -154,7 +154,7 @@ private:
   // --------------------------------------------------------------------------
   static Adafruit_NeoPixel* _leds;      // eigener NeoPixel-Strip
   static uint32_t*          _buf;       // Shadow-Buffer (pro Pixel-Farbe)
-  static int                _bufCount;  // Anzahl Pixel (Größe von _buf)
+  static int                _bufCount;  // Number of pixels (size of _buf)
 
   // --------------------------------------------------------------------------
   // Error-Blink-State (phasenbasiert)
@@ -176,7 +176,7 @@ private:
   static bool               _tagHeld;            // Tag physisch vor Ort (inkl. Grace)
   static unsigned long      _lastTagSeen;        // Zeitpunkt der letzten Roh-Erkennung
   static unsigned long      _releaseTs;          // 0 = kein Timeout aktiv, sonst Startzeit
-  static const uint16_t     TAG_HELD_GRACE_MS;   // „Sticky“ gegen kurze Lücken
+  static const uint16_t     TAG_HELD_GRACE_MS;   // "Sticky" protection against short gaps
 
   // Reassert (gegen Glitches / halbe Frames)
   static unsigned long      _lastHoldRefresh;
@@ -196,13 +196,13 @@ private:
   static unsigned long      _idleBlockUntil;
 
   // FIX: Während Netzlast (HTTP/WS) zusätzlich Idle-Frames pausieren
-  static unsigned long      _netPauseUntil;      // bis wann Idle unterdrücken
+  static unsigned long      _netPauseUntil;      // until when to suppress idle
 
   // --------------------------------------------------------------------------
   // Buffer-Helfer
   // --------------------------------------------------------------------------
   static void ensureBuf(int n);                       // Buffer (re)alloziieren
-  static void renderAllFromBuf(Adafruit_NeoPixel* s); // Buffer → Strip übertragen
+  static void renderAllFromBuf(Adafruit_NeoPixel* s); // Transfer buffer -> strip
   static bool bufAnyLit();      
   
   

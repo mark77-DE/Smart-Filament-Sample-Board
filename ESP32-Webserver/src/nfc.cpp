@@ -13,17 +13,17 @@
 #endif
 
 // ============================================================================
-// Schwache Default-Hooks (können in der Applikation überschrieben werden)
+// Weak default hooks (can be overridden by the application)
 // ============================================================================
 __attribute__((weak)) void NFC_OnPreempt(const String&) { }
 __attribute__((weak)) void NFC_OnActive() { }
 
 // ============================================================================
-// Lokaler PN532-Zugriff
+// Local PN532 access
 // ============================================================================
 static Adafruit_PN532* _nfc = nullptr;
 
-// Quelle des UID-Triggers (wird in handleUID genutzt, Definition liegt extern)
+// Source of the UID trigger (used in handleUID, definition is external)
 enum class UidSource : uint8_t;
 extern void handleUID(const String& uidStr, UidSource src);
 
@@ -31,19 +31,19 @@ extern void handleUID(const String& uidStr, UidSource src);
 // Guards / State
 // ============================================================================
 // Edge-/Hold-Tracking
-static bool          s_prevTagPresent  = false;   // Präsenz-Status des letzten Ticks
+static bool          s_prevTagPresent  = false;   // Presence status of the previous tick
 static bool          s_holdActive      = false;   // wir sind „im Hold“ (selbes Tag)
-static String        s_holdUid;                   // letzte getriggerte UID (für Debounce in Idle)
-static unsigned long s_lastTriggerMs   = 0;       // letzter handleUID()-Zeitpunkt
-static unsigned long s_lastSeenMs      = 0;       // letzte Roh-Erkennung (ms)
+static String        s_holdUid;                   // Last triggered UID (for idle debounce)
+static unsigned long s_lastTriggerMs   = 0;       // Last handleUID() time
+static unsigned long s_lastSeenMs      = 0;       // Last raw detection (ms)
 
-// Sperre gegen Retrigger während Effekt läuft
+// Block retriggering while an effect is running
 static bool          s_lockActive      = false;   // blockt (same uid) retrigger bis LEDs idle
 
 // Welche UID „besitzt“ aktuell den LED-Controller (solange nicht idle)?
 static String        s_busyUid;
 
-// Debug-Throttle für Roh-Logs
+// Debug throttle for raw logs
 static bool          s_prevRaw         = false;
 static unsigned long s_lastRaw1LogMs   = 0;
 static constexpr uint16_t RAW1_PERIOD_MS        = 300; // min. alle 300 ms „raw=1“-Log
@@ -51,7 +51,7 @@ static constexpr uint16_t RAW1_PERIOD_MS        = 300; // min. alle 300 ms „ra
 // ============================================================================
 // Tuning-Parameter
 // ============================================================================
-// Unterdrückt Doppel-Trigger derselben UID, wenn die LEDs idle sind
+// Suppress duplicate triggers for the same UID when LEDs are idle
 // (z. B. direkt nach einem Timeout).
 static constexpr uint16_t RETRIGGER_DEBOUNCE_MS = 300;
 

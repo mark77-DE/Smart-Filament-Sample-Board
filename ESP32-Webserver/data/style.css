@@ -5,31 +5,31 @@ body {
 
 #header {
     display: flex;
-    align-items: center;  /* vertikal zentrieren */
-    gap: 20px;            /* Abstand zwischen Logo und Headline */
-    padding: 10px 30px;   /* optional, innen Abstand */
+    align-items: center;  /* Center vertically */
+    gap: 20px;            /* Space between logo and headline */
+    padding: 10px 30px;   /* optional inner spacing */
     border-bottom: 1px solid #4f4f4f;
     
 }
 
 #headline {
-    font-size: 24px; /* Haupttextgröße */
+    font-size: 24px; /* Main text size */
     font-weight: bold;
     text-align: center;
 }
 
 #subheadline {
-    font-size: 50%; /* halbe Schriftgröße des Elterntexts */
+    font-size: 50%; /* Half the parent text size */
     font-weight: normal;
     text-align: center;
-    color: #666; /* optional etwas dezenter */
+    color: #666; /* optional slightly decent */
 }
 
 .logo {
-    width: 150px;      /* z.B. feste Breite */
-    height: auto;      /* Höhe proportional */
+    width: 150px;      /* z.B. fixed width */
+    height: auto;      /* Proportional height */
     
-    margin: 10px auto; /* zentrieren */
+    margin: 10px auto; /* center */
 }
 
 #about {
@@ -89,7 +89,7 @@ button {
     grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
     gap: 10px;
     width: 100%;
-    max-width: calc(100% - 40px); /* optional, für sauberes Layout */
+    max-width: calc(100% - 40px); /* optional, for clean layout */
 }
 
 .tile {
@@ -143,8 +143,8 @@ button {
 
 /* -------------------- DAY MODE -------------------- */
 body.daymode {
-    background-color: #f4f6f8;   /* sehr helles Grau statt Weiß */
-    color: #2c3e50;              /* dunkles Blau-Grau */
+    background-color: #f4f6f8;   /* Very light gray instead of white */
+    color: #2c3e50;              /* dark blue-gray */
 }
 
 /* Header */
@@ -198,7 +198,7 @@ body.daymode .ws-connected {
 
 
 select {
-    appearance: none;          /* entfernt Standard-Pfeil/Styling */
+    appearance: none;          /* removes default arrow/styling */
     -webkit-appearance: none;  /* Safari/Chrome */
     -moz-appearance: none;     /* Firefox */
     
@@ -255,9 +255,9 @@ select, .select-wrapper::after {
 .tile .vendor,
 .tile .color,
 .tile .type {
-    overflow-wrap: break-word; /* Zeilenumbruch bei langen Wörtern */
-    word-wrap: break-word;     /* alte Browser */
-    word-break: break-word;    /* alternative, je nach Browser */
+    overflow-wrap: break-word; /* Line break for long words */
+    word-wrap: break-word;     /* old browsers */
+    word-break: break-word;    /* alternative, depending on browser */
     text-align: center;
 }
 
@@ -361,7 +361,7 @@ body.daymode #filters {
 
 .filterElement {
     display: flex;
-    flex-direction: column;   /* Label über Select */
+    flex-direction: column;   /* Label above select */
 }
 
 .filterLabel {

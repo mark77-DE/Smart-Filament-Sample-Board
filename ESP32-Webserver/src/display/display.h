@@ -14,7 +14,7 @@ void displayClear();
 void displayFlush();
 
 /**
- * @brief Display-Hilfsklasse für Filament-Infos und Statusanzeigen.
+ * @brief Display helper class for filament information and status displays.
  * 
  * 
  */
@@ -67,8 +67,8 @@ public:
     static void showCenteredTwoLines(const String& line1, const String& line2);
 
     /**
-     * @brief Zeigt drei zentrierte Zeilen (neu, für Reboot-Countdown).
-     *        Kürzt bei Bedarf mit "..." und passt den Font je nach Display-Höhe an.
+    * @brief Shows three centered lines (new, for reboot countdown).
+    *        Truncates with "..." when needed and adjusts the font to the display height.
      * @param line1 Erste Zeile (oben)
      * @param line2 Zweite Zeile (Mitte)
      * @param line3 Dritte Zeile (unten)
@@ -92,7 +92,7 @@ public:
     static void showBootVersion(const char* version, const char* dateShort);
 
     /**
-     * @brief Bildschirm löschen (z.B. vor Idle-Animation).
+    * @brief Clears the screen (e.g. before the idle animation).
      */
     static void clear();
 

@@ -6,7 +6,7 @@
 #include "config.h"
 #include "mqtt_manager.h"
 
-static FilamentEntry db[150];   // max 100 Einträge
+static FilamentEntry db[150];   // max 150 entries
 static int dbCount = 0;
 static const int MAX_DB_ENTRIES = 150;
 
@@ -38,7 +38,7 @@ bool findByUID(const String &uid, FilamentEntry &entry) {
 // ----------------- Neue Funktionen -----------------
 
 bool add(const FilamentEntry &entry) {
-    if (dbCount >= 100) return false;
+    if (dbCount >= MAX_DB_ENTRIES) return false;
     db[dbCount++] = entry;
     return true;  // nur Erfolg im Speicher
 }

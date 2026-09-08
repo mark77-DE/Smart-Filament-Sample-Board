@@ -4,13 +4,13 @@
 class I18N {
 public:
     /**
-     * Initialisiert die Sprache und lädt die JSON-Datei
+    * Initializes the language and loads the JSON file
      * Muss nach loadConfig() aufgerufen werden
      */
     static void begin(const String& lang);
 
     /**
-     * Liefert einen String anhand des Keys zurück
+    * Returns a string for the given key
      * Beispiel: I18N::get("txt_unknown")
      */
     static const char* get(const char* key);
@@ -22,13 +22,13 @@ public:
     static const char* getNested(const char* path);
 
     /**
-     * Gibt aktuell geladene Sprache zurück
+    * Returns the currently loaded language
      */
     static const String& currentLanguage();
 
 private:
     /**
-     * Interne Funktion: lädt die Sprachdatei
+    * Internal function: loads the language file
      */
     static bool loadLanguage(const char* path);
 

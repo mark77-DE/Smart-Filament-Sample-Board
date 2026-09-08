@@ -7,10 +7,10 @@ fwInput.addEventListener("change", () => {
     fwInput.files.length ? fwInput.files[0].name : t("txt_no_file_selected");
 });
 
-fsInput.addEventListener("change", () => {
-  document.getElementById("fsFileName").textContent =
-    fsInput.files.length ? fsInput.files[0].name : t("txt_no_file_selected");
-});
+// fsInput.addEventListener("change", () => {
+//   document.getElementById("fsFileName").textContent =
+//     fsInput.files.length ? fsInput.files[0].name : t("txt_no_file_selected");
+// });
 
 
 
@@ -22,7 +22,7 @@ async function uploadFS() {
 
   const file = fileInput.files[0];
 
-  // einfache Flüchtigkeitsprüfung
+  // Simple sanity check
   if (!file.name.endsWith("littlefs.bin")) {
     return alert(t("txt_filesystem_invalid"));
   }
@@ -54,7 +54,7 @@ async function uploadFirmware() {
 
   const file = fileInput.files[0];
 
-  // einfache Flüchtigkeitsprüfung
+  // Simple sanity check
   if (!file.name.endsWith("firmware.bin")) {
     return alert(t("txt_firmware_invalid"));
   }

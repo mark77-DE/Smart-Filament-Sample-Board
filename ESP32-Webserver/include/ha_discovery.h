@@ -4,11 +4,11 @@
 #include "config.h"
 
 /**
- * @brief Veröffentlicht Home-Assistant MQTT Discovery für dieses Gerät
+ * @brief Publishes Home Assistant MQTT discovery for this device
  *
  * Erstellt automatisch:
- * - Schalter für Display-Animation (ON/OFF)
- * - Schalter für LEDs (ALL OFF)
+ * - Switch for display animation (ON/OFF)
+ * - Switch for LEDs (ALL OFF)
  *
  * Muss aufgerufen werden, sobald MQTT verbunden ist.
  */
