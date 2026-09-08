@@ -1222,6 +1222,18 @@ body.daymode #statusSection {
     
 }
 
+.updateFilenameSpan {
+    margin-bottom: 10px;
+    font-weight: bold;
+}
+
+#updateAvailable {
+    color: #28a745;
+    font-weight: bold;
+    margin-bottom: 10px;
+    display: none;
+}
+
 
 input[type="file"] {
     display: none;

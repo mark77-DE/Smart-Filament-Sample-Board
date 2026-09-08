@@ -184,7 +184,10 @@
     "txt_uploading_fw": "Uploading Firmware...",
     "txt_uploading_fs": "Uploading Filesystem...",
     "txt_unknown": "Unknown",
-    "txt_update_check_interval": "Update check interval (minutes):"
+    "txt_update_check_interval": "Update check interval (minutes):",
+    "txt_filename": "Needed file:",
+    "txt_display_type": "Display type:",
+    "txt_latest_version": "Latest version:"
 
 
 

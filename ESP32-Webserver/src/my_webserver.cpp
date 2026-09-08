@@ -337,6 +337,9 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
         doc["git_hash"]                 = GIT_HASH;
         doc["build_date"]               = BUILD_DATE;
         doc["build_date_short"]         = BUILD_DATE_SHORT;
+        doc["display_type"]             = MYDISPLAY::getDisplayVariant();
+        doc["update_filename"]          = getFirmwareAssetName();
+        doc["latest_firmware_version"]  = LATEST_FIRMWARE_VERSION;
         doc["config_version"]           = CONFIGV2.system.version;
         doc["boardVariant"]             = boardVariant;
         doc["chipName"]                 = info.chipName;

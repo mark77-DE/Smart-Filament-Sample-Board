@@ -7,7 +7,7 @@
         "animationAfterBoot": true,
         "hostname": "filament-board-dev",
         "defaultLanguage": "en",
-        "updateCheckInterval": 121
+        "updateCheckInterval": 2
         },
     "ledHardware": {
         "type": "WS2812B",

@@ -4,6 +4,7 @@
 #include <HTTPClient.h>
 #include "version_info.h"
 #include "config.h"
+#include "globals.h"
 
 static UpdateInfo g_updateInfo;
 static bool changed = false;
@@ -81,10 +82,14 @@ bool checkForUpdate(String& latestVersion) {
     latestVersion = http.getString();
     latestVersion.trim();
 
+    LATEST_FIRMWARE_VERSION = latestVersion;
+
     if(CONFIGV2.system.debugMode)
     {
         Serial.println("[UPDATE-CHECK] Latest version fetched: " + latestVersion);
     }
+
+
 
     http.end();
     return latestVersion.length() > 0;

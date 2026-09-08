@@ -6,17 +6,14 @@
 #include "globals.h"
 #include "version_info.h"
 
-
-
-
 void displayInit();
 void displayClear();
 void displayFlush();
 
 /**
  * @brief Display helper class for filament information and status displays.
- * 
- * 
+ *
+ *
  */
 
 #ifndef TFT_BLACK
@@ -38,42 +35,42 @@ void displayFlush();
 #ifndef TFT_ORANGE
 #define TFT_ORANGE 0xFD20
 #endif
-   
 
-class MYDISPLAY {
+class MYDISPLAY
+{
 public:
     /**
      * @brief Display-Backend setzen (einmalig im Setup).
      * @param disp Zeiger auf das Display-Objekt
      */
-    static void init(DisplayType* disp) { _display = disp; }
+    static void init(DisplayType *disp) { _display = disp; }
 
     /**
      * @brief Zeigt Filament-Daten (vendor / type / color) in drei Zeilen.
      */
-    static void show(const FilamentEntry& entry);
+    static void show(const FilamentEntry &entry);
 
     /**
      * @brief Zeigt eine einzelne zentrierte Zeile.
      * @param msg Text
      */
-    static void showCentered(const String& msg, const int FOREGROUND_COLOR = TFT_WHITE, const int BACKGROUND_COLOR = TFT_BLACK);
+    static void showCentered(const String &msg, const int FOREGROUND_COLOR = TFT_WHITE, const int BACKGROUND_COLOR = TFT_BLACK);
 
     /**
      * @brief Zeigt zwei zentrierte Zeilen (bestehende API beibehalten).
      * @param line1 Erste Zeile
      * @param line2 Zweite Zeile
      */
-    static void showCenteredTwoLines(const String& line1, const String& line2);
+    static void showCenteredTwoLines(const String &line1, const String &line2);
 
     /**
-    * @brief Shows three centered lines (new, for reboot countdown).
-    *        Truncates with "..." when needed and adjusts the font to the display height.
+     * @brief Shows three centered lines (new, for reboot countdown).
+     *        Truncates with "..." when needed and adjusts the font to the display height.
      * @param line1 Erste Zeile (oben)
      * @param line2 Zweite Zeile (Mitte)
      * @param line3 Dritte Zeile (unten)
      */
-    static void showThreeLinesCentered(const String& line1, const String& line2, const String& line3, int foregroundColor = TFT_WHITE, int backgroundColor = TFT_BLACK);
+    static void showThreeLinesCentered(const String &line1, const String &line2, const String &line3, int foregroundColor = TFT_WHITE, int backgroundColor = TFT_BLACK);
 
     /**
      * @brief Zeigt vier zentrierte Zeilen.
@@ -82,20 +79,19 @@ public:
      * @param line3 Dritte Zeile
      * @param line4 Vierte Zeile (unten)
      */
-    static void showFourLinesCentered(const String& line1, const String& line2, const String& line3, const String& line4);
+    static void showFourLinesCentered(const String &line1, const String &line2, const String &line3, const String &line4);
 
     /**
      * @brief Bootscreen mit Firmware-Version/Datum
      * @param version Versionstext
      * @param dateShort Datum
      */
-    static void showBootVersion(const char* version, const char* dateShort);
+    static void showBootVersion(const char *version, const char *dateShort);
 
     /**
-    * @brief Clears the screen (e.g. before the idle animation).
+     * @brief Clears the screen (e.g. before the idle animation).
      */
     static void clear();
-
 
     /**
      * @brief Zeigt eine Fehlermeldung zentriert an (z.B. bei unbekanntem Tag).
@@ -103,10 +99,21 @@ public:
      * @param FOREGROUND_COLOR Textfarbe
      * @param BACKGROUND_COLOR Hintergrundfarbe
      */
-    static void showErrorCentered(const String& msg, const int FOREGROUND_COLOR = TFT_RED, const int BACKGROUND_COLOR = TFT_BLACK);
+    static void showErrorCentered(const String &msg, const int FOREGROUND_COLOR = TFT_RED, const int BACKGROUND_COLOR = TFT_BLACK);
 
-    static int getMaxTextSize(const String& text, int maxWidth, int maxSize);
+    static int getMaxTextSize(const String &text, int maxWidth, int maxSize);
+
+    static String getDisplayVariant()
+    {
+#if DISPLAY_TYPE == DISPLAY_TYPE_SH1106
+        return "sh1106";
+#elif DISPLAY_TYPE == DISPLAY_TYPE_ST7789
+        return "st7789";
+#else
+        return "unknown";
+#endif
+    }
 
 private:
-    static DisplayType* _display;
+    static DisplayType *_display;
 };

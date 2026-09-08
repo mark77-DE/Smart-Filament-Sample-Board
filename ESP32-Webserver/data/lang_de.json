@@ -184,7 +184,10 @@
     "txt_uploading_fw": "Firmware wird hochgeladen...",
     "txt_uploading_fs": "Filesystem wird hochgeladen...",
     "txt_unknown": "Unbekannt",
-    "txt_update_check_interval": "Intervall für Update-Checks (Minuten):"
+    "txt_update_check_interval": "Intervall für Update-Checks (Minuten):",
+    "txt_filename": "Benötigte Datei:",
+    "txt_display_type": "Display Typ:",
+    "txt_latest_version": "Neueste Version:"
 
   }
 
