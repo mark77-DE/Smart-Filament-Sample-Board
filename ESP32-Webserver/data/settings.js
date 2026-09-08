@@ -40,6 +40,7 @@ const infoHostname = document.getElementById("infoHostname");
 const infoGitHash = document.getElementById("infoGitHash");
 const infoBuildDate = document.getElementById("infoBuildDate");
 const infoConfigVersion = document.getElementById("infoConfigVersion");
+const infoDisplayType = document.getElementById("infoDisplayType");
 const infoHeapSize = document.getElementById("infoHeapSize");
 const infoFreeHeap = document.getElementById("infoHeapFree");
 const infoSketchSize = document.getElementById("infoSketchSize");
@@ -47,6 +48,9 @@ const infoFreeSketch = document.getElementById("infoFreeSketch");
 const infoSpiffsSize = document.getElementById("infoSpiffsSize");
 const infoFreeSpiffs = document.getElementById("infoFreeSpiffs");
 const infoBoardVariant = document.getElementById("infoBoardVariant");
+const updateFilename = document.getElementById("updateFilename");
+const linkElement = document.getElementById("myLink");
+const updateAvailableDiv = document.getElementById("updateAvailable");
 
 const ledHardwareTypeSelect = document.getElementById("ledHardwareTypeSelect");
 const ledHardwareColorOrderSelect = document.getElementById("ledHardwareColorOrderSelect");
@@ -114,6 +118,8 @@ const section = document.getElementById("sectionSettings");
 
 const updateCheckIntervalInput = document.getElementById("updateCheckInterval");
 const updateIntervalHumanTxt = document.getElementById("updateIntervalHuman");
+
+const latestFirmwareVersion = document.getElementById("latestFirmwareVersion");
 
 const infoCpuTempInfo = document.getElementById("infoCpuTemp");
 
@@ -217,7 +223,7 @@ function connectWebSocket() {
     };
 
     socket.onerror = () => {
-        try { socket.close(); } catch {}
+        try { socket.close(); } catch { }
     };
 }
 
@@ -318,25 +324,46 @@ async function handleWSMessage(ev) {
     // ----------------- Check heartbeat -----------------
     if (data.action === "heartbeat") {
 
-    wsLastHeartbeat = Date.now();
+        wsLastHeartbeat = Date.now();
 
-    if (!wsWatchdogTimer) {
-        startWSWatchdog(); // erst nach erstem Heartbeat
+        if (!wsWatchdogTimer) {
+            startWSWatchdog(); // erst nach erstem Heartbeat
+        }
+
+        updateWSStatus(true);
+        updateRssiDisplay(data.wifi_rssi);
+        infoCpuTempInfo.textContent = data.cpu_temp_c.toFixed(1) + " °C";
+        infoFreeHeap.textContent = data.heap_free + " bytes";
+        infoUptime.textContent = formatUptime(data.uptime_ms);
+
+        let updateAvailable = data.updateAvailable || false;
+
+        if (updateAvailable && data.latestVersion) {
+            showUpdateNotification(data);
+
+            //https://github.com/mark77-DE/Smart-Filament-Sample-Board/releases/download/v0.4.9/esp32-s3-st7789-firmware.bin
+
+            let baselineUrl = "https://github.com/mark77-DE/Smart-Filament-Sample-Board/releases/download/";
+            let filename = updateFilename.textContent || "error";
+            let url = baselineUrl + data.latestVersion + "/" + filename;
+
+            linkElement.href = url;
+            linkElement.textContent = "Download_" + data.latestVersion;
+
+            updateAvailableDiv.style.display = "block";
+
+        }
+
+
+
+
+
+        if (CONFIGV2?.system?.debugMode) {
+            console.log("Heartbeat:", data);
+        }
+
+        return;
     }
-
-    updateWSStatus(true);
-    updateRssiDisplay(data.wifi_rssi);
-    infoCpuTempInfo.textContent = data.cpu_temp_c.toFixed(1) + " °C";
-    infoFreeHeap.textContent = data.heap_free + " bytes";
-    infoUptime.textContent = formatUptime(data.uptime_ms);
-
-
-    if (CONFIGV2?.system?.debugMode) {
-        console.log("Heartbeat:", data);
-    }
-
-    return;
-}
 
     // ----------------- UID Logik -----------------
     if (!data.uid) {
@@ -365,7 +392,7 @@ async function handleWSMessage(ev) {
             lastHighlightedRow = row;
 
             row.scrollIntoView({ behavior: "smooth", block: "center" });
-            
+
 
             row.parentNode.classList.remove("row-highlight");
 
@@ -374,29 +401,29 @@ async function handleWSMessage(ev) {
             void row.parentNode.offsetWidth;
 
             row.parentNode.classList.add("row-highlight");
-            
+
 
         }
     });
 
     if (!highlighted) {
 
-    if (!scannedTags.has(data.uid)) {
+        if (!scannedTags.has(data.uid)) {
 
-        scannedTags.add(data.uid);
+            scannedTags.add(data.uid);
 
-        const option = document.createElement("option");
-        option.value = data.uid;
-        option.textContent = `${numberNewUID++}: ${data.uid}`;
+            const option = document.createElement("option");
+            option.value = data.uid;
+            option.textContent = `${numberNewUID++}: ${data.uid}`;
 
-        newTagsSelect.appendChild(option);
-        newTagsSelect.value = data.uid;
+            newTagsSelect.appendChild(option);
+            newTagsSelect.value = data.uid;
+
+        }
 
     }
 
-}
 
-    
 }
 
 
@@ -433,19 +460,19 @@ document.getElementById("importAllForm").addEventListener("submit", async e => {
     const text = await fileInput.files[0].text();
     try {
         const res = await fetch("/api/importAll", { method: "POST", headers: { "Content-Type": "application/json" }, body: text });
-        if (res.ok) { 
+        if (res.ok) {
             alert(t("txt_import_success"));
 
             await loadFilaments();
             await renderTable();
             updateAddFormSamples();
-            await loadConfig_V2(); 
+            await loadConfig_V2();
         }
-        else { 
-            alert(t("txt_import_failed") + ": " + await res.text()); 
+        else {
+            alert(t("txt_import_failed") + ": " + await res.text());
         }
-    } catch (err) { 
-        alert(t("txt_import_failed") + ": " + err); 
+    } catch (err) {
+        alert(t("txt_import_failed") + ": " + err);
     }
 });
 
@@ -563,7 +590,7 @@ async function renderTable() {
     let html = '<div id="table">';
 
     data.forEach((e, idx) => {
-    html += `
+        html += `
         <div class="itemBlock">
 
             <!-- Hauptzeile -->
@@ -664,30 +691,30 @@ async function renderTable() {
     const mqtt = CONFIGV2.mqttConfig || {};
 
     debugToggle.checked = !!(sys.debugMode);
-    
+
     await loadHelpAndLang(CONFIGV2.system.defaultLanguage); // default language
     selectLanguageSelect.value = CONFIGV2.system.defaultLanguage;
     setupLangSwitcher('langSelect');
     // Insert help icons
     injectHelpIcons();
-    
 
-    
-    
+
+
+
 
     // --- Werte setzen ---
 
     // --- LED Hardware ---
-const ledHardware = CONFIGV2.ledHardware || {};
+    const ledHardware = CONFIGV2.ledHardware || {};
 
-if (ledHardwareTypeSelect) {
-    ledHardwareTypeSelect.value = ledHardware.type ?? "WS2812B";
-}
+    if (ledHardwareTypeSelect) {
+        ledHardwareTypeSelect.value = ledHardware.type ?? "WS2812B";
+    }
 
-if (ledHardwareColorOrderSelect) {
-    ledHardwareColorOrderSelect.value = ledHardware.order ?? "GRB";
-}
-    
+    if (ledHardwareColorOrderSelect) {
+        ledHardwareColorOrderSelect.value = ledHardware.order ?? "GRB";
+    }
+
 
     ledBrightnessInput.value = ledValueToPercent(led.brightness ?? 99);
     nfcLedBrightnessInput.value = ledValueToPercent(nfc.brightness ?? 99);
@@ -758,42 +785,42 @@ if (ledHardwareColorOrderSelect) {
     // --- Hostsettings ---
     if (hostnameInput) hostnameInput.value = sys.hostname ?? "hostname";
     if (daynightToggle) daynightToggle.checked = !sys.darkmode ?? true;
-    
+
     document.body.classList.toggle("daymode", daynightToggle.checked);
 
 
     // --- System ---
     if (updateCheckIntervalInput) updateCheckIntervalInput.value = sys.updateCheckInterval ?? 60;
     updateIntervalDisplay();
-    
-    
+
+
 
     // initial update
 
-// Alle contenteditable mit data-max
-document.querySelectorAll('span[contenteditable][data-max]').forEach(el => {
-    updateCharsLeft(el); // initial
+    // Alle contenteditable mit data-max
+    document.querySelectorAll('span[contenteditable][data-max]').forEach(el => {
+        updateCharsLeft(el); // initial
 
 
-    el.addEventListener('input', () => {
-        const max = parseInt(el.dataset.max || "60");
+        el.addEventListener('input', () => {
+            const max = parseInt(el.dataset.max || "60");
 
-        // trim excess characters
-        if (el.textContent.length > max) {
-            el.textContent = el.textContent.slice(0, max);
+            // trim excess characters
+            if (el.textContent.length > max) {
+                el.textContent = el.textContent.slice(0, max);
 
-            // move cursor to end
-            const range = document.createRange();
-            const sel = window.getSelection();
-            range.selectNodeContents(el);
-            range.collapse(false);
-            sel.removeAllRanges();
-            sel.addRange(range);
-        }
+                // move cursor to end
+                const range = document.createRange();
+                const sel = window.getSelection();
+                range.selectNodeContents(el);
+                range.collapse(false);
+                sel.removeAllRanges();
+                sel.addRange(range);
+            }
 
-        updateCharsLeft(el); // live aktualisieren
+            updateCharsLeft(el); // live aktualisieren
+        });
     });
-});
 
 
 }
@@ -882,7 +909,7 @@ async function saveConfigHandler() {
     const darkmode = !daynightToggle.checked;
     const defaultLanguage = selectLanguageSelect.value;
     const animationAfterBoot = animationAfterBootInput.checked;
-    
+
 
     // --- NFC ---
     const nfcLedCount = Number(document.getElementById("nfcMaxLED").value);
@@ -1127,7 +1154,7 @@ function initColorPresets() {
 function disableButton() {
     if (buttonEnabledInput.checked) {
         buttonEnabledDiv.classList.remove("disabled");
-    } else {        
+    } else {
         buttonEnabledDiv.classList.add("disabled");
     }
 }
@@ -1323,11 +1350,11 @@ function updateRssiIcon(rssi) {
     }
 
     bars.forEach(bar => {
-        bar.classList.remove("red","orange","green");
+        bar.classList.remove("red", "orange", "green");
         bar.classList.add(color); // color = "red"|"orange"|"green"
     });
 
-   
+
 }
 
 
@@ -1337,12 +1364,12 @@ async function getVersion() {
         .then(r => r.json())
         .then(data => {
 
-                    
+
             document.getElementById("fwVersion").textContent = "FW-Version: " + data.firmware;
             document.getElementById("build_date").textContent = "Build date: " + data.build_date_short;
 
             BOARD_VARIANT = data.boardVariant; // globally available to other functions
-    
+
             infoChipName.textContent = data.chipName;
             infoBoardVariant.textContent = data.boardVariant;
             infoCores.textContent = data.cores;
@@ -1352,12 +1379,16 @@ async function getVersion() {
             infoGitHash.textContent = data.git_hash;
             infoBuildDate.textContent = data.build_date;
             infoConfigVersion.textContent = data.config_version;
+            infoDisplayType.textContent = data.display_type;
+
+            updateFilename.textContent = data.update_filename;
+
 
 
             infoHostname.textContent = data.hostname;
 
             infoHeapSize.textContent = data.heap_size + " bytes";
-            
+
             infoSketchSize.textContent = data.sketch_size + " bytes";
             infoFreeSketch.textContent = data.free_sketch + " bytes";
             infoSpiffsSize.textContent = data.spiffs_size + " bytes";
@@ -1377,7 +1408,7 @@ async function getVersion() {
             infoNfcFwVer.textContent = data.nfc_fwVerMajor + "." + data.nfc_fwVerMinor;
             infoNfcChipId.textContent = data.nfc_chipID;
 
-            
+
 
         })
         .catch(err => console.error("Version fetch failed:", err));
@@ -1512,13 +1543,13 @@ daynightToggle.addEventListener("change", function () {
 buzzerEnabledInput.addEventListener("change", function () {
 
     disableBuzzer();
-   
 
-    });
+
+});
 
 buttonEnabledInput.addEventListener("change", function () {
     disableButton();
-   
+
 });
 
 
@@ -1575,7 +1606,7 @@ function updateCharsLeft(el) {
 
     const max = parseInt(el.dataset.max || "60");
     el.dataset.charsLeft = max - (el.textContent?.length || 0);
-    
+
 }
 
 function updateCharsLeftInput(el) {
@@ -1629,13 +1660,13 @@ function formatMinutesHuman(minutes) {
     minutes = Number(minutes);
     if (isNaN(minutes) || minutes <= 0) return "";
 
-    const days  = Math.floor(minutes / 1440);
+    const days = Math.floor(minutes / 1440);
     const hours = Math.floor((minutes % 1440) / 60);
-    const mins  = minutes % 60;
+    const mins = minutes % 60;
 
     let parts = [];
 
-    
+
 
     if (days > 0) {
         parts.push(`${days} ${days === 1 ? t("txt_day") : t("txt_day_plural")}`);
@@ -1654,7 +1685,7 @@ function formatMinutesHuman(minutes) {
 
 function updateIntervalDisplay() {
     updateIntervalHumanTxt.textContent = formatMinutesHuman(updateCheckIntervalInput.value);
-    
+
 }
 
 // Events
@@ -1696,18 +1727,28 @@ function updateLedColorOrderOptions() {
     }
 }
 
+function showUpdateNotification(msg) {
+
+    const updateDiv = document.getElementById('updateStatus');
+    updateDiv.textContent = `⚠️ Update available: ${msg.latestVersion}`;
+    updateDiv.style.color = 'orange';
+
+}
+
+
+
 
 // -------------------- Init --------------------
 async function init() {
 
     connectWebSocket();
-    
+
     await loadConfig_V2();
     await loadFilaments();
-    
+
     await renderTable();
     updateAddFormSamples();
-   
+
     updateImportUI();
     initColorPresets();
     disableButton();
@@ -1716,11 +1757,11 @@ async function init() {
     await getVersion();
     await getPinout();
 
-    
+
     updateLedColorOrderOptions();
 
     document.querySelectorAll('#addForm input[data-max]').forEach(el => updateCharsLeft(el));
-    
+
     updateIntervalDisplay();
 
 

@@ -24,6 +24,8 @@ extern bool displayIdleShown;
 
 extern bool DEBUG_MODE;
 
+extern String LATEST_FIRMWARE_VERSION;
+
 enum class UidSource {
     NFC,
     WEBIF
