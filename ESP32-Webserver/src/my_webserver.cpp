@@ -295,14 +295,14 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
     // LittleFS mounten
     if (!LittleFS.begin(true))
     { // true = format if mount fails
-        Serial.println("LittleFS mount failed!");
+        Serial.println("[LittleFS] mount failed!");
     }
     else
     {
-        Serial.println("LittleFS mounted successfully!");
-        Serial.print("Total Bytes: ");
+        Serial.println("[LittleFS] mounted successfully!");
+        Serial.print("  [LittleFS] Total Bytes: ");
         Serial.println(LittleFS.totalBytes());
-        Serial.print("Used Bytes:  ");
+        Serial.print("  [LittleFS] Used Bytes:  ");
         Serial.println(LittleFS.usedBytes());
     }
 

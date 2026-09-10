@@ -527,9 +527,9 @@ void setup()
 
   Serial.println();
   Serial.println();
-  Serial.println("*********************");
-  Serial.println("*  Setup complete!  *");
-  Serial.println("*********************");
+  Serial.println("*****************************************");
+  Serial.println("*  Setup complete, enjoy your samples!  *");
+  Serial.println("*****************************************");
   Serial.println();
   Serial.println();
 }
