@@ -71,7 +71,7 @@
             <!-- Main row -->
             <div class="rowMain">
 
-              
+
 
                 <span id="newTagsBox">
                     <label>UID</label>
@@ -882,22 +882,27 @@
                         <div class="cardHeader"><span data-i18n="txt_update_settings">Update</span></div>
                         <div class="formGrid">
 
-                            <div class="ieTitle">Firmware update</div>
                             <div class="exportHint" data-i18n="txt_warning_firmware"></div>
+
+                            <!-- Manual Firmware Update Section -->
+
+                            <div class="ieTitle">Manual firmware update</div>
+
                             <div id="fwUpdateSection">
 
                                 <div class="updateFilenameSpan">
-                                        <span id="updateFilenameLabel" data-i18n="txt_filename">Filename</span>
-                                        <span id="updateFilename"></span>
+                                    <span id="updateFilenameLabel" data-i18n="txt_filename">Filename</span>
+                                    <span id="updateFilename"></span>
                                 </div>
 
                                 <div id="updateAvailable">
                                     <span id="latestFirmwareVersionLabel" data-i18n="txt_latest_version">unknown</span>
-                                    <span id="latestFirmwareVersion"><a id="myLink" href="#" target="_blank">Download</a></span>
+                                    <span id="latestFirmwareVersion"><a id="myLink" href="#"
+                                            target="_blank">Download</a></span>
                                 </div>
 
                                 <form id="uploadForm">
-                                    
+
                                     <label for="firmwareFile" class="primaryBtn" data-i18n="txt_select_file">Choose
                                         file</label>
                                     <span id="fwFileName" class="fileName" data-i18n="txt_no_file_selected">no file
@@ -908,12 +913,29 @@
                                 </form>
                             </div>
 
-                            
+                            <!-- Automatic Firmware Update Section -->
+
+
+                            <div class="ieTitle">Automatic firmware update</div>
+                            <div id="selfUpdateStatus" data-i18n="txt_self_update_status">No new version available</div>
+                            <div id="selfUpdateSection">
+
+                                <button id="selfUpdateBtn" type="button" class="primaryBtn" onclick="startSelfUpdate()"
+                                    data-i18n="btn_start_self_update">Start Self Update</button>
+
+                            </div>
+
+
                             <div class="ieTitle">Status</div>
                             <div id="statusSection">
                                 <span>
                                     <pre id="statusTxt"></pre>
                                 </span>
+                                <div id="statusProgress" class="progress-wrap" style="display:none;">
+                                    <div id="statusProgressBar" class="progress-bar"></div>
+                                    <span id="statusProgressLabel" class="progress-label">0%</span>
+                                </div>
+
                             </div>
 
                             <div class="ieTitle">Update Check Interval</div>

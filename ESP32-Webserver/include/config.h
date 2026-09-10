@@ -109,6 +109,7 @@ struct systemConfig {
   bool          animationAfterBoot; ///< Startup animation after boot enabled
   String        defaultLanguage; ///< Default language (e.g. "en" or "de")
   uint32_t      updateCheckInterval; ///< Seconds until reboot after long press
+  String        timezone;   // POSIX-TZ-String, example "CET-1CEST,M3.5.0,M10.5.0/3"
 };
 
 /**
@@ -219,9 +220,13 @@ bool migrateConfigV2(TCfg& cfg)
         ver = "2.0";
         changed = true;
     }
-    if (ver == "2.0") {
+    if (ver == "2.1") {
         // Next step later
-        Serial.println(F("[MIGRATION] 2.0 -> 2.2"));
+        //CONFIGV2.system.timezone = sys["timezone"] | CONFIGV2.system.timezone;
+        if (cfg["system"]["timezone"].isNull()) {
+            cfg["system"]["timezone"] = "CET-1CEST,M3.5.0,M10.5.0/3";
+        }
+        Serial.println(F("[MIGRATION] 2.1 -> 2.2"));
         ver = "2.2";
         changed = true;
     }

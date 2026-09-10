@@ -15,6 +15,9 @@
 #include "version_info.h"
 #include "config.h"
 #include "pins.h"
+#include "update_manager.h"
+#include "display/display_anim.h"
+
 
 DisplayType* MYDISPLAY::_display = nullptr;
 
@@ -323,7 +326,7 @@ void MYDISPLAY::showCentered(const String& msg, const int FOREGROUND_COLOR, cons
 // ------------------------------------------------------------
 // Two centered lines (existing API explicitly available again)
 // ------------------------------------------------------------
-void MYDISPLAY::showCenteredTwoLines(const String& line1, const String& line2) {
+void MYDISPLAY::showTwoLinesCentered(const String& line1, const String& line2) {
   if (!_display) return;
 
   _display->clearDisplay();
@@ -462,7 +465,70 @@ void MYDISPLAY::clear() {
 }
 
 
+namespace {
+    bool          s_selfUpdateActive   = false;
+    bool          s_finishedShown      = false;
+    bool          s_finishedHandled    = false;   // NEU: verhindert Re-Trigger
+    unsigned long s_finishedAt         = 0;
 
+    uint8_t       s_lastProgress       = 255;
+    String        s_lastMessage        = "";
+}
+
+static const unsigned long SELF_UPDATE_RESULT_HOLD_MS = 10000;
+
+void MYDISPLAY::renderSelfUpdateStatus(const SelfUpdateStatus& status) {
+
+    // Neuer Update-Lauf erkannt (running wieder true) -> alles zurücksetzen
+    if (status.running) {
+        s_finishedHandled = false;
+    }
+
+    // Kein Update aktiv, keins (unbehandelt) abgeschlossen -> nichts zu tun
+    if (!status.running && (!status.finished || s_finishedHandled)) {
+        s_selfUpdateActive = false;
+        s_finishedShown    = false;
+        return;
+    }
+
+    if (!s_selfUpdateActive) {
+        DisplayAnim::stop();
+        s_selfUpdateActive = true;
+        s_lastProgress = 255;
+        s_lastMessage  = "";
+    }
+
+    // ---- Abschluss (Erfolg/Fehler) ----
+    if (status.finished && !s_finishedHandled) {
+        if (!s_finishedShown) {
+            if (status.success) {
+                showThreeLinesCentered(F("FW update"), F("success"), F("rebooting"));
+            } else {
+                showTwoLinesCentered(F("FW update"), F("failed"));
+            }
+            s_finishedShown = true;
+            s_finishedAt    = millis();
+        }
+
+        if (millis() - s_finishedAt >= SELF_UPDATE_RESULT_HOLD_MS) {
+            s_finishedHandled  = true;   // wichtig: dieses Ereignis ist jetzt "verbraucht"
+            s_finishedShown    = false;
+            s_selfUpdateActive = false;
+            DisplayAnim::startIdle(millis());
+        }
+        return;
+    }
+
+    // ---- Läuft noch: Progress anzeigen ----
+    if (status.progress != s_lastProgress || status.message != s_lastMessage) {
+        char pct[8];
+        snprintf(pct, sizeof(pct), "%u%%", status.progress);
+        showThreeLinesCentered(F("FW update"), status.message.c_str(), String(pct));
+
+        s_lastProgress = status.progress;
+        s_lastMessage  = status.message;
+    }
+}
 
 
 

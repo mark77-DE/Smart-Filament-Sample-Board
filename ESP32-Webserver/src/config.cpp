@@ -79,6 +79,7 @@ bool loadConfigV2()
     CONFIGV2.system.animationAfterBoot = sys["animationAfterBoot"] | true;
     CONFIGV2.system.defaultLanguage = sys["defaultLanguage"] | "en";
     CONFIGV2.system.updateCheckInterval = sys["updateCheckInterval"] | 3; // default 3 Minuten
+    CONFIGV2.system.timezone = sys["timezone"] | "CET-1CEST,M3.5.0,M10.5.0/3"; //default germany
 
     // --- LED-Hardware ---
     const char *ledType = ledHardware["type"] | "WS2812B";
@@ -296,8 +297,11 @@ void applyConfigV2()
 
     if (CONFIGV2.system.debugMode)
     {
-        Serial.println(F("--------------------"));
-        Serial.println(F("Config V2 applied:"));
+        Serial.println();
+        Serial.println(F("#----------------------#"));
+        Serial.println(F("|  Config V2 applied:  |"));
+        Serial.println(F("#----------------------#"));
+
 
         Serial.println();
         Serial.println(F("System Settings:"));
@@ -317,6 +321,8 @@ void applyConfigV2()
         Serial.println(CONFIGV2.system.defaultLanguage);
         Serial.print(F(" UPDATE_CHECK_INTERVAL = "));
         Serial.println(CONFIGV2.system.updateCheckInterval);
+        Serial.println(F(" TIMEZONE = "));
+        Serial.print(CONFIGV2.system.timezone);
 
         Serial.println();
         Serial.println(F("LED Hardware Settings:"));
@@ -422,7 +428,10 @@ void applyConfigV2()
         Serial.print(F(" MQTT HA Discovery Prefix="));
         Serial.println(CONFIGV2.mqttConfig.haDiscoveryPrefix);
 
-        Serial.println(F("--------------------"));
+        Serial.println(F("#-------------------------#"));
+        Serial.println(F("|  Config V2 applied end  |"));
+        Serial.println(F("#-------------------------#"));
+        Serial.println();
         Serial.println();
     }
 }
@@ -445,6 +454,8 @@ bool updateConfigFromJsonV2(JsonDocument &doc)
         CONFIGV2.system.animationAfterBoot = sys["animationAfterBoot"] | CONFIGV2.system.animationAfterBoot;
         CONFIGV2.system.defaultLanguage = sys["defaultLanguage"] | CONFIGV2.system.defaultLanguage;
         CONFIGV2.system.updateCheckInterval = sys["updateCheckInterval"] | CONFIGV2.system.updateCheckInterval;
+        CONFIGV2.system.timezone = sys["timezone"] | CONFIGV2.system.timezone;
+
 
         Serial.println(F("System configuration updated:"));
         Serial.print(F("Hostname set to: "));
@@ -816,6 +827,7 @@ bool saveConfigV2()
     system["hostname"] = CONFIGV2.system.hostname;
     system["defaultLanguage"] = CONFIGV2.system.defaultLanguage;
     system["updateCheckInterval"] = CONFIGV2.system.updateCheckInterval;
+    system["timezone"] = CONFIGV2.system.timezone;
 
     // =========================
     // LED-Hardware
@@ -966,6 +978,7 @@ bool importConfigJsonV2(JsonObject src)
         CONFIGV2.system.animationAfterBoot = system["animationAfterBoot"] | CONFIGV2.system.animationAfterBoot;
         CONFIGV2.system.defaultLanguage = system["defaultLanguage"] | CONFIGV2.system.defaultLanguage;
         CONFIGV2.system.updateCheckInterval = system["updateCheckInterval"] | CONFIGV2.system.updateCheckInterval;
+        CONFIGV2.system.timezone = system["timezone"] | CONFIGV2.system.timezone;
 
         if (CONFIGV2.system.debugMode)
         {
@@ -982,6 +995,8 @@ bool importConfigJsonV2(JsonObject src)
             Serial.println(CONFIGV2.system.animationAfterBoot ? F("true") : F("false"));
             Serial.print(F("  Default Language: "));
             Serial.println(CONFIGV2.system.defaultLanguage);
+            Serial.println(F("  TIMEZONE: "));
+            Serial.print(CONFIGV2.system.timezone);
         }
     }
 

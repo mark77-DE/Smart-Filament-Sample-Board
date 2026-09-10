@@ -5,6 +5,7 @@
 #include "display_config.h"
 #include "globals.h"
 #include "version_info.h"
+#include "update_manager.h"
 
 void displayInit();
 void displayClear();
@@ -61,7 +62,7 @@ public:
      * @param line1 Erste Zeile
      * @param line2 Zweite Zeile
      */
-    static void showCenteredTwoLines(const String &line1, const String &line2);
+    static void showTwoLinesCentered(const String &line1, const String &line2);
 
     /**
      * @brief Shows three centered lines (new, for reboot countdown).
@@ -113,6 +114,11 @@ public:
         return "unknown";
 #endif
     }
+
+
+    static void renderSelfUpdateStatus(const SelfUpdateStatus& status);
+
+
 
 private:
     static DisplayType *_display;

@@ -1,10 +1,6 @@
 // -------------------- Global references --------------------
 const MAX_LENGTH = 30; // Maximum character count for vendor and color
 
-
-
-
-
 const dbDiv = document.getElementById("db");
 const addForm = document.getElementById("addForm");
 const wsStatus = document.getElementById("wsStatus");
@@ -54,7 +50,6 @@ const updateAvailableDiv = document.getElementById("updateAvailable");
 
 const ledHardwareTypeSelect = document.getElementById("ledHardwareTypeSelect");
 const ledHardwareColorOrderSelect = document.getElementById("ledHardwareColorOrderSelect");
-
 
 const ledBrightnessInput = document.getElementById("ledBrightness");
 const maxLEDInput = document.getElementById("maxLED");
@@ -116,8 +111,19 @@ const importBtn = document.getElementById("importBtn");
 const toggleBtn = document.getElementById("toggleSettings");
 const section = document.getElementById("sectionSettings");
 
+const fwUpdateSection = document.getElementById("fwUpdateSection");
 const updateCheckIntervalInput = document.getElementById("updateCheckInterval");
 const updateIntervalHumanTxt = document.getElementById("updateIntervalHuman");
+
+const selfUpdateSectionDiv = document.getElementById("selfUpdateSection");
+
+const selfUpdateBtn = document.getElementById("selfUpdateBtn");
+const statusProgressSpan = document.getElementById("statusProgress");
+const selfUpdateStatusDiv = document.getElementById("selfUpdateStatus");
+
+const statusProgressWrap = document.getElementById("statusProgress");
+const statusProgressBar = document.getElementById("statusProgressBar");
+const statusProgressLabel = document.getElementById("statusProgressLabel");
 
 const latestFirmwareVersion = document.getElementById("latestFirmwareVersion");
 
@@ -352,9 +358,44 @@ async function handleWSMessage(ev) {
 
             updateAvailableDiv.style.display = "block";
 
+
+
+            //self update status defaults
+            // g_selfUpdateStatus.running = true;
+            // g_selfUpdateStatus.finished = false;
+            // g_selfUpdateStatus.success = false;
+            // g_selfUpdateStatus.progress = 0;
+            // g_selfUpdateStatus.message = "Starting firmware update";
+
+
+
+            selfUpdateSectionDiv.style.display = "block";
+            statusProgressSpan.style.display = "block";
+
+            statusTxt.textContent = data.selfUpdateMessage || "";
+
+            if (data.selfUpdateProgress >= 0) {
+
+                statusProgressSpan.textContent = "Progress: " + data.selfUpdateProgress + "%";
+                statusProgressWrap.style.display = "block";
+                statusProgressBar.style.width = data.selfUpdateProgress + "%";
+                statusProgressLabel.textContent = data.selfUpdateProgress + "%";
+
+            } else {
+                statusProgressSpan.textContent = "";
+                statusProgressWrap.style.display = "none";
+            }
+
+
+        } else {
+
+            updateAvailableDiv.style.display = "none";
+            selfUpdateStatusDiv.textContent = "No new version available";
+            statusProgressSpan.style.display = "none";
+            selfUpdateSectionDiv.style.display = "none";
+            fwUpdateSection.style.display = "block";
+
         }
-
-
 
 
 
@@ -1732,10 +1773,32 @@ function showUpdateNotification(msg) {
     const updateDiv = document.getElementById('updateStatus');
     updateDiv.textContent = `⚠️ Update available: ${msg.latestVersion}`;
     updateDiv.style.color = 'orange';
+    selfUpdateStatusDiv.textContent = `⚠️ Update available: ${msg.latestVersion}`;
 
 }
 
+function startSelfUpdate() {
 
+    fetch("/api/selfUpdate", { method: "POST" })
+        .then(res => {
+            if (res.ok) {
+                statusTxt.style.color = "blue";
+                fwUpdateSection.style.display = "none";
+            } else {
+                statusTxt.textContent = "Update failed to start.";
+                statusTxt.style.color = "red";
+                fwUpdateSection.style.display = "block";
+            }
+        })
+        .catch(err => {
+            console.error("Self-update request failed:", err);
+            statusTxt.textContent = "Update request failed.";
+            statusTxt.style.color = "red";
+            fwUpdateSection.style.display = "block";
+        });
+
+
+}
 
 
 // -------------------- Init --------------------

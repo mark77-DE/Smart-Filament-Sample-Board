@@ -221,7 +221,15 @@ void MYDISPLAY::showErrorCentered(
 }
 
 
+// display_oled.cpp
+namespace {
+    bool s_selfUpdateActive = false;   // merkt sich, ob wir gerade "im Update-Modus" sind
+}
 
+void MYDISPLAY::renderSelfUpdateStatus(const SelfUpdateStatus& status) {
+
+    
+}
 
 
 // -----------------------------

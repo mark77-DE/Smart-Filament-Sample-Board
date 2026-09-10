@@ -30,6 +30,9 @@
 #include <HTTPClient.h>
 #include <WiFiClientSecure.h>
 #include "update_manager.h"
+#include "time_manager.h"
+
+#include <esp_heap_caps.h>
 
 constexpr uint32_t SPLASH_CHAR_MS = 35;   // timing for typewriter effect at boot (ms per char)
 constexpr uint32_t SPLASH_LINE_MS = 200;  // extra delay after each line at boot (ms)
@@ -48,20 +51,18 @@ static void printOtaInfo()
   const esp_partition_t *boot = esp_ota_get_boot_partition();
   const esp_partition_t *run = esp_ota_get_running_partition();
 
-  
-
-  if(CONFIGV2.system.debugMode)
+  if (CONFIGV2.system.debugMode)
   {
-      Serial.println();
-      Serial.printf("OTA boot: name=%s addr=0x%06X subtype=0x%02X\n",
-                    boot ? boot->label : "null",
-                    boot ? (unsigned)boot->address : 0,
-                    boot ? (unsigned)boot->subtype : 0);
+    Serial.println();
+    Serial.printf("OTA boot: name=%s addr=0x%06X subtype=0x%02X\n",
+                  boot ? boot->label : "null",
+                  boot ? (unsigned)boot->address : 0,
+                  boot ? (unsigned)boot->subtype : 0);
 
-      Serial.printf("OTA run : name=%s addr=0x%06X subtype=0x%02X\n",
-                    run ? run->label : "null",
-                    run ? (unsigned)run->address : 0,
-                    run ? (unsigned)run->subtype : 0);
+    Serial.printf("OTA run : name=%s addr=0x%06X subtype=0x%02X\n",
+                  run ? run->label : "null",
+                  run ? (unsigned)run->address : 0,
+                  run ? (unsigned)run->subtype : 0);
   }
 
   if (run)
@@ -69,10 +70,10 @@ static void printOtaInfo()
     esp_ota_img_states_t st{};
     if (esp_ota_get_state_partition(run, &st) == ESP_OK)
     {
-      if(CONFIGV2.system.debugMode)
+      if (CONFIGV2.system.debugMode)
       {
-          Serial.printf("OTA state: %d (PENDING_VERIFY=%d)\n",
-                        (int)st, (int)ESP_OTA_IMG_PENDING_VERIFY);
+        Serial.printf("OTA state: %d (PENDING_VERIFY=%d)\n",
+                      (int)st, (int)ESP_OTA_IMG_PENDING_VERIFY);
       }
     }
   }
@@ -195,8 +196,6 @@ void renderRebootCountdown(unsigned long nowMs)
     inReboot = true;
     lastSec = 0xFFFFFFFF;
 
-    
-
     if (rebootReason)
     {
       LEDCTRL_NFC::showSuccess();       // NFC ring immediately green (solid)
@@ -216,12 +215,6 @@ void renderRebootCountdown(unsigned long nowMs)
         Serial.println("Reboot countdown: ERROR or user reboot");
       }
     }
-
-
-
-
-
-
   }
 
   // Hold presence so solid/error does not time out
@@ -399,17 +392,15 @@ void setup()
 
   g_sysInfo = getSysInfo();
 
-  if(CONFIGV2.system.debugMode)
+  if (CONFIGV2.system.debugMode)
   {
-      printChipInfo();
+    printChipInfo();
   }
 
   loadConfigV2();
 
-  
-
   applyConfigV2();
-  
+
   I18N::begin(CONFIGV2.system.defaultLanguage);
 
   LEDCTRL_FILAMENT::allOff();
@@ -433,7 +424,7 @@ void setup()
   if (CONFIGV2.system.hostname.length() > 0)
   {
     WiFi.setHostname(CONFIGV2.system.hostname.c_str()); // <- hier
-    Serial.printf("Hostname: %s\n", CONFIGV2.system.hostname.c_str());
+    Serial.printf("[Hostname]: %s\n", CONFIGV2.system.hostname.c_str());
   }
 
   // Optional: neutral display while autoConnect() decides (router vs. AP portal).
@@ -464,6 +455,9 @@ void setup()
     }
   }
 
+  // init network time
+  TimeManager::init();
+
   // init MQTT
   if (CONFIGV2.mqttConfig.enabled)
   {
@@ -476,9 +470,9 @@ void setup()
   }
   else
   {
-    if(CONFIGV2.system.debugMode)
+    if (CONFIGV2.system.debugMode)
     {
-        Serial.println("MQTT is disabled, skipping initialization.");
+      Serial.println("MQTT is disabled, skipping initialization.");
     }
   }
 
@@ -506,21 +500,21 @@ void setup()
                                        SPLASH_CHAR_MS, SPLASH_LINE_MS, SPLASH_HOLD_MS);
 
   // 7) PN532 JETZT initialisieren (kann im Fehlerfall aufs Display schreiben)
-uint32_t version = NFC::init(&nfc); // begin() + SAMConfig(), FW wird intern geloggt
+  uint32_t version = NFC::init(&nfc); // begin() + SAMConfig(), FW wird intern geloggt
 
-if (!version)
-{
-  MYDISPLAY::showCentered("PN532 FEHLER!");
-  g_nfcInfo.available = false;
-  // while (1) { delay(100); }
-}
-else
-{
-  g_nfcInfo.available  = true;
-  g_nfcInfo.fwVerMajor = (version >> 24) & 0xFF;
-  g_nfcInfo.fwVerMinor = (version >> 16) & 0xFF;
-  g_nfcInfo.chipID     = version & 0xFFFF;
-}
+  if (!version)
+  {
+    MYDISPLAY::showCentered("PN532 FEHLER!");
+    g_nfcInfo.available = false;
+    // while (1) { delay(100); }
+  }
+  else
+  {
+    g_nfcInfo.available = true;
+    g_nfcInfo.fwVerMajor = (version >> 24) & 0xFF;
+    g_nfcInfo.fwVerMinor = (version >> 16) & 0xFF;
+    g_nfcInfo.chipID = version & 0xFFFF;
+  }
 
   // 8) Idle-Animation vorbereiten
   DisplayAnim::startIdleTextFirst(millis());
@@ -530,7 +524,7 @@ else
   // server.addHandler(&ws); // <-- ENTFERNT, Registrierung erfolgt in initWebServer()
   initWebServer(server, ws);
   WiFi.setSleep(false);
-  
+
   Serial.println();
   Serial.println();
   Serial.println("*********************");
@@ -675,7 +669,7 @@ void loop()
   sendHeartbeat(ws);
 
   // ---------------------------------------------------------------------------
-  // 8) Update Check
+  // 8) Update Check -> update_manager.cpp
   // ---------------------------------------------------------------------------
   updateLoop();
   if (updateHasChanged())
@@ -684,8 +678,26 @@ void loop()
     clearUpdateChanged();
   }
 
+  MYDISPLAY::renderSelfUpdateStatus(getSelfUpdateStatus());
+
   // ---------------------------------------------------------------------------
-  // 9) (Optional) yield()
+  // 8) Time Loop -> timemanager.cpp
   // ---------------------------------------------------------------------------
+  TimeManager::loop();
+
+  // ---------------------------------------------------------------------------
+  // LAST) (Optional) yield() und chrash check
+  // ---------------------------------------------------------------------------
+
+  static unsigned long lastHeapCheck = 0;
+  if (millis() - lastHeapCheck > 5000)
+  {
+    lastHeapCheck = millis();
+    if (!heap_caps_check_integrity_all(true))
+    {
+      Serial.println("[HEAP] Corruption detected in periodic check!");
+    }
+  }
+
   yield();
 }
