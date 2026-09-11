@@ -298,9 +298,9 @@ void applyConfigV2()
     if (CONFIGV2.system.debugMode)
     {
         Serial.println();
-        Serial.println(F("#----------------------#"));
-        Serial.println(F("|  Config V2 applied:  |"));
-        Serial.println(F("#----------------------#"));
+        Serial.println(F("#-------------------#"));
+        Serial.println(F("|  apply config_v2  |"));
+        Serial.println(F("#-------------------#"));
 
 
         Serial.println();
