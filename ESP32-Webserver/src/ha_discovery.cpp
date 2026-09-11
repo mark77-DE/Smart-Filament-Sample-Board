@@ -2,6 +2,7 @@
 #include "ha_discovery.h"
 #include "config.h"
 #include "version_info.h"
+#include <WiFi.h> 
 
 void publishHADiscovery(
     PubSubClient &client,

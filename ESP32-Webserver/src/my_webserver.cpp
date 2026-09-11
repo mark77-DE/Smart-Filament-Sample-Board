@@ -19,6 +19,7 @@
 #include "esp_system.h"
 #include "update_manager.h"
 #include "esp_chip_info.h"
+#include <WiFi.h>
 
 File fsFile; // global or outside the lambda in this .cpp
 
@@ -34,10 +35,10 @@ extern void handleUID(const String &uid, UidSource source);
 
 const char *boardVariant = BOARD_VARIANT;
 
-
 // --- Chip-ID Mapping (aus esp_app_format.h) ---
-enum : uint16_t {
-    IMG_CHIP_ESP32   = 0x0000,
+enum : uint16_t
+{
+    IMG_CHIP_ESP32 = 0x0000,
     IMG_CHIP_ESP32S2 = 0x0002,
     IMG_CHIP_ESP32C3 = 0x0005,
     IMG_CHIP_ESP32S3 = 0x0009,
@@ -46,36 +47,55 @@ enum : uint16_t {
     IMG_CHIP_ESP32H2 = 0x0010,
 };
 
-String chipIdToName(uint16_t id) {
-    switch (id) {
-        case IMG_CHIP_ESP32:   return "ESP32";
-        case IMG_CHIP_ESP32S2: return "ESP32-S2";
-        case IMG_CHIP_ESP32C3: return "ESP32-C3";
-        case IMG_CHIP_ESP32S3: return "ESP32-S3";
-        case IMG_CHIP_ESP32C2: return "ESP32-C2";
-        case IMG_CHIP_ESP32C6: return "ESP32-C6";
-        case IMG_CHIP_ESP32H2: return "ESP32-H2";
-        default: return "unbekannt (0x" + String(id, HEX) + ")";
+String chipIdToName(uint16_t id)
+{
+    switch (id)
+    {
+    case IMG_CHIP_ESP32:
+        return "ESP32";
+    case IMG_CHIP_ESP32S2:
+        return "ESP32-S2";
+    case IMG_CHIP_ESP32C3:
+        return "ESP32-C3";
+    case IMG_CHIP_ESP32S3:
+        return "ESP32-S3";
+    case IMG_CHIP_ESP32C2:
+        return "ESP32-C2";
+    case IMG_CHIP_ESP32C6:
+        return "ESP32-C6";
+    case IMG_CHIP_ESP32H2:
+        return "ESP32-H2";
+    default:
+        return "unbekannt (0x" + String(id, HEX) + ")";
     }
 }
 
-uint16_t runningChipId() {
+uint16_t runningChipId()
+{
     esp_chip_info_t info;
     esp_chip_info(&info);
-    switch (info.model) {
-        case CHIP_ESP32:   return IMG_CHIP_ESP32;
-        case CHIP_ESP32S2: return IMG_CHIP_ESP32S2;
-        case CHIP_ESP32C3: return IMG_CHIP_ESP32C3;
-        case CHIP_ESP32S3: return IMG_CHIP_ESP32S3;
-        case CHIP_ESP32C2: return IMG_CHIP_ESP32C2;
-        case CHIP_ESP32C6: return IMG_CHIP_ESP32C6;
-        case CHIP_ESP32H2: return IMG_CHIP_ESP32H2;
-        default: return 0xFFFF;
+    switch (info.model)
+    {
+    case CHIP_ESP32:
+        return IMG_CHIP_ESP32;
+    case CHIP_ESP32S2:
+        return IMG_CHIP_ESP32S2;
+    case CHIP_ESP32C3:
+        return IMG_CHIP_ESP32C3;
+    case CHIP_ESP32S3:
+        return IMG_CHIP_ESP32S3;
+    case CHIP_ESP32C2:
+        return IMG_CHIP_ESP32C2;
+    case CHIP_ESP32C6:
+        return IMG_CHIP_ESP32C6;
+    case CHIP_ESP32H2:
+        return IMG_CHIP_ESP32H2;
+    default:
+        return 0xFFFF;
     }
 }
 
 static bool otaAborted = false;
-
 
 SysInfo getSysInfo()
 {
@@ -275,14 +295,14 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
     // LittleFS mounten
     if (!LittleFS.begin(true))
     { // true = format if mount fails
-        Serial.println("LittleFS mount failed!");
+        Serial.println("[LittleFS] mount failed!");
     }
     else
     {
-        Serial.println("LittleFS mounted successfully!");
-        Serial.print("Total Bytes: ");
+        Serial.println("[LittleFS] mounted successfully!");
+        Serial.print("  [LittleFS] Total Bytes: ");
         Serial.println(LittleFS.totalBytes());
-        Serial.print("Used Bytes:  ");
+        Serial.print("  [LittleFS] Used Bytes:  ");
         Serial.println(LittleFS.usedBytes());
     }
 
@@ -434,7 +454,6 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
 #elif DISPLAY_TYPE == DISPLAY_TYPE_SH1106
 
     doc["display"]["type"] = "SH1106";
-
 
 #else
 
@@ -831,18 +850,16 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
         // optional: Status-JSON zurückgeben
         request->send(200, "application/json", "{\"status\":\"ok\",\"pending\":true}"); });
 
-    server.on("/api/otaUpdate", HTTP_POST,
-    [](AsyncWebServerRequest *req) {
+    server.on("/api/otaUpdate", HTTP_POST, [](AsyncWebServerRequest *req)
+              {
         if (otaAborted) {
             req->send(409, "application/json",
                 "{\"status\":\"error\",\"msg\":\"Update aborted\"}");
         } else {
             req->send(200, "text/plain", "Upload started");
         }
-        otaAborted = false;
-    },
-    nullptr,
-    [](AsyncWebServerRequest *req, uint8_t *data, size_t len, size_t index, size_t total) {
+        otaAborted = false; }, nullptr, [](AsyncWebServerRequest *req, uint8_t *data, size_t len, size_t index, size_t total)
+              {
 
         if (otaAborted) return; // weitere Chunks ignorieren
 
@@ -943,71 +960,24 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
                 req->send(500, "application/json",
                     "{\"status\":\"error\",\"msg\":\"FW update failed\"}");
             }
-        }
-    }
-);
-
-    server.on("/api/uploadFS", HTTP_POST, [](AsyncWebServerRequest *req)
-              { req->send(200, "text/plain", "FS Upload started"); }, nullptr, [](AsyncWebServerRequest *req, uint8_t *data, size_t len, size_t index, size_t total)
-              {
-
-        if (req->hasParam("filename", true)) { // falls dein JS FormData verwendet
-            String fname = req->getParam("filename", true)->value();
-            if(fname != "littlefs.bin"){
-                req->send(400, "text/plain", "Wrong filename! Expected: littlefs.bin");
-                return;
-            }
-        }
-
-
-        if(index == 0){
-            Serial.printf("Starting FS OTA update: %u bytes\n", total);
-            DisplayAnim::stop();
-            MYDISPLAY::showThreeLinesCentered(
-                F("started"),
-                F("FS OTA"),
-                F("update")
-            );
-            if(!Update.begin(total, U_SPIFFS)) {  // <-- U_SPIFFS für FS-OTA
-                Serial.printf("Update begin failed! Error: %d\n", Update.getError());
-                MYDISPLAY::showThreeLinesCentered(
-                    F("FS OTA"),
-                    F("update"),
-                    F("failed")
-                );
-                return;
-            }
-        }
-
-        // Chunk schreiben
-        if(Update.write(data, len) != len){
-            Serial.printf("FS update write failed! Error: %d\n", Update.getError());
-            MYDISPLAY::showThreeLinesCentered(
-                    F("FS OTA"),
-                    F("update"),
-                    F("failed")
-                );
-            return;
-        }
-
-        // Letzter Chunk
-        if (index + len == total) {
-
-            if (Update.end(false)) {   // WICHTIG: false = KEIN automatischer Reboot
-                Serial.println("FS OTA applied successfully");
-
-                req->send(200, "application/json",
-                    "{\"status\":\"ok\",\"msg\":\"FS update successful, rebooting\"}");
-
-                // Reboot auslösen
-                rebootReason = true; // true = success
-                rebootPending = true;
-                rebootAt = millis() + 1000;
-            } else {
-                req->send(500, "application/json",
-                    "{\"status\":\"error\",\"msg\":\"FS update failed\"}");
-            }
         } });
+
+   
+
+    server.on("/api/selfUpdate", HTTP_POST, [](AsyncWebServerRequest *req)
+              {
+    if (startSelfUpdate()) {
+        req->send(200, "application/json",
+            "{\"status\":\"ok\",\"msg\":\"Firmware update started\"}");
+            DisplayAnim::stop();
+            MYDISPLAY::showThreeLinesCentered(F("FW update"), F("started"), F("0%"));
+    } else {
+        req->send(500, "application/json",
+            "{\"status\":\"error\",\"msg\":\"Firmware update could not be started\"}");
+            MYDISPLAY::showThreeLinesCentered(F("FW update"), F("failed"), F("pls reboot"));
+            LEDCTRL_NFC::showError();        // NFC-Ring sofort rot (solid)
+            LEDCTRL_FILAMENT::errorAll();  // Filament: rot (wie gewünscht)
+    } });
 
     // [ORDER-FIX]: Catch-all (ROOT) *zuletzt*, damit nichts Wichtiges davor abgefangen wird
     server.serveStatic("/", LittleFS, "/")
@@ -1034,6 +1004,7 @@ void sendHeartbeat(AsyncWebSocket &ws)
     // Update-Info
     UpdateInfo &update = getUpdateInfo();
 
+    // send info update availabl eonly if available, otherwise just send updateAvailable=false
     if (update.updateAvailable)
     {
         doc["updateAvailable"] = update.updateAvailable;
@@ -1045,6 +1016,25 @@ void sendHeartbeat(AsyncWebSocket &ws)
     {
         doc["updateAvailable"] = false;
     }
+
+    // request self-update status
+    SelfUpdateStatus &selfUpdate = getSelfUpdateStatus();
+
+    // send self-update info only if running or finished, otherwise just send selfUpdate=false
+    if (selfUpdate.running || selfUpdate.finished)
+    {
+        doc["selfUpdate"] = true;
+        doc["selfUpdateRunning"] = selfUpdate.running;
+        doc["selfUpdateFinished"] = selfUpdate.finished;
+        doc["selfUpdateSuccess"] = selfUpdate.success;
+        doc["selfUpdateProgress"] = selfUpdate.progress;
+        doc["selfUpdateMessage"] = selfUpdate.message;
+    }
+    else
+    {
+        doc["selfUpdate"] = false;
+    }
+
 
     String out;
     serializeJson(doc, out);

@@ -9,37 +9,36 @@ struct UpdateInfo
     uint32_t lastCheck;
 };
 
+struct SelfUpdateStatus {
+    bool running;       // true if self-update is in progress
+    bool finished;      // true if self-update has finished (success or failure)    
+    bool success;       // true if self-update was successful
+    uint8_t progress;   // progress percentage (0-100)
+    String message;     //  status message (e.g., "Starting update", "Downloading...", "Update successful", "Update failed", etc.)
+};
+
 void updateInit();
 void updateLoop();
 UpdateInfo &getUpdateInfo();
 bool updateHasChanged();
 void clearUpdateChanged();
 
-static String getFirmwareAssetName()
-{
-#if defined(BOARD_VARIANT)
+// start self update (OTA) process)
+bool startSelfUpdate();
 
-    String board = BOARD_VARIANT;
+// get self update status
+SelfUpdateStatus& getSelfUpdateStatus();
 
-#if DISPLAY_TYPE == DISPLAY_TYPE_SH1106
+String getFirmwareAssetName();
 
-    if (board == "dev-kit-v1")
-        return "esp32-sh1106-firmware.bin";
 
-    if (board == "esp32-s3-zero")
-        return "esp32-s3-sh1106-firmware.bin";
 
-#elif DISPLAY_TYPE == DISPLAY_TYPE_ST7789
-
-    if (board == "dev-kit-v1")
-        return "esp32-st7789-firmware.bin";
-
-    if (board == "esp32-s3-zero")
-        return "esp32-s3-st7789-firmware.bin";
-
+#ifdef OTA_DEBUG_LOCAL_SERVER
+  #include "ota_local_server_generated.h"   // wird von dev_release.py geschrieben
+  #define FW_VERSION_URL  OTA_LOCAL_SERVER_URL_BASE "version.txt"
+  #define FW_BINARY_URL   OTA_LOCAL_SERVER_URL_BASE
+#else
+  #define FW_VERSION_URL  "https://raw.githubusercontent.com/mark77-DE/Smart-Filament-Sample-Board/refs/heads/main/ESP32-Webserver/version.txt"
+  #define FW_BINARY_URL   "https://github.com/mark77-DE/Smart-Filament-Sample-Board/releases/download/"
 #endif
 
-#endif
-
-    return "";
-}
