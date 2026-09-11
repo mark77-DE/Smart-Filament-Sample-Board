@@ -215,13 +215,54 @@
     color:var(--teal);
   }
   .steps strong{ color:var(--ink); }
+
+	.title-row{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:18px;
+  margin-bottom:10px;
+}
+
+.title-logo{
+  width:72px;
+  height:72px;
+  object-fit:contain;
+  flex-shrink:0;
+}
+
+.title-row h1{
+  margin:0;
+}
+
+@media (max-width:600px){
+  .title-row{
+    gap:12px;
+  }
+
+  .title-logo{
+    width:56px;
+    height:56px;
+  }
+}
 </style>
 </head>
 <body>
 
   <div class="eyebrow">Firmware Installer</div>
+
+<div class="title-row">
+  <img
+    src="Smart_Filament_Sample_Board_Logo_480p.png"
+    alt="Smart Filament Sample Board Logo"
+    class="title-logo"
+  >
   <h1>Smart Filament Sample Board</h1>
-  <p class="sub">Firmware direkt aus dem Browser aufspielen — kein Arduino IDE, keine Kommandozeile nötig.</p>
+</div>
+
+<p class="sub">
+  Firmware direkt aus dem Browser aufspielen — kein Arduino IDE, keine Kommandozeile nötig.
+</p>
 
   <div class="variant-picker" role="group" aria-label="Display-Variante wählen">
 	<button type="button" data-variant="sh1106" class="active">SH1106 OLED</button>
