@@ -461,7 +461,7 @@ void setup()
   // init MQTT
   if (CONFIGV2.mqttConfig.enabled)
   {
-    Serial.println("MQTT is enabled, initializing...");
+    Serial.println("[MQTT] enabled i config, initializing...");
 
     if (WiFi.status() == WL_CONNECTED)
     {
@@ -472,7 +472,7 @@ void setup()
   {
     if (CONFIGV2.system.debugMode)
     {
-      Serial.println("MQTT is disabled, skipping initialization.");
+      Serial.println("[MQTT] disabled in config, skipping initialization.");
     }
   }
 

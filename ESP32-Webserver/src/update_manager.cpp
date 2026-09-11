@@ -61,7 +61,7 @@ bool checkForUpdate(String &latestVersion)
 
     if (CONFIGV2.system.debugMode)
     {
-        Serial.println("[UPDATE-CHECK] Checking for update...");
+        Serial.println("[UPDATE-CHECK] Checking for update");
         Serial.println("[UPDATE-CHECK] Uptime: " + String(millis() / 1000) + " seconds");
         Serial.println("[UPDATE-CHECK] URL: " + String(FW_VERSION_URL));
         Serial.println("[UPDATE-CHECK] Binary URL: " + String(FW_BINARY_URL));
@@ -242,7 +242,7 @@ void updateLoop()
 
         if (CONFIGV2.system.debugMode)
         {
-            Serial.println("[UPDATE-CHECK] Trigger async update check...");
+            Serial.println("[UPDATE-CHECK] Trigger async update check");
         }
         startUpdateTask();
     }

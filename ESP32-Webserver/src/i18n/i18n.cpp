@@ -48,7 +48,7 @@ bool I18N::loadLanguage(const char *path)
 
     if (CONFIGV2.system.debugMode)
     {
-        Serial.printf("[%s]: %s %s.\n", get("txt_language"), path, get("txt_loaded"));
+        Serial.printf("[%s] %s %s.\n", get("txt_language"), path, get("txt_loaded"));
     }
     return true;
 }

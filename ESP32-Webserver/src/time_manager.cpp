@@ -16,10 +16,10 @@ namespace TimeManager {
 void doSync() {
     String tz = CONFIGV2.system.timezone;
     if (tz.length() == 0) {
-        tz = "CET-1CEST,M3.5.0,M10.5.0/3";  // Fallback, falls Migration/Config leer ist
+        tz = TIMEZONE;  // Fallback, falls Migration/Config leer ist
     }
 
-    configTzTime(tz.c_str(), "192.168.0.1", "time.google.com", "time.cloudflare.com"); //pool.ntp.org
+    configTzTime(tz.c_str(), TIMESERVER_1, TIMESERVER_2, TIMESERVER_3);
 
     s_lastSyncAttempt = millis();
 

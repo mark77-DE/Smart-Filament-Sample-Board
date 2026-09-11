@@ -1,3 +1,4 @@
 .pio/
 .vscode/
 data/**/*.gz
+ota_local_server_generated.h

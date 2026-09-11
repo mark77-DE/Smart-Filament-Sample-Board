@@ -34,8 +34,9 @@ String getFirmwareAssetName();
 
 
 #ifdef OTA_DEBUG_LOCAL_SERVER
-  #define FW_VERSION_URL  "http://192.168.0.197:8000/version.txt"
-  #define FW_BINARY_URL   "http://192.168.0.197:8000/"
+  #include "ota_local_server_generated.h"   // wird von dev_release.py geschrieben
+  #define FW_VERSION_URL  OTA_LOCAL_SERVER_URL_BASE "version.txt"
+  #define FW_BINARY_URL   OTA_LOCAL_SERVER_URL_BASE
 #else
   #define FW_VERSION_URL  "https://raw.githubusercontent.com/mark77-DE/Smart-Filament-Sample-Board/refs/heads/main/ESP32-Webserver/version.txt"
   #define FW_BINARY_URL   "https://github.com/mark77-DE/Smart-Filament-Sample-Board/releases/download/"

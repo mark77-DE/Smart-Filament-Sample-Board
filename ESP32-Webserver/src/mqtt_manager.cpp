@@ -17,7 +17,7 @@ PubSubClient mqttClient(espClient);
 // OTA Dummy
 // --------------------------------------------------
 void startOTAUpdate() {
-    Serial.println("[OTA] Update requested -> NOT IMPLEMENTED YET");
+    Serial.println("[MQTT] Update requested -> NOT IMPLEMENTED YET");
 }
 
 // --------------------------------------------------
@@ -34,9 +34,9 @@ static void mqttCallback(char* topic, byte* payload, unsigned int length) {
     String t = topic;
 
     if (CONFIGV2.system.debugMode) {
-        Serial.println("MQTT message received:");
-        Serial.println("  Topic: " + t);
-        Serial.println("  Payload: " + msg);
+        Serial.println("[MQTT] message received:");
+        Serial.println("[MQTT]  Topic: " + t);
+        Serial.println("[MQTT]  Payload: " + msg);
         Serial.println();
     }
 
@@ -81,9 +81,9 @@ void mqttInit() {
     mqttClient.setSocketTimeout(10);
 
     if(CONFIGV2.system.debugMode) {
-        Serial.println("MQTT initialized:");
-        Serial.println("  Server: " + CONFIGV2.mqttConfig.server);
-        Serial.println("  Port: " + String(CONFIGV2.mqttConfig.port));
+        Serial.println("[MQTT] MQTT initialized:");
+        Serial.println("[MQTT]  Server: " + CONFIGV2.mqttConfig.server);
+        Serial.println("[MQTT]  Port: " + String(CONFIGV2.mqttConfig.port));
     }
 }
 
@@ -145,7 +145,7 @@ static void mqttReconnect() {
         mqttClient.subscribe((base + "/device/update/install").c_str());
 
         if(CONFIGV2.system.debugMode) {
-            Serial.println("MQTT connected");
+            Serial.println("[MQTT] connected");
         }
 
         // HA Discovery
@@ -164,7 +164,7 @@ static void mqttReconnect() {
 
     } else {
         if(CONFIGV2.system.debugMode) {
-            Serial.print("MQTT connect failed, rc=");
+            Serial.print("[MQTT] connect failed, rc=");
             Serial.println(mqttClient.state());
         }
     }

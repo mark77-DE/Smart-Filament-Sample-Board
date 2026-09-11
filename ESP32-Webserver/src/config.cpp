@@ -79,7 +79,7 @@ bool loadConfigV2()
     CONFIGV2.system.animationAfterBoot = sys["animationAfterBoot"] | true;
     CONFIGV2.system.defaultLanguage = sys["defaultLanguage"] | "en";
     CONFIGV2.system.updateCheckInterval = sys["updateCheckInterval"] | 3; // default 3 Minuten
-    CONFIGV2.system.timezone = sys["timezone"] | "CET-1CEST,M3.5.0,M10.5.0/3"; //default germany
+    CONFIGV2.system.timezone = sys["timezone"] | TIMEZONE; //default germany
 
     // --- LED-Hardware ---
     const char *ledType = ledHardware["type"] | "WS2812B";
