@@ -5,7 +5,7 @@
 // ============================================================================
 // GPIO-Hardware-Modul: Button (entprellt + Events) & Buzzer (Sequenzen, non-blocking)
 // - Uses CONFIG.button / CONFIG.buzzer, but falls back to defaults,
-//   wenn Keys in /config.json fehlen.
+//   wenn Keys in /config_v2.json fehlen.
 // - ESP32: passiver Buzzer via LEDC (PWM), aktiver via digitalWrite.
 // ============================================================================
 

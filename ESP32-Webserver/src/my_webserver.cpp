@@ -20,6 +20,7 @@
 #include "update_manager.h"
 #include "esp_chip_info.h"
 #include <WiFi.h>
+#include "web_assets_generated.h"
 
 File fsFile; // global or outside the lambda in this .cpp
 
@@ -288,6 +289,34 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
     }
 }
 
+// Helper: find an embedded asset by filename, nullptr if not found
+const WebAsset *findAsset(const char *filename)
+{
+    for (size_t i = 0; i < WEB_ASSETS_COUNT; i++)
+    {
+        if (strcmp(WEB_ASSETS[i].filename, filename) == 0)
+            return &WEB_ASSETS[i];
+    }
+    return nullptr;
+}
+
+// Registers a route serving one embedded asset, with optional cache-control
+void serveAsset(AsyncWebServer &server, const char *urlPath, const char *filename, const char *cacheControl)
+{
+    const WebAsset *asset = findAsset(filename);
+    if (!asset)
+    {
+        Serial.printf("[web_assets] WARNING: %s not embedded!\n", filename);
+        return;
+    }
+    server.on(urlPath, HTTP_GET, [asset, cacheControl](AsyncWebServerRequest *request)
+              {
+        AsyncWebServerResponse *response = request->beginResponse_P(200, asset->mime, asset->data, asset->len);
+        if (asset->gzipped) response->addHeader("Content-Encoding", "gzip");
+        response->addHeader("Cache-Control", cacheControl);
+        request->send(response); });
+}
+
 // ------------------ Webserver Init -------------------
 void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
 {
@@ -306,42 +335,23 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
         Serial.println(LittleFS.usedBytes());
     }
 
-    // [ORDER-FIX]: WebSocket zuerst registrieren, damit /ws nicht vom Catch-all "/" abgefangen wird
     ws.onEvent(onWsEvent);
     server.addHandler(&ws);
 
-    // FIX: Statische Dateien per serveStatic + Cache-Header ausliefern
-    //      (schneller, weniger LittleFS-Lesezugriffe, Browser-Caching)
-    // Spezifische Routen zuerst:
-    server.serveStatic("/settings", LittleFS, "/settings.html")
-        .setCacheControl("no-cache"); // Deliberately cache/check HTML briefly
-
-    server.serveStatic("/script.js", LittleFS, "/script.js")
-        .setCacheControl("public, max-age=604800"); // 7 Tage
-
-    server.serveStatic("/style.css", LittleFS, "/style.css")
-        .setCacheControl("public, max-age=604800");
-
-    server.serveStatic("/settings.js", LittleFS, "/settings.js")
-        .setCacheControl("public, max-age=604800");
-
-    server.serveStatic("/settings.css", LittleFS, "/settings.css")
-        .setCacheControl("public, max-age=604800");
-
-    server.serveStatic("/logo.png", LittleFS, "/logo.png")
-        .setCacheControl("public, max-age=2592000"); // 30 Tage
-
-    server.serveStatic("/favicon.ico", LittleFS, "/favicon.ico")
-        .setCacheControl("public, max-age=2592000");
-
-    server.serveStatic("/update.html", LittleFS, "/update.html")
-        .setCacheControl("no-cache");
-
-    server.serveStatic("/update.css", LittleFS, "/update.css")
-        .setCacheControl("no-cache");
-
-    server.serveStatic("/update.js", LittleFS, "/update.js")
-        .setCacheControl("no-cache");
+    // Embedded web assets (formerly served via serveStatic from LittleFS)
+    serveAsset(server, "/settings", "settings.html", "no-cache");
+    serveAsset(server, "/script.js", "script.js", "public, max-age=604800");
+    serveAsset(server, "/style.css", "style.css", "public, max-age=604800");
+    serveAsset(server, "/settings.js", "settings.js", "public, max-age=604800");
+    serveAsset(server, "/settings.css", "settings.css", "public, max-age=604800");
+    serveAsset(server, "/logo.png", "logo.png", "public, max-age=2592000");
+    serveAsset(server, "/favicon.ico", "favicon.ico", "public, max-age=2592000");
+    serveAsset(server, "/update.js", "update.js", "no-cache");
+    serveAsset(server, "/lang_de.json",  "lang_de.json",   "public, max-age=604800");
+    serveAsset(server, "/lang_en.json",  "lang_en.json",   "public, max-age=604800");
+    serveAsset(server, "/i18n_help.js", "i18n_help.js", "public, max-age=604800");
+    serveAsset(server, "/", "index.html", "no-cache");
+    serveAsset(server, "/index.html", "index.html", "no-cache");
 
     server.on("/api/version", HTTP_GET, [](AsyncWebServerRequest *request)
               {
@@ -709,19 +719,6 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
         request->send(200, "application/json", "{\"status\":\"ok\"}"); });
 
     // Config als JSON ausliefern
-    server.on("/config.json", HTTP_GET, [](AsyncWebServerRequest *request)
-              {
-        // FIX: Netzlast-Hinweis – FS-Read + JSON
-        LEDCTRL_FILAMENT::netBusyHint(250);
-        LEDCTRL_NFC::netBusyHint(250);
-
-        if (!LittleFS.exists("/config.json")) {
-            request->send(404, "application/json", "{\"error\":\"config.json missing\"}");
-            return;
-        }
-        request->send(LittleFS, "/config.json", "application/json"); });
-
-    // Config als JSON ausliefern
     server.on("/config_v2.json", HTTP_GET, [](AsyncWebServerRequest *request)
               {
         // FIX: Netzlast-Hinweis – FS-Read + JSON
@@ -734,50 +731,6 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
         }
         request->send(LittleFS, "/config_v2.json", "application/json"); });
 
-    // Help/Texte als JSON ausliefern
-    server.on("/help_de.json", HTTP_GET, [](AsyncWebServerRequest *request)
-              {
-
-        // Optional: Netzlast-Hinweis wie bei Config
-        LEDCTRL_FILAMENT::netBusyHint(150);
-        LEDCTRL_NFC::netBusyHint(150);
-
-        if (!LittleFS.exists("/help_de.json")) {
-            request->send(404, "application/json", "{\"error\":\"help_de.json missing\"}");
-            return;
-        }
-
-        request->send(LittleFS, "/help_de.json", "application/json"); });
-
-    server.on("/help_en.json", HTTP_GET, [](AsyncWebServerRequest *request)
-              {
-
-        // Optional: Netzlast-Hinweis wie bei Config
-        LEDCTRL_FILAMENT::netBusyHint(150);
-        LEDCTRL_NFC::netBusyHint(150);
-
-        if (!LittleFS.exists("/help_en.json")) {
-            request->send(404, "application/json", "{\"error\":\"help_en.json missing\"}");
-            return;
-        }
-
-        request->send(LittleFS, "/help_en.json", "application/json"); });
-
-    server.on("/i18n_help.js", HTTP_GET, [](AsyncWebServerRequest *request)
-              {
-
-        // Optional: Netzlast-Hinweis wie bei Config
-        LEDCTRL_FILAMENT::netBusyHint(150);
-        LEDCTRL_NFC::netBusyHint(150);
-
-        if (!LittleFS.exists("/i18n_help.js")) {
-            request->send(404, "application/json", "{\"error\":\"i18n_help.js missing\"}");
-            return;
-        }
-
-        request->send(LittleFS, "/i18n_help.js", "application/javascript"); });
-
-    // FIX: /logo.png und /favicon.ico laufen nun über serveStatic (oben) mit Cache
     // server.on("/logo.png", HTTP_GET, ...);    // entfernt
     // server.on("/favicon.ico", HTTP_GET, ...); // entfernt
 
@@ -962,8 +915,6 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
             }
         } });
 
-   
-
     server.on("/api/selfUpdate", HTTP_POST, [](AsyncWebServerRequest *req)
               {
     if (startSelfUpdate()) {
@@ -978,11 +929,6 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
             LEDCTRL_NFC::showError();        // NFC-Ring sofort rot (solid)
             LEDCTRL_FILAMENT::errorAll();  // Filament: rot (wie gewünscht)
     } });
-
-    // [ORDER-FIX]: Catch-all (ROOT) *zuletzt*, damit nichts Wichtiges davor abgefangen wird
-    server.serveStatic("/", LittleFS, "/")
-        .setDefaultFile("index.html")
-        .setCacheControl("no-cache"); // Startseite immer revalidieren
 
     server.begin();
 }
@@ -1034,7 +980,6 @@ void sendHeartbeat(AsyncWebSocket &ws)
     {
         doc["selfUpdate"] = false;
     }
-
 
     String out;
     serializeJson(doc, out);
