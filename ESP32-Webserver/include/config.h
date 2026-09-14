@@ -5,9 +5,33 @@
 #include "led_config.h"
 
 
+
+// OPTIONAL: Marker so gpio_hardware.cpp knows that
+// Button/buzzer are present in CONFIG:
+#define CONFIG_HAS_GPIO
+
+
 // ============================================================================
 // Configuration structures
 // ============================================================================
+/**
+ * @brief System
+ * -Konfiguration
+ */
+
+struct systemConfig {
+  String        version = "error";
+  bool          darkmode;    ///< Dark mode enabled
+  bool          debugMode;   ///< Debug mode enabled
+  uint32_t      webLEDTimeout;   // Dashboard default (ms)
+  String        hostname;    ///< Wi-Fi hostname
+  bool          animationAfterBoot; ///< Startup animation after boot enabled
+  String        defaultLanguage; ///< Default language (e.g. "en" or "de")
+  uint32_t      updateCheckInterval; ///< Seconds until reboot after long press
+  String        timezone;   // POSIX-TZ-String, example see TIMEZONE in platformio.ini
+};
+
+
 
 /**
  * @brief Globale LED-Hardware-Konfiguration
@@ -96,21 +120,24 @@ struct MqttConfigV2 {
   String haDiscoveryPrefix;  ///< Prefix for HA Discovery (e.g. "homeassistant")
 };
 
-// OPTIONAL: Marker so gpio_hardware.cpp knows that
-// Button/buzzer are present in CONFIG:
-#define CONFIG_HAS_GPIO
 
-struct systemConfig {
-  String        version = "error";
-  bool          darkmode;    ///< Dark mode enabled
-  bool          debugMode;   ///< Debug mode enabled
-  uint32_t      webLEDTimeout;   // Dashboard default (ms)
-  String        hostname;    ///< Wi-Fi hostname
-  bool          animationAfterBoot; ///< Startup animation after boot enabled
-  String        defaultLanguage; ///< Default language (e.g. "en" or "de")
-  uint32_t      updateCheckInterval; ///< Seconds until reboot after long press
-  String        timezone;   // POSIX-TZ-String, example see TIMEZONE in platformio.ini
+/**
+ * @brief Filaman Konfiguration
+ */
+
+struct FilamanConfig 
+{
+  /* data */
+  bool      enabled;
+  String    server;   //IP-address of filaman server
+  uint32_t  port; //port of filman api/server
+  String    user;   //Filaman login user (usually email address)
+  String    password;  //Filaman password
 };
+
+
+
+
 
 /**
  * @brief Haupt-Konfigurationsstruktur der App
@@ -127,6 +154,7 @@ struct AppConfigV2 {
   ButtonConfigV2 button;      ///< Pushbutton configuration
   BuzzerConfigV2 buzzer;      ///< Buzzer configuration
   MqttConfigV2   mqttConfig;  ///< MQTT configuration
+  FilamanConfig  filamanConfig;     ///< Filaman configuration
 };
 
 // Global, currently loaded configuration
@@ -228,6 +256,29 @@ bool migrateConfigV2(TCfg& cfg)
         }
         Serial.println(F("[MIGRATION] 2.1 -> 2.2"));
         ver = "2.2";
+        changed = true;
+    }
+
+    if (ver == "2.2") {
+        // Next step later
+        //CONFIGV2.system.timezone = sys["timezone"] | CONFIGV2.system.timezone;
+        if (cfg["filamanConfig"]["enabled"].isNull()) {
+            cfg["filamanConfig"]["enabled"] = false;
+        }
+        if (cfg["filamanConfig"]["server"].isNull()) {
+            cfg["filamanConfig"]["server"] = "";
+        }
+        if (cfg["filamanConfig"]["port"].isNull()) {
+            cfg["filamanConfig"]["port"] = 8083;
+        }
+        if (cfg["filamanConfig"]["user"].isNull()) {
+            cfg["filamanConfig"]["user"] = "";
+        }
+        if (cfg["filamanConfig"]["password"].isNull()) {
+            cfg["filamanConfig"]["password"] = "";
+        }
+        Serial.println(F("[MIGRATION] 2.2 -> 2.3"));
+        ver = "2.3";
         changed = true;
     }
 

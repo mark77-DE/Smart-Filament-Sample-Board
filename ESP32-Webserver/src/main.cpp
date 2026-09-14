@@ -32,6 +32,8 @@
 #include "update_manager.h"
 #include "time_manager.h"
 
+#include "filaman_manager.h"
+
 #include <esp_heap_caps.h>
 
 constexpr uint32_t SPLASH_CHAR_MS = 35;   // timing for typewriter effect at boot (ms per char)
@@ -321,9 +323,12 @@ void handleUID(const String &uid, UidSource source)
   }
   else
   {
-    // --- UNBEKANNTES TAG ---
+    // --- UNBEKANNTES TAG (lokal) ---
 
-    // If a target pixel was previously set: turn it off and reset it
+    if(CONFIGV2.system.debugMode) {
+      Serial.println("[NFC] tag unbekannt");
+    }
+
     if (targetLed != -1)
     {
       LEDCTRL_FILAMENT::setPixel(targetLed, 0);
@@ -331,21 +336,26 @@ void handleUID(const String &uid, UidSource source)
       ledStartTime = millis();
     }
 
-    // Display-Hinweis
-    MYDISPLAY::showErrorCentered(I18N::get("txt_unknown"), TFT_RED);
-
-    if (isNfc)
+    // Erst FilaMan als Fallback probieren, falls aktiviert — nicht-blockierend.
+    if (CONFIGV2.filamanConfig.enabled && FilamanManager::requestLookup(uid))
     {
-      // Rotes Fehlerfeedback am NFC-Ring
-      LEDCTRL_NFC::showError();
-
-      // NEU: Filament-Stripe erst BLINKEN lassen,
-      // danach (wenn Timeout nicht abgelaufen) automatisch errorAll()
-      LEDCTRL_FILAMENT::errorBlink();
+      // Zwischenzustand, bis das Ergebnis im loop() eintrifft
+      MYDISPLAY::showCentered(I18N::get("txt_searching")); // ggf. Textkey ergänzen, z.B. "Suche..."
+      doc["action"] = "searchingUID";
     }
+    else
+    {
+      // Display-Hinweis
+      MYDISPLAY::showErrorCentered(I18N::get("txt_unknown"), TFT_RED);
 
-    // Event for the WebSocket
-    doc["action"] = "unknownUID";
+      if (isNfc)
+      {
+        LEDCTRL_NFC::showError();
+        LEDCTRL_FILAMENT::errorBlink();
+      }
+
+      doc["action"] = "unknownUID";
+    }
   }
 
   String msg;
@@ -609,6 +619,36 @@ void loop()
   // 1b) Also pass presence to the filament controller
   // ---------------------------------------------------------------------------
   LEDCTRL_FILAMENT::tagPresenceTick(tagPresent);
+
+  //
+
+  // ---------------------------------------------------------------------------
+  // 1c) FilaMan: Ergebnis eines Hintergrund-Lookups abholen (falls vorhanden)
+  // ---------------------------------------------------------------------------
+  {
+    String resUid, resLocation;
+    bool resFound;
+    if (FilamanManager::pollResult(resUid, resFound, resLocation))
+    {
+      // Nur anwenden, wenn das Tag noch dasselbe ist wie gerade angezeigt —
+      // sonst wurde es zwischenzeitlich entfernt/gewechselt, Ergebnis verwerfen.
+      if (resUid == NFC::currentHoldUid()) // s_holdUid kommt aus nfc.cpp, ggf. Getter ergänzen
+      {
+        if (resFound)
+        {
+          MYDISPLAY::showTwoLinesCentered(F("Sample found:"), resLocation);
+          if (buzzer_busy() == false)
+            buzzer_single_beep();
+        }
+        else
+        {
+          MYDISPLAY::showErrorCentered(I18N::get("txt_unknown"), TFT_RED);
+          LEDCTRL_NFC::showError();
+          LEDCTRL_FILAMENT::errorBlink();
+        }
+      }
+    }
+  }
 
   // ---------------------------------------------------------------------------
   // 2) Reboot (falls angefordert) + Countdown-UI

@@ -324,4 +324,9 @@ lastPoll = now;
   tagPresentOut    = tagPresent;
 }
 
+
+String currentHoldUid() {
+  return s_holdUid;
+}
+
 } // namespace NFC

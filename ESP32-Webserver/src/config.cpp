@@ -7,6 +7,9 @@
 #include "globals.h"
 #include "filehandling.h"
 #include "pins.h"
+#include "filaman_manager.h"
+
+
 
 AppConfigV2 CONFIGV2;
 
@@ -60,13 +63,14 @@ bool loadConfigV2()
 
     JsonObject cfg = doc.as<JsonObject>();
 
-    JsonObject sys = cfg["system"];
-    JsonObject ledHardware = cfg["ledHardware"];
-    JsonObject led = cfg["led"];
-    JsonObject nfc = cfg["nfc"];
-    JsonObject btn = cfg["button"];
-    JsonObject buz = cfg["buzzer"];
-    JsonObject mqtt = cfg["mqttConfig"];
+    JsonObject sys          = cfg["system"];
+    JsonObject ledHardware  = cfg["ledHardware"];
+    JsonObject led          = cfg["led"];
+    JsonObject nfc          = cfg["nfc"];
+    JsonObject btn          = cfg["button"];
+    JsonObject buz          = cfg["buzzer"];
+    JsonObject mqtt         = cfg["mqttConfig"];
+    JsonObject filaman      = cfg["filamanConfig"];
 
     // --- Version ---
     CONFIGV2.system.version = cfg["version"] | "error";
@@ -235,6 +239,14 @@ bool loadConfigV2()
     CONFIGV2.mqttConfig.haDiscovery = mqtt["haDiscovery"] | false;
     CONFIGV2.mqttConfig.haDiscoveryPrefix = mqtt["haDiscoveryPrefix"] | "homeassistant";
 
+
+    // --- Filaman ---
+    CONFIGV2.filamanConfig.enabled    = filaman["enabled"] | false;
+    CONFIGV2.filamanConfig.server     = filaman["server"] | "";
+    CONFIGV2.filamanConfig.port       = filaman["port"] | 8083;
+    CONFIGV2.filamanConfig.user       = filaman["user"] | "admin@example.com";
+    CONFIGV2.filamanConfig.password   = filaman["password"] | "admin123";
+
     // Filament-DB laden & Konfiguration anwenden
     if (CONFIGV2.system.debugMode)
     {
@@ -294,6 +306,9 @@ void applyConfigV2()
 
     // GPIO-Hardware (Button/Buzzer)
     gpiohw_init(); // liest CONFIGV2.button / CONFIGV2.buzzer, richtet Pins & ISR/Timer ein
+
+    // NEU: FilaMan-Client mit aktueller Config (neu) versorgen
+    FilamanManager::applyConfig();
 
     if (CONFIGV2.system.debugMode)
     {
@@ -428,6 +443,20 @@ void applyConfigV2()
         Serial.print(F(" MQTT HA Discovery Prefix="));
         Serial.println(CONFIGV2.mqttConfig.haDiscoveryPrefix);
 
+        Serial.println();
+        Serial.println(F("Filaman Settings:"));
+        Serial.print(F(" filaman enabled="));
+        Serial.println(CONFIGV2.filamanConfig.enabled);
+        Serial.print(F(" filaman server="));
+        Serial.println(CONFIGV2.filamanConfig.server);
+        Serial.print(F(" filaman port="));
+        Serial.println(CONFIGV2.filamanConfig.port);
+        Serial.print(F(" filaman user="));
+        Serial.println(CONFIGV2.filamanConfig.user);
+        Serial.print(F(" filaman password="));
+        Serial.println(CONFIGV2.filamanConfig.password);
+
+
         Serial.println(F("#-------------------------#"));
         Serial.println(F("|  Config V2 applied end  |"));
         Serial.println(F("#-------------------------#"));
@@ -458,20 +487,22 @@ bool updateConfigFromJsonV2(JsonDocument &doc)
 
 
         Serial.println(F("System configuration updated:"));
-        Serial.print(F("Hostname set to: "));
+        Serial.print(F("  Hostname set to: "));
         Serial.println(CONFIGV2.system.hostname);
-        Serial.print(F("Web LED Timeout set to: "));
+        Serial.print(F("  Web LED Timeout set to: "));
         Serial.println(CONFIGV2.system.webLEDTimeout);
-        Serial.print(F("Darkmode set to: "));
+        Serial.print(F("  Darkmode set to: "));
         Serial.println(CONFIGV2.system.darkmode ? F("true") : F("false"));
-        Serial.print(F("Debug Mode set to: "));
+        Serial.print(F("  Debug Mode set to: "));
         Serial.println(CONFIGV2.system.debugMode ? F("true") : F("false"));
-        Serial.print(F("Animation After Boot set to: "));
+        Serial.print(F("  Animation After Boot set to: "));
         Serial.println(CONFIGV2.system.animationAfterBoot ? F("true") : F("false"));
-        Serial.print(F("Default Language set to: "));
+        Serial.print(F("  Default Language set to: "));
         Serial.println(CONFIGV2.system.defaultLanguage);
-        Serial.print(F("Update Check Interval set to: "));
+        Serial.print(F("  Update Check Interval set to: "));
         Serial.println(CONFIGV2.system.updateCheckInterval);
+        Serial.print(F("  Timezone set to: "));
+        Serial.println(CONFIGV2.system.timezone);
     }
 
     // --- LED-Hardware ---
@@ -593,9 +624,9 @@ bool updateConfigFromJsonV2(JsonDocument &doc)
         }
 
         Serial.println(F("LED hardware configuration updated:"));
-        Serial.print(F("LED type set to: "));
+        Serial.print(F("  LED type set to: "));
         Serial.println(static_cast<int>(CONFIGV2.ledHardware.type));
-        Serial.print(F("LED order set to: "));
+        Serial.print(F("  LED order set to: "));
         Serial.println(static_cast<int>(CONFIGV2.ledHardware.order));
     }
 
@@ -630,17 +661,17 @@ bool updateConfigFromJsonV2(JsonDocument &doc)
         }
 
         Serial.println(F("LED configuration updated:"));
-        Serial.print(F("LED count set to: "));
+        Serial.print(F("  LED count set to: "));
         Serial.println(CONFIGV2.led.count);
-        Serial.print(F("LED brightness set to: "));
+        Serial.print(F("  LED brightness set to: "));
         Serial.println(CONFIGV2.led.brightness);
-        Serial.print(F("LED timeout set to: "));
+        Serial.print(F("  LED timeout set to: "));
         Serial.println(CONFIGV2.led.timeout);
-        Serial.print(F("LED color set to: 0x"));
+        Serial.print(F("  LED color set to: 0x"));
         Serial.println(CONFIGV2.led.color, HEX);
-        Serial.print(F("LED error color set to: 0x"));
+        Serial.print(F("  LED error color set to: 0x"));
         Serial.println(CONFIGV2.led.colorError, HEX);
-        Serial.print(F("LED pulse color set to: 0x"));
+        Serial.print(F("  LED pulse color set to: 0x"));
         Serial.println(CONFIGV2.led.colorPulse, HEX);
     }
 
@@ -679,21 +710,21 @@ bool updateConfigFromJsonV2(JsonDocument &doc)
         CONFIGV2.nfc.successBlinkMs = nfc["successBlinkMs"] | CONFIGV2.nfc.successBlinkMs;
 
         Serial.println(F("NFC configuration updated:"));
-        Serial.print(F("NFC count set to: "));
+        Serial.print(F("  NFC count set to: "));
         Serial.println(CONFIGV2.nfc.count);
-        Serial.print(F("NFC brightness set to: "));
+        Serial.print(F("  NFC brightness set to: "));
         Serial.println(CONFIGV2.nfc.brightness);
-        Serial.print(F("NFC timeout set to: "));
+        Serial.print(F("  NFC timeout set to: "));
         Serial.println(CONFIGV2.nfc.timeout);
-        Serial.print(F("NFC success color set to: 0x"));
+        Serial.print(F("  NFC success color set to: 0x"));
         Serial.println(CONFIGV2.nfc.colorSuccess, HEX);
-        Serial.print(F("NFC error color set to: 0x"));
+        Serial.print(F("  NFC error color set to: 0x"));
         Serial.println(CONFIGV2.nfc.colorError, HEX);
-        Serial.print(F("NFC pulse color set to: 0x"));
+        Serial.print(F("  NFC pulse color set to: 0x"));
         Serial.println(CONFIGV2.nfc.colorPulse, HEX);
-        Serial.print(F("NFC success blink enabled set to: "));
+        Serial.print(F("  NFC success blink enabled set to: "));
         Serial.println(CONFIGV2.nfc.successBlinkEnabled ? F("true") : F("false"));
-        Serial.print(F("NFC success blink count set to: "));
+        Serial.print(F("  NFC success blink count set to: "));
         Serial.println(CONFIGV2.nfc.successBlinkCount);
     }
 
@@ -709,17 +740,17 @@ bool updateConfigFromJsonV2(JsonDocument &doc)
         CONFIGV2.button.holdRepeatMs = btn["holdMs"] | CONFIGV2.button.holdRepeatMs;
 
         Serial.println(F("Button configuration updated:"));
-        Serial.print(F("Button enabled set to: "));
+        Serial.print(F("  Button enabled set to: "));
         Serial.println(CONFIGV2.button.enabled ? F("true") : F("false"));
-        Serial.print(F("Button pullup set to: "));
+        Serial.print(F("  Button pullup set to: "));
         Serial.println(CONFIGV2.button.pullup ? F("true") : F("false"));
-        Serial.print(F("Button debounceMs set to: "));
+        Serial.print(F("  Button debounceMs set to: "));
         Serial.println(CONFIGV2.button.debounceMs);
-        Serial.print(F("Button longMs set to: "));
+        Serial.print(F("  Button longMs set to: "));
         Serial.println(CONFIGV2.button.longMs);
-        Serial.print(F("Button doubleGapMs set to: "));
+        Serial.print(F("  Button doubleGapMs set to: "));
         Serial.println(CONFIGV2.button.doubleGapMs);
-        Serial.print(F("Button holdRepeatMs set to: "));
+        Serial.print(F("  Button holdRepeatMs set to: "));
         Serial.println(CONFIGV2.button.holdRepeatMs);
     }
 
@@ -738,23 +769,23 @@ bool updateConfigFromJsonV2(JsonDocument &doc)
         CONFIGV2.buzzer.errorCount = buz["errorCount"] | CONFIGV2.buzzer.errorCount;
 
         Serial.println(F("Buzzer configuration updated:"));
-        Serial.print(F("Buzzer enabled set to: "));
+        Serial.print(F("  Buzzer enabled set to: "));
         Serial.println(CONFIGV2.buzzer.enabled ? F("true") : F("false"));
-        Serial.print(F("Buzzer activeHigh set to: "));
+        Serial.print(F("  Buzzer activeHigh set to: "));
         Serial.println(CONFIGV2.buzzer.activeHigh ? F("true") : F("false"));
-        Serial.print(F("Buzzer freqHz set to: "));
+        Serial.print(F("  Buzzer freqHz set to: "));
         Serial.println(CONFIGV2.buzzer.freqHz);
-        Serial.print(F("Buzzer singleMs set to: "));
+        Serial.print(F("  Buzzer singleMs set to: "));
         Serial.println(CONFIGV2.buzzer.singleMs);
-        Serial.print(F("Buzzer doubleOnMs set to: "));
+        Serial.print(F("  Buzzer doubleOnMs set to: "));
         Serial.println(CONFIGV2.buzzer.doubleOnMs);
-        Serial.print(F("Buzzer doubleGapMs set to: "));
+        Serial.print(F("  Buzzer doubleGapMs set to: "));
         Serial.println(CONFIGV2.buzzer.doubleGapMs);
-        Serial.print(F("Buzzer errorOnMs set to: "));
+        Serial.print(F("  Buzzer errorOnMs set to: "));
         Serial.println(CONFIGV2.buzzer.errorOnMs);
-        Serial.print(F("Buzzer errorGapMs set to: "));
+        Serial.print(F("  Buzzer errorGapMs set to: "));
         Serial.println(CONFIGV2.buzzer.errorGapMs);
-        Serial.print(F("Buzzer errorCount set to: "));
+        Serial.print(F("  Buzzer errorCount set to: "));
         Serial.println(CONFIGV2.buzzer.errorCount);
     }
 
@@ -773,23 +804,52 @@ bool updateConfigFromJsonV2(JsonDocument &doc)
         CONFIGV2.mqttConfig.haDiscoveryPrefix = mqtt["haDiscoveryPrefix"] | CONFIGV2.mqttConfig.haDiscoveryPrefix;
 
         Serial.println(F("MQTT configuration updated:"));
-        Serial.print(F("MQTT enabled set to: "));
+        Serial.print(F("  MQTT enabled set to: "));
         Serial.println(CONFIGV2.mqttConfig.enabled ? F("true") : F("false"));
-        Serial.print(F("MQTT server set to: "));
+        Serial.print(F("  MQTT server set to: "));
         Serial.println(CONFIGV2.mqttConfig.server);
-        Serial.print(F("MQTT port set to: "));
+        Serial.print(F("  MQTT port set to: "));
         Serial.println(CONFIGV2.mqttConfig.port);
-        Serial.print(F("MQTT user set to: "));
+        Serial.print(F("  MQTT user set to: "));
         Serial.println(CONFIGV2.mqttConfig.user);
-        Serial.print(F("MQTT baseTopic set to: "));
+        Serial.print(F("  MQTT baseTopic set to: "));
         Serial.println(CONFIGV2.mqttConfig.baseTopic);
-        Serial.print(F("MQTT clientId set to: "));
+        Serial.print(F("  MQTT clientId set to: "));
         Serial.println(CONFIGV2.mqttConfig.clientId);
-        Serial.print(F("MQTT HA Discovery set to: "));
+        Serial.print(F("  MQTT HA Discovery set to: "));
         Serial.println(CONFIGV2.mqttConfig.haDiscovery ? F("true") : F("false"));
-        Serial.print(F("MQTT HA Discovery Prefix set to: "));
+        Serial.print(F("  MQTT HA Discovery Prefix set to: "));
         Serial.println(CONFIGV2.mqttConfig.haDiscoveryPrefix);
     }
+
+
+    // --- Filaman ---
+    if (cfg["filamanConfig"].is<JsonObject>())
+    {
+        JsonObject filaman = cfg["filamanConfig"];
+        CONFIGV2.filamanConfig.enabled = filaman["enabled"] | CONFIGV2.filamanConfig.enabled;
+        CONFIGV2.filamanConfig.server = filaman["server"] | CONFIGV2.filamanConfig.server;
+        CONFIGV2.filamanConfig.port = filaman["port"] | CONFIGV2.filamanConfig.port;
+        CONFIGV2.filamanConfig.user = filaman["user"] | CONFIGV2.filamanConfig.user;
+        CONFIGV2.filamanConfig.password = filaman["password"] | CONFIGV2.filamanConfig.password;
+        
+        Serial.println(F("Filaman configuration updated:"));
+        Serial.print(F("  Filaman enabled set to: "));
+        Serial.println(CONFIGV2.filamanConfig.enabled ? F("true") : F("false"));
+        Serial.print(F("  Filaman server set to: "));
+        Serial.println(CONFIGV2.filamanConfig.server);
+        Serial.print(F("  Filaman port set to: "));
+        Serial.println(CONFIGV2.filamanConfig.port);
+        Serial.print(F("  Filaman user set to: "));
+        Serial.println(CONFIGV2.filamanConfig.user);
+        Serial.print(F("  Filaman password set to: "));
+        Serial.println(CONFIGV2.filamanConfig.password);
+        
+    }
+
+
+
+
 
     saveConfigV2();
     g_applyConfigPending = true;
@@ -934,6 +994,17 @@ bool saveConfigV2()
     mqtt["clientId"] = CONFIGV2.mqttConfig.clientId;
     mqtt["haDiscovery"] = CONFIGV2.mqttConfig.haDiscovery;
     mqtt["haDiscoveryPrefix"] = CONFIGV2.mqttConfig.haDiscoveryPrefix;
+
+
+    // =========================
+    // Filaman
+    // =========================
+    JsonObject filaman = doc["filamanConfig"].to<JsonObject>();
+    filaman["enabled"] = CONFIGV2.filamanConfig.enabled;
+    filaman["server"] = CONFIGV2.filamanConfig.server;
+    filaman["port"] = CONFIGV2.filamanConfig.port;
+    filaman["user"] = CONFIGV2.filamanConfig.user;
+    filaman["password"] = CONFIGV2.filamanConfig.password;
 
     // =========================
     // Schreiben
@@ -1280,6 +1351,33 @@ bool importConfigJsonV2(JsonObject src)
             Serial.println(CONFIGV2.mqttConfig.haDiscoveryPrefix);
         }
     }
+
+
+    // --- Filaman ---
+    if (src["filamanConfig"].is<JsonObject>())
+    {
+        JsonObject filaman = src["filamanConfig"];
+        CONFIGV2.filamanConfig.enabled = filaman["enabled"] | CONFIGV2.filamanConfig.enabled;
+        CONFIGV2.filamanConfig.server = filaman["server"] | CONFIGV2.filamanConfig.server;
+        CONFIGV2.filamanConfig.port = filaman["port"] | CONFIGV2.filamanConfig.port;
+        CONFIGV2.filamanConfig.user = filaman["user"] | CONFIGV2.filamanConfig.user;
+        CONFIGV2.filamanConfig.password = filaman["password"] | CONFIGV2.filamanConfig.password;
+        
+        Serial.println(F("Filaman configuration updated:"));
+        Serial.print(F("  Filaman enabled set to: "));
+        Serial.println(CONFIGV2.filamanConfig.enabled ? F("true") : F("false"));
+        Serial.print(F("  Filaman server set to: "));
+        Serial.println(CONFIGV2.filamanConfig.server);
+        Serial.print(F("  Filaman port set to: "));
+        Serial.println(CONFIGV2.filamanConfig.port);
+        Serial.print(F("  Filaman user set to: "));
+        Serial.println(CONFIGV2.filamanConfig.user);
+        Serial.print(F("  Filaman password set to: "));
+        Serial.println(CONFIGV2.filamanConfig.password);
+        
+    }
+
+
 
     // =========================
     // Persistieren im V2-Format

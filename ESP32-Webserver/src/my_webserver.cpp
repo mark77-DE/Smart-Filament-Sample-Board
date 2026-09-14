@@ -311,7 +311,7 @@ void serveAsset(AsyncWebServer &server, const char *urlPath, const char *filenam
     }
     server.on(urlPath, HTTP_GET, [asset, cacheControl](AsyncWebServerRequest *request)
               {
-        AsyncWebServerResponse *response = request->beginResponse_P(200, asset->mime, asset->data, asset->len);
+        AsyncWebServerResponse *response = request->beginResponse(200, asset->mime, asset->data, asset->len);
         if (asset->gzipped) response->addHeader("Content-Encoding", "gzip");
         response->addHeader("Cache-Control", cacheControl);
         request->send(response); });
