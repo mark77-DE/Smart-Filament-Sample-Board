@@ -31,7 +31,7 @@ def generate_header(www_dir, out_header):
         with open(src, "rb") as f:
             raw = f.read()
 
-        gzipped = ext in GZIP_EXTS
+        gzipped = ext in GZIP_EXTS and name not in {"lang_de.json", "lang_en.json"}
         payload = gzip.compress(raw, compresslevel=9) if gzipped else raw
         var_name = "asset_" + sanitize(name)
 

@@ -33,6 +33,7 @@
 #include "time_manager.h"
 
 #include "filaman_manager.h"
+#include "filaman_sync_apply.h"
 
 #include <esp_heap_caps.h>
 
@@ -320,12 +321,27 @@ void handleUID(const String &uid, UidSource source)
     doc["vendor"] = entry.vendor;
     doc["type"] = entry.type;
     doc["color"] = entry.color;
+
+    // Erst FilaMan als Fallback probieren, falls aktiviert — nicht-blockierend.
+    if (CONFIGV2.filamanConfig.enabled && FilamanManager::requestLookup(uid))
+    {
+
+      if (CONFIGV2.system.debugMode)
+      {
+        Serial.println("[FILAMAN] request search");
+      }
+
+      // Zwischenzustand, bis das Ergebnis im loop() eintrifft
+      MYDISPLAY::showCentered(I18N::get("txt_searching")); // ggf. Textkey ergänzen, z.B. "Suche..."
+      
+    }
   }
   else
   {
     // --- UNBEKANNTES TAG (lokal) ---
 
-    if(CONFIGV2.system.debugMode) {
+    if (CONFIGV2.system.debugMode)
+    {
       Serial.println("[NFC] tag unbekannt");
     }
 
@@ -339,9 +355,15 @@ void handleUID(const String &uid, UidSource source)
     // Erst FilaMan als Fallback probieren, falls aktiviert — nicht-blockierend.
     if (CONFIGV2.filamanConfig.enabled && FilamanManager::requestLookup(uid))
     {
+
+      if (CONFIGV2.system.debugMode)
+      {
+        Serial.println("[FILAMAN] request search");
+      }
+
       // Zwischenzustand, bis das Ergebnis im loop() eintrifft
       MYDISPLAY::showCentered(I18N::get("txt_searching")); // ggf. Textkey ergänzen, z.B. "Suche..."
-      doc["action"] = "searchingUID";
+      
     }
     else
     {
@@ -353,8 +375,6 @@ void handleUID(const String &uid, UidSource source)
         LEDCTRL_NFC::showError();
         LEDCTRL_FILAMENT::errorBlink();
       }
-
-      doc["action"] = "unknownUID";
     }
   }
 
@@ -488,21 +508,20 @@ void setup()
 
   // Upadte Check
 
+  updateInit();
+  updateLoop(); // initial einmal
+
+  MYDISPLAY::showBootVersion(FIRMWARE_VERSION, BUILD_DATE_SHORT);
+
+  const uint32_t until = millis() + FIRMWARE_HOLD_MS;
+  while ((int32_t)(until - millis()) > 0)
   {
-
-    updateInit();
-    updateLoop(); // initial einmal
-
-    MYDISPLAY::showBootVersion(FIRMWARE_VERSION, BUILD_DATE_SHORT);
-
-    const uint32_t until = millis() + FIRMWARE_HOLD_MS;
-    while ((int32_t)(until - millis()) > 0)
-    {
-      gpiohw_tick(millis());
-      ws.cleanupClients();
-      yield();
-    }
+    gpiohw_tick(millis());
+    ws.cleanupClients();
+    yield();
   }
+
+  
 
   // Nach dem Firmware-Bootscreen (10 s), WLAN+Webserver sind schon da
   displayClear();
@@ -535,6 +554,20 @@ void setup()
   initWebServer(server, ws);
   WiFi.setSleep(false);
 
+  // Nur EINMAL, kein Doppel-Aufruf:
+if (WiFi.status() == WL_CONNECTED)
+{
+  FilamanManager::requestWarmup();  // Session + Location-Cache zuerst
+
+  // Automatischen Boot-Sync nur, wenn das wirklich gewollt ist (s.o. Rückfrage) —
+  // sonst hier weglassen und nur über Button/WebIF auslösen.
+  // FilamanManager::requestSync();
+}
+else if (CONFIGV2.system.debugMode)
+{
+  Serial.println("[FILAMAN] boot: WiFi not yet connected, skipping warmup/sync");
+}
+
   Serial.println();
   Serial.println();
   Serial.println("*****************************************");
@@ -542,6 +575,8 @@ void setup()
   Serial.println("*****************************************");
   Serial.println();
   Serial.println();
+
+
 }
 
 void loop()
@@ -578,6 +613,8 @@ void loop()
     DisplayAnim::startIdleTextFirst(now);
     renderRebootCountdown(now);
   }
+
+  
 
   // 0d (Config)
   if (g_applyConfigPending)
@@ -639,6 +676,7 @@ void loop()
           MYDISPLAY::showTwoLinesCentered(F("Sample found:"), resLocation);
           if (buzzer_busy() == false)
             buzzer_single_beep();
+          LEDCTRL_NFC::showSuccess();
         }
         else
         {
@@ -724,6 +762,36 @@ void loop()
   // 8) Time Loop -> timemanager.cpp
   // ---------------------------------------------------------------------------
   TimeManager::loop();
+
+  // ---------------------------------------------------------------------------
+  // 8) refresh filaman locations cache / sync Filaman database locally
+  // ---------------------------------------------------------------------------
+  static unsigned long lastFilamanWarmup = 0;
+  const unsigned long FILAMAN_WARMUP_INTERVAL_MS = 30UL * 60UL * 1000UL;
+  if (millis() - lastFilamanWarmup > FILAMAN_WARMUP_INTERVAL_MS)
+  {
+    lastFilamanWarmup = millis();
+    FilamanManager::requestWarmup();
+  }
+
+  std::vector<FilamentSyncEntry> syncEntries;
+  bool syncOk;
+  if (FilamanManager::pollSyncResult(syncEntries, syncOk))
+  {
+    if (syncOk)
+    {
+      applyFilamanSyncToLocalDb(syncEntries);
+      // ggf. Display-Feedback: "Sync: X Filamente aktualisiert"
+      if (CONFIGV2.system.debugMode)
+      {
+        Serial.printf("[FILAMAN] %d filamenst synced", syncEntries);
+      }
+    }
+    else if (CONFIGV2.system.debugMode)
+    {
+      Serial.println("[FILAMAN] sync failed");
+    }
+  }
 
   // ---------------------------------------------------------------------------
   // LAST) (Optional) yield() und chrash check

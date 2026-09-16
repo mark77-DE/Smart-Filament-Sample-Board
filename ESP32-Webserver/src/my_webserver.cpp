@@ -21,6 +21,7 @@
 #include "esp_chip_info.h"
 #include <WiFi.h>
 #include "web_assets_generated.h"
+#include "filaman_manager.h"
 
 File fsFile; // global or outside the lambda in this .cpp
 
@@ -347,8 +348,8 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
     serveAsset(server, "/logo.png", "logo.png", "public, max-age=2592000");
     serveAsset(server, "/favicon.ico", "favicon.ico", "public, max-age=2592000");
     serveAsset(server, "/update.js", "update.js", "no-cache");
-    serveAsset(server, "/lang_de.json",  "lang_de.json",   "public, max-age=604800");
-    serveAsset(server, "/lang_en.json",  "lang_en.json",   "public, max-age=604800");
+    serveAsset(server, "/lang_de.json", "lang_de.json", "public, max-age=604800");
+    serveAsset(server, "/lang_en.json", "lang_en.json", "public, max-age=604800");
     serveAsset(server, "/i18n_help.js", "i18n_help.js", "public, max-age=604800");
     serveAsset(server, "/", "index.html", "no-cache");
     serveAsset(server, "/index.html", "index.html", "no-cache");
@@ -930,6 +931,22 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
             LEDCTRL_FILAMENT::errorAll();  // Filament: rot (wie gewünscht)
     } });
 
+    server.on("/api/filamanSync", HTTP_POST, [](AsyncWebServerRequest *req)
+              {
+                  if (CONFIGV2.system.debugMode)
+                  {
+                      Serial.println("[API] request filaman sync");
+                  }
+
+                  bool started = FilamanManager::requestSync();
+
+                  JsonDocument doc;
+                  doc["started"] = started;
+                  String out;
+                  serializeJson(doc, out);
+                  req->send(started ? 200 : 409, "application/json", out); // 409 = schon busy/disabled
+              });
+
     server.begin();
 }
 
@@ -946,6 +963,11 @@ void sendHeartbeat(AsyncWebSocket &ws)
     doc["heap_free"] = ESP.getFreeHeap();
     doc["wifi_rssi"] = WiFi.RSSI();
     doc["cpu_temp_c"] = temperatureRead();
+
+    if (CONFIGV2.filamanConfig.enabled)
+    {
+        doc["filamanSync"] = FilamanManager::isSyncBusy();
+    }
 
     // Update-Info
     UpdateInfo &update = getUpdateInfo();

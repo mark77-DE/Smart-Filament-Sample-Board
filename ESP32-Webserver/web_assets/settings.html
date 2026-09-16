@@ -57,6 +57,12 @@
             </svg>
         </div>
 
+        <div class="sysGroup">
+            <button id="filamanSyncBtn" class="primaryBtn" >
+                Sync Filaman
+            </button>
+        </div>
+
         <div id="updateStatus"></div>
 
     </div>
@@ -167,6 +173,7 @@
                 <button class="navItem" data-target="panel-button" data-i18n="txt_button">Button</button>
                 <button class="navItem" data-target="panel-buzzer" data-i18n="txt_buzzer">Buzzer</button>
                 <button class="navItem" data-target="panel-mqtt">MQTT</button>
+                <button class="navItem" data-target="panel-filaman">Filaman</button>
                 <button class="navItem" data-target="panel-dashboard">Dashboard</button>
                 <button class="navItem" data-target="panel-debug">Debug</button>
                 <button class="navItem" data-target="panel-host">Host</button>
@@ -224,8 +231,6 @@
 
                         <div class="cardHeader ledSettingsGrid"><span data-i18n="txt_led_settings">LED Settings</span>
                         </div>
-
-
 
                         <div class="formGrid">
 
@@ -437,36 +442,32 @@
                 </div>
 
                 <div class="settingsPanel" id="panel-mqtt">
-                    <!-- EXISTIERENDE MQTT CARD HIER REIN -->
                     <div id="mqttSettings" class="card" data-help="mqtt">
-                        <div class="cardHeader"><span data-i18n="txt_mqtt_settings">MQTT Settings</span></div>
+                        <div class="cardHeader"><span data-i18n="txt_mqtt_settings">MQTT settings</span></div>
                         <div class="formGrid">
 
-                            <label for="mqttEnabled" data-i18n="txt_mqtt_enabled">MQTT enabled:</label>
-                            <input type="checkbox" id="mqttEnabled" name="mqttEnabled" checked>
+                            <label for="mqttEnabled" data-i18n="txt_enabled">enabled:</label>
+                            <input type="checkbox" id="mqttEnabled" name="mqttEnabled">
 
-                            <label for="mqttServerIP" title="">MQTT Server:</label>
+                            <label for="mqttServerIP" title="">Server:</label>
                             <div class="textField">
-                                <input type="text" id="mqttBroker" name="mqttBroker" value="192.168.0.1" title=""
-                                    placeholder="127.0.0.1">
+                                <input type="text" id="mqttBroker" name="mqttBroker" value="192.168.0.1" title="" placeholder="">
                             </div>
 
-                            <label for="mqttServerPort" title="">MQTT Port:</label>
+                            <label for="mqttServerPort" title="">Port:</label>
                             <input type="number" id="mqttPort" name="mqttPort" min="1" max="65535" value="1883">
 
-                            <label for="mqttUser" title="" data-i18n="txt_mqtt_user">MQTT User:</label>
-                            <input type="text" id="mqttUser" name="mqttUser" value="mqttuser" placeholder="username">
+                            <label for="mqttUser" title="" data-i18n="txt_user">User:</label>
+                            <input type="text" id="mqttUser" name="mqttUser" value="mqttuser" placeholder="">
 
-                            <label for="mqttPassword" title="" data-i18n="txt_mqtt_password">MQTT Password:</label>
-                            <input type="password" id="mqttPassword" name="mqttPassword" value=""
-                                placeholder="password">
+                            <label for="mqttPassword" title="" data-i18n="txt_password">Password:</label>
+                            <input type="password" id="mqttPassword" name="mqttPassword" value="" placeholder="">
 
-                            <label for="mqttClientId" title="">MQTT Client ID:</label>
-                            <input type="text" id="mqttClientId" name="mqttClientId" value="" placeholder="client ID">
+                            <label for="mqttClientId" title="">Client ID:</label>
+                            <input type="text" id="mqttClientId" name="mqttClientId" value="" placeholder="">
 
-                            <label for="mqttBaseTopic" title="">MQTT Base Topic:</label>
-                            <input type="text" id="mqttBaseTopic" name="mqttBaseTopic" value=""
-                                placeholder="base topic">
+                            <label for="mqttBaseTopic" title="">Base Topic:</label>
+                            <input type="text" id="mqttBaseTopic" name="mqttBaseTopic" value="" placeholder="">
 
                             <label for="mqttHADiscovery" title="">Home Assistant Discovery:</label>
                             <input type="checkbox" id="mqttHADiscovery" name="mqttHADiscovery">
@@ -476,6 +477,35 @@
                                 placeholder="discovery prefix">
 
                             <div id="warningMqtt" data-i18n="txt_mqtt_rebootMsg">REBOOT REQUIRED AFTER CHANGES</div>
+
+                        </div>
+                    </div>
+                </div>
+
+
+
+                <div class="settingsPanel" id="panel-filaman">
+                    <div id="filamanSettings" class="card" data-help="filaman">
+                        <div class="cardHeader"><span data-i18n="txt_filaman_settings">Filaman settings</span></div>
+                        <div class="formGrid">
+
+                            <label for="filamanEnabled" data-i18n="txt_enabled">enabled:</label>
+                            <input type="checkbox" id="filamanEnabled" name="filamanEnabled">
+
+                            <label for="filamanServerIP" title="">Server:</label>
+                            <div class="textField">
+                                <input type="text" id="filamanServer" name="filamanServer" value="192.168.0.1" title="" placeholder="">
+                            </div>
+
+                            <label for="filamanServerPort" title="">Port:</label>
+                            <input type="number" id="filamanPort" name="filamanPort" min="1" max="65535" value="8083">
+
+                            <label for="filamanUser" title="" data-i18n="txt_user">User:</label>
+                            <input type="text" id="filamanUser" name="filamanUser" value="admin@example.com" placeholder="">
+
+                            <label for="filamanPassword" title="" data-i18n="txt_password">Password:</label>
+                            <input type="password" id="filamanPassword" name="filamanPassword" value="admin123" placeholder="">
+
 
                         </div>
                     </div>
@@ -523,6 +553,7 @@
                                 <button id="exportAllBtn" class="primaryBtn">
                                     Export JSON
                                 </button>
+                                <div id="exportWarning" data-i18n="txt_export_warning">WARNING: Passwords will be clear text!</div>
                             </div>
 
 
@@ -897,15 +928,19 @@
 
                                 <div id="updateAvailable">
                                     <span id="latestFirmwareVersionLabel" data-i18n="txt_latest_version">unknown</span>
-                                    <span id="latestFirmwareVersion"><a id="myLink" href="#" target="_blank">Download</a></span>
+                                    <span id="latestFirmwareVersion"><a id="myLink" href="#"
+                                            target="_blank">Download</a></span>
                                 </div>
 
                                 <form id="uploadForm">
 
-                                    <label for="firmwareFile" class="primaryBtn" data-i18n="txt_select_file">Choose file</label>
-                                    <span id="fwFileName" class="fileName" data-i18n="txt_no_file_selected">no file selected</span>
+                                    <label for="firmwareFile" class="primaryBtn" data-i18n="txt_select_file">Choose
+                                        file</label>
+                                    <span id="fwFileName" class="fileName" data-i18n="txt_no_file_selected">no file
+                                        selected</span>
                                     <input type="file" id="firmwareFile" accept=".bin" />
-                                    <div><button type="button" class="primaryBtn" onclick="uploadFirmware()">Upload FW</button></div>
+                                    <div><button type="button" class="primaryBtn" onclick="uploadFirmware()">Upload
+                                            FW</button></div>
                                 </form>
                             </div>
 

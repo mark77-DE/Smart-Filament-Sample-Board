@@ -623,7 +623,7 @@ span.uid.invalid {
     content: "▾";
 }
 
-#warningMqtt, #importReboot, #importWarning {
+#warningMqtt, #importReboot, #importWarning, #exportWarning {
     color: red;
     float: right;
     font-weight: bold;

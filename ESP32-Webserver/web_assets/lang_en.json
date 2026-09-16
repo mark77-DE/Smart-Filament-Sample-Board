@@ -1,43 +1,47 @@
 {
   "help": {
     "led": {
-      "title": "LED Settings",
+      "title": "LED settings",
       "content": "<p>LED & NFC-LED Hardware Settings.</p><ul><li>Connected LED-Type.</li><li>LED color order corresponding to the LED type</li></ul><p>Here you can configure the LEDs for the sample.</p><ul><li>Number of LEDs: Number of WS2812b LEDs, corresponding to the number of planned samples</li><li>Brightness: The brightness for the sample LEDs (0–100%)</li><li>LED Color: The color that lights up above the detected sample</li><li>LED Color on Error: The color displayed when the NFC tag is unknown</li><li>Pulsing LED Color: The color that pulses in standby mode</li><li>Timeout: How many milliseconds the LED should light up on the sample</li></ul>"
     },
     "nfcled": {
-      "title": "NFC LED Settings",
+      "title": "NFC LED settings",
       "content": "<p>Here you can configure the NFC LEDs, which light up the NFC symbol (default 12).</p><ul><li>Number of LEDs: Number of WS2812b LEDs</li><li>Brightness: The brightness for the NFC LEDs (0–100%)</li><li>LED Color (NFC detected): The color displayed when an NFC tag is detected</li><li>LED Color (NFC Error): The color displayed when the NFC tag is unknown</li><li>LED Timeout (ms): How long the LEDs light up when an NFC tag is detected</li><li>Pulsing LED Color (Standby): The color that pulses in standby mode</li><li>Blinking: Whether the LEDs should blink on NFC interaction</li><li>Blink Count: Number of blink cycles</li><li>Blink Interval (ms): Interval between blink cycles</li></ul>"
     },
     "mqtt": {
-      "title": "MQTT Settings",
+      "title": "MQTT settings",
       "content": "<p>MQTT connection to the broker.</p><ul><li>Broker IP or hostname</li><li>Client ID should be unique</li><li>Discovery enables automatic HA integration</li></ul>"
     },
+    "filaman": {
+      "title": "Filaman settings",
+      "content": "<p>Filaman connection to Filaman Server.</p><ul><li>Filaman IP or hostname</li></ul>"
+    },
     "button": {
-      "title": "Pushbutton Settings",
+      "title": "Pushbutton settings",
       "content": "<p>Configure the pushbutton including debounce and multi-click detection.</p><ul><li>Pull-Up active: enable internal pull-up (active-low)</li><li>Debounce (ms): Time in milliseconds to wait for a stable input</li><li>Long Press (ms): Time in milliseconds the button must be pressed to count as a long press</li><li>Double Press Gap (ms): Time in milliseconds between two clicks to detect a double press</li><li>Hold Repeat (ms): Interval in milliseconds for repeating action while the button is held</li></ul>"
     },
     "buzzer": {
-      "title": "Buzzer Settings",
+      "title": "Buzzer settings",
       "content": "<p>Configure the piezo buzzer, e.g., volume and pitch.</p><ul><li>Active-High Output: Whether the output is active-high (true) or active-low (false)</li><li>Frequency (Hz): The frequency of the buzzer in Hertz</li><li>Single Beep On (ms): Duration of a single beep</li><li>Double Beep On (ms): Duration of a double beep</li><li>Double Beep Gap (ms): Interval in milliseconds between the two beeps of a double beep</li><li>Error Beep On (ms): Duration of an error beep</li><li>Error Beep Gap (ms): Interval in milliseconds between error beeps</li><li>Error Beep Count: Number of beeps on error</li></ul>"
     },
     "dashboard": {
-      "title": "Dashboard Settings",
+      "title": "Dashboard settings",
       "content": "<p>General settings for the dashboard.</p><ul><li>Highlight LED Timeout (ms): Time the LEDs of the samples light up when a sample or filter is clicked in the web interface.</li><li>Color theme for the web interface (light/dark)</li><li>Language: English, German</li></ul>"
     },
     "importexport": {
-      "title": "Import / Export Settings",
+      "title": "Import / Export settings",
       "content": "<p>Here you can export and import the complete configuration.</p><ul>The configuration is saved in JSON format and can be edited with a text editor.</ul>"
     },
     "debug": {
-      "title": "Debug Settings",
+      "title": "Debug settings",
       "content": "<p>Enable debug for the web console and serial interface.</p>"
     },
     "host": {
-      "title": "Host Settings",
+      "title": "Host settings",
       "content": "<p>Configuration of the hostname.</p>"
     },
     "info": {
-      "title": "Info Settings",
+      "title": "Info settings",
       "content": "<p>Displays information about the device, e.g., version, memory usage, and hardware details.</p>"
     },
     "pinout": {
@@ -120,6 +124,7 @@
     "txt_import_reboot": "Please refresh browser after importing settings.",
     "txt_import_success": "Import successful!",
     "txt_import_warning": "WARNING: This will overwrite all current settings and filaments!",
+    "txt_export_warning": "WARNING: Passwords will be exportet unencrypted in plain text!",
     "txt_importexport_settings": "Import / Export Settings",
     "txt_info1": "Info 1:",
     "txt_info2": "Info 2:",
@@ -143,11 +148,11 @@
     "txt_memory_info": "Memory Information",
     "txt_minute": "minute",
     "txt_minute_plural": "minutes",
-    "txt_mqtt_enabled": "MQTT enabled:",
-    "txt_mqtt_password": "MQTT Password:",
+    "txt_enabled": "enabled:",
+    "txt_password": "MQTT Password:",
     "txt_mqtt_rebootMsg": "REBOOT REQUIRED AFTER CHANGES",
     "txt_mqtt_settings": "MQTT Settings",
-    "txt_mqtt_user": "MQTT User:",
+    "txt_user": "MQTT User:",
     "txt_network_info": "Network Information",
     "txt_nfc_available": "NFC Available:",
     "txt_nfcled_blink": "Blinking:",
@@ -191,7 +196,9 @@
     "txt_warning_filesystem": "Before doing <span class='alert'>filesystem</span> updates, please export config, because data <span class='alert'>will</span> be lost.",
     "txt_warning_firmware": "Before doing <span class='alert'>firmware</span> updates, please export config, because data <span class='alert'>might</span> be lost.",
     "websocket_connected": "WebSocket: connected",
-    "websocket_disconnected": "WebSocket: disconnected"
+    "websocket_disconnected": "WebSocket: disconnected",
+    "txt_searching": "searching",
+    "dummy": "dummy"
 
 
 

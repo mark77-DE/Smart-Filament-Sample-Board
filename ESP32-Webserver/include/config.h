@@ -4,8 +4,6 @@
 
 #include "led_config.h"
 
-
-
 // OPTIONAL: Marker so gpio_hardware.cpp knows that
 // Button/buzzer are present in CONFIG:
 #define CONFIG_HAS_GPIO

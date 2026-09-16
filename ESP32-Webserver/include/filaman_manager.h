@@ -3,6 +3,8 @@
 // FreeRTOS task so handleUID()/loop() never wait on the network round trip.
 #pragma once
 #include <Arduino.h>
+#include <vector>
+#include "FilamanClient.h" // for FilamentSyncEntry
 
 namespace FilamanManager {
 
@@ -22,7 +24,32 @@ namespace FilamanManager {
   // the lookup was still running in the background.
   bool pollResult(String& uid, bool& found, String& locationName);
 
-  // True while a lookup is currently running (e.g. to show a "searching..." state).
+  // Non-blocking: logs in and pre-fetches the location cache in the background.
+  // Call once after WiFi connects, and optionally on a periodic timer
+  // afterwards. Shares the same "one background task at a time" slot as
+  // requestLookup(), so it's simply skipped if a real lookup is in flight.
+  bool requestWarmup();
+
+  // True while a lookup or warmup is currently running (e.g. to show a "searching..." state).
   bool isBusy();
+
+  // Non-blocking: syncs all filaments tagged with sampleboard_uid from FilaMan
+  // into a background-collected list. Meant to be triggered rarely (WebIF
+  // button / hardware button), not automatically — pulling ~1300 filaments
+  // takes many requests. Runs on its own task, independent of the lookup/
+  // warmup busy flag (but they share the same FilamanClient instance
+  // internally, so a sync won't start while a lookup/warmup is in flight,
+  // and vice versa).
+  bool requestSync();
+
+  // True while a sync is currently running.
+  bool isSyncBusy();
+
+  // Call once per loop() iteration. Returns true exactly once when a sync
+  // run has finished. `entries` holds everything found (already includes
+  // per-filament spool count/weight); merging them into FilamentDB is left
+  // to the caller (single-threaded in loop(), to avoid touching FilamentDB
+  // from a background task).
+  bool pollSyncResult(std::vector<FilamentSyncEntry>& entries, bool& success);
 
 } // namespace FilamanManager

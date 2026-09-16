@@ -1,20 +1,17 @@
 // -------------------- Global references --------------------
 const MAX_LENGTH = 30; // Maximum character count for vendor and color
 
+// Database / add-entry / status bar
 const dbDiv = document.getElementById("db");
 const addForm = document.getElementById("addForm");
 const wsStatus = document.getElementById("wsStatus");
+const statusTxt = document.getElementById('statusTxt');
 const editToggle = document.getElementById("editToggle");
 const debugToggle = document.getElementById("debugToggle");
-
-const statusTxt = document.getElementById('statusTxt');
-
 const selectLanguageSelect = document.getElementById("langSelect");
-
-
 const daynightToggle = document.getElementById("daynightToggle");
 
-
+// System / dashboard / info panel
 const infoChipName = document.getElementById("infoChipName");
 const infoCores = document.getElementById("infoCores");
 const infoRevision = document.getElementById("infoRevision");
@@ -44,13 +41,11 @@ const infoFreeSketch = document.getElementById("infoFreeSketch");
 const infoSpiffsSize = document.getElementById("infoSpiffsSize");
 const infoFreeSpiffs = document.getElementById("infoFreeSpiffs");
 const infoBoardVariant = document.getElementById("infoBoardVariant");
-const updateFilename = document.getElementById("updateFilename");
-const linkElement = document.getElementById("myLink");
-const updateAvailableDiv = document.getElementById("updateAvailable");
+const infoCpuTempInfo = document.getElementById("infoCpuTemp");
 
+// LED settings
 const ledHardwareTypeSelect = document.getElementById("ledHardwareTypeSelect");
 const ledHardwareColorOrderSelect = document.getElementById("ledHardwareColorOrderSelect");
-
 const ledBrightnessInput = document.getElementById("ledBrightness");
 const maxLEDInput = document.getElementById("maxLED");
 const ledColorInput = document.getElementById("ledColor");
@@ -58,9 +53,9 @@ const ledColorErrorInput = document.getElementById("ledColorError");
 const ledColorPulseInput = document.getElementById("ledColorPulse");
 const ledTimeoutInput = document.getElementById("ledTimeout");
 const animationAfterBootInput = document.getElementById("animationAfterBoot");
+const webLedTimeoutInput = document.getElementById("webLedTimeout");
 
-
-
+// NFC settings
 const nfcLedBrightnessInput = document.getElementById("nfcLedBrightness");
 const nfcMaxLEDInput = document.getElementById("nfcMaxLED");
 const nfcLedColorSuccessInput = document.getElementById("nfcLedColorSuccess");
@@ -71,7 +66,7 @@ const nfcLedSuccessBlinkCountInput = document.getElementById("nfcLedSuccessBlink
 const nfcLedSuccessBlinkMsInput = document.getElementById("nfcLedSuccessBlinkMs");
 const nfcLedTimeoutInput = document.getElementById("nfcLedTimeout");
 
-
+// Button / buzzer settings
 const buttonEnabledInput = document.getElementById("buttonEnabled");
 const buttonEnabledDiv = document.getElementById("buttonEnabledDiv");
 const buttonPullupInput = document.getElementById("buttonPullup");
@@ -92,6 +87,7 @@ const buzzerErrorOnMsInput = document.getElementById("buzzerErrorOnMs");
 const buzzerErrorGapMsInput = document.getElementById("buzzerErrorGapMs");
 const buzzerErrorCountInput = document.getElementById("buzzerErrorCount");
 
+// MQTT
 const mqttEnabledDiv = document.getElementById("mqttEnabled");
 const mqttBrokerInput = document.getElementById("mqttBroker");
 const mqttPortInput = document.getElementById("mqttPort");
@@ -102,47 +98,43 @@ const mqttBaseTopicInput = document.getElementById("mqttBaseTopic");
 const mqttHADiscoveryCheck = document.getElementById("mqttHADiscovery");
 const mqttHADiscoveryPrefixInput = document.getElementById("mqttHADiscoveryPrefix");
 
+//Filaman
+const filamanEnabledDiv = document.getElementById("filamanEnabled");
+const filamanServerInput = document.getElementById("filamanServer");
+const filamanPortInput = document.getElementById("filamanPort");
+const filamanUserInput = document.getElementById("filamanUser");
+const filamanPasswordInput = document.getElementById("filamanPassword");
 
-const webLedTimeoutInput = document.getElementById("webLedTimeout");
 
+
+//update / import export
 const importFileInput = document.getElementById("importFile");
 const importBtn = document.getElementById("importBtn");
-
 const toggleBtn = document.getElementById("toggleSettings");
 const section = document.getElementById("sectionSettings");
 
 const fwUpdateSection = document.getElementById("fwUpdateSection");
 const updateCheckIntervalInput = document.getElementById("updateCheckInterval");
 const updateIntervalHumanTxt = document.getElementById("updateIntervalHuman");
-
+const updateFilename = document.getElementById("updateFilename");
+const linkElement = document.getElementById("myLink");
+const updateAvailableDiv = document.getElementById("updateAvailable");
 const selfUpdateSectionDiv = document.getElementById("selfUpdateSection");
-
 const selfUpdateBtn = document.getElementById("selfUpdateBtn");
 const statusProgressSpan = document.getElementById("statusProgress");
 const selfUpdateStatusDiv = document.getElementById("selfUpdateStatus");
-
 const statusProgressWrap = document.getElementById("statusProgress");
 const statusProgressBar = document.getElementById("statusProgressBar");
 const statusProgressLabel = document.getElementById("statusProgressLabel");
-
 const latestFirmwareVersion = document.getElementById("latestFirmwareVersion");
 
-const infoCpuTempInfo = document.getElementById("infoCpuTemp");
-
-
-
+// Host / pinout
 const hostnameInput = document.getElementById("hostname");
-
 const ledSelect = document.getElementById("ledIndexSelect");
-
-
-
 const sclPin = document.getElementById("sclPin");
 const sdaPin = document.getElementById("sdaPin");
-
 const ledPin = document.getElementById("ledPin");
 const nfcLedPin = document.getElementById("nfcLedPin");
-
 const buttonPin = document.getElementById("buttonPin");
 const buzzerPin = document.getElementById("buzzerPin");
 
@@ -526,11 +518,24 @@ document.getElementById("rebootBtn").addEventListener("click", async () => {
     try { await fetch("/api/reboot", { method: "POST" }); } catch { }
     document.body.innerHTML = `
         <h2 data-i18n="txt_esp_disconnected">ESP disconnected...</h2>
-        <p data-i18n="txt_page_reload">Page will reload in 2 seconds.</p>
+        <p data-i18n="txt_page_reload">Page will reload in 5 seconds.</p>
     `;
-    setTimeout(() => location.reload(), 2000);
+    setTimeout(() => location.reload(), 5000);
 });
 
+
+// -------------------- Filaman Sync --------------------
+document.getElementById("filamanSyncBtn").addEventListener("click", async () => {
+    try {
+        const res = await fetch("/api/filamanSync", { method: "POST" });
+        const data = await res.json();
+        if (!data.started) {
+            alert("Sync nicht gestartet (läuft evtl. bereits, oder FilaMan ist deaktiviert).");
+        }
+    } catch (e) {
+        console.error("Sync request failed", e);
+    }
+});
 
 // -------------------- Add Form --------------------
 addForm.addEventListener("submit", async e => {
@@ -730,6 +735,7 @@ async function renderTable() {
     const buz = CONFIGV2.buzzer || {};
     const btn = CONFIGV2.button || {};
     const mqtt = CONFIGV2.mqttConfig || {};
+    const filaman = CONFIGV2.filamanConfig || {};
 
     debugToggle.checked = !!(sys.debugMode);
 
@@ -822,6 +828,13 @@ async function renderTable() {
     if (mqttBaseTopicInput) mqttBaseTopicInput.value = mqtt.baseTopic ?? "";
     if (mqttHADiscoveryCheck) mqttHADiscoveryCheck.checked = !!mqtt.haDiscovery;
     if (mqttHADiscoveryPrefixInput) mqttHADiscoveryPrefixInput.value = mqtt.haDiscoveryPrefix ?? "";
+
+    // --- Filaman UI ---
+    if (filamanEnabledDiv) filamanEnabledDiv.checked = !!filaman.enabled;
+    if (filamanServerInput) filamanServerInput.value = filaman.server ?? "";
+    if (filamanPortInput) filamanPortInput.value = filaman.port ?? 8083;
+    if (filamanUserInput) filamanUserInput.value = filaman.user ?? "admin@example.com";
+    if (filamanPasswordInput) filamanPasswordInput.value = filaman.password ?? "admin123";
 
     // --- Hostsettings ---
     if (hostnameInput) hostnameInput.value = sys.hostname ?? "hostname";
@@ -993,6 +1006,13 @@ async function saveConfigHandler() {
     const mqttHADiscoveryCheckValue = mqttHADiscoveryCheck ? mqttHADiscoveryCheck.checked : false;
     const mqttHADiscoveryPrefixInputValue = mqttHADiscoveryPrefixInput ? mqttHADiscoveryPrefixInput.value.trim() : "homeassistant";
 
+    // --- Filaman ---
+    const filamanEnabledCheck = filamanEnabledDiv ? filamanEnabledDiv.checked : false;
+    const filamanServerInputValue = filamanServerInput ? filamanServerInput.value.trim() : "";
+    const filamanPortInputValue = filamanPortInput ? Number(filamanPortInput.value) : 8083;
+    const filamanUserInputValue = filamanUserInput ? filamanUserInput.value.trim() : "admin@example.com";
+    const filamanPasswordInputValue = filamanPasswordInput ? filamanPasswordInput.value : "admin124";
+
     // --- Hostsettings ---
     const hostname = hostnameInput ? hostnameInput.value.trim() : "hostname";
 
@@ -1065,6 +1085,13 @@ async function saveConfigHandler() {
                     baseTopic: mqttBaseTopicInputValue,
                     haDiscovery: mqttHADiscoveryCheckValue,
                     haDiscoveryPrefix: mqttHADiscoveryPrefixInputValue
+                },
+                filamanConfig: {
+                    enabled: filamanEnabledCheck,
+                    server: filamanServerInputValue,
+                    port: filamanPortInputValue,
+                    user: filamanUserInputValue,
+                    password: filamanPasswordInputValue,
                 }
             })
         });

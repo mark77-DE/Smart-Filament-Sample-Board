@@ -38,7 +38,7 @@ String getFirmwareAssetName();
   #define FW_VERSION_URL  OTA_LOCAL_SERVER_URL_BASE "version.txt"
   #define FW_BINARY_URL   OTA_LOCAL_SERVER_URL_BASE
 #else
-  #define FW_VERSION_URL  "https://raw.githubusercontent.com/mark77-DE/Smart-Filament-Sample-Board/refs/heads/main/ESP32-Webserver/version.txt"
+  #define FW_VERSION_URL  "https://api.github.com/repos/mark77-DE/Smart-Filament-Sample-Board/releases/latest"
   #define FW_BINARY_URL   "https://github.com/mark77-DE/Smart-Filament-Sample-Board/releases/download/"
 #endif
 

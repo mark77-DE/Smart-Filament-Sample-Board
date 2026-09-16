@@ -2,6 +2,7 @@
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
 #include <HTTPClient.h>
+#include <ArduinoJson.h>
 #include "version_info.h"
 #include "config.h"
 #include "globals.h"
@@ -96,14 +97,12 @@ bool checkForUpdate(String &latestVersion)
         return false;
     }
 
-    if (CONFIGV2.system.debugMode) Serial.println("[HEAP] Checkpoint A (before GET)");
-    heap_caps_check_integrity_all(true);
+    http.addHeader("Accept", "application/vnd.github+json");
+    http.addHeader("User-Agent", "Smart-Filament-Sample-Board");
 
     int httpCode = http.GET();
 
-    if (CONFIGV2.system.debugMode) Serial.println("[HEAP] Checkpoint B (after GET)");
-    heap_caps_check_integrity_all(true);
-
+    
     if (CONFIGV2.system.debugMode)
     {
         Serial.println("[UPDATE-CHECK] HTTP Code: " + String(httpCode));
@@ -117,17 +116,35 @@ bool checkForUpdate(String &latestVersion)
         }
         http.end();
 
-        if (CONFIGV2.system.debugMode) Serial.println("[HEAP] Checkpoint C-fail (after http.end())");
-        heap_caps_check_integrity_all(true);
 
         return false;
     }
 
-    latestVersion = http.getString();
-    latestVersion.trim();
+    String response = http.getString();
+    JsonDocument releaseDoc;
+    DeserializationError err = deserializeJson(releaseDoc, response);
+    if (err)
+    {
+        if (CONFIGV2.system.debugMode)
+        {
+            Serial.println("[UPDATE-CHECK] GitHub JSON parse failed: " + String(err.c_str()));
+        }
+        http.end();
+        return false;
+    }
 
-    if (CONFIGV2.system.debugMode) Serial.println("[HEAP] Checkpoint C (after getString)");
-    heap_caps_check_integrity_all(true);
+    const char *tagName = releaseDoc["tag_name"].as<const char *>();
+    if (tagName == nullptr || tagName[0] == '\0')
+    {
+        if (CONFIGV2.system.debugMode)
+        {
+            Serial.println("[UPDATE-CHECK] GitHub response has no tag_name");
+        }
+        http.end();
+        return false;
+    }
+
+    latestVersion = tagName;
 
     LATEST_FIRMWARE_VERSION = latestVersion;
 
@@ -135,11 +152,7 @@ bool checkForUpdate(String &latestVersion)
     {
         Serial.println("[UPDATE-CHECK] Latest version fetched: " + latestVersion);
     }
-
     http.end();
-
-    if (CONFIGV2.system.debugMode) Serial.println("[HEAP] Checkpoint D (after http.end())");
-    heap_caps_check_integrity_all(true);
 
     return latestVersion.length() > 0;
 }
