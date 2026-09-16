@@ -11,28 +11,21 @@
   <img alt="Home Assistant" src="https://img.shields.io/badge/integration-Home%20Assistant-41BDF5">
 </p>
 
+<p align="center">
+  🇩🇪 <strong>Deutsch</strong> &nbsp;|&nbsp; 🇬🇧 <a href="./README_EN.md">English</a>
+</p>
+
 ---
 
 ## Inhaltsverzeichnis
 
-<!-- - [Über das Projekt](#über-das-projekt) -->
-- [Funktionsweise](#funktionsweise)
-- [Benötigte Hardware](#benötigte-hardware)
-- [Galerie](#galerie)
-- [Erste Schritte](#erste-schritte)
-- [Dokumentation](#dokumentation)
-- [Mitmachen](#mitmachen)
-- [Lizenz](#lizenz)
-
-
-<!-- 
-## Über das Projekt
-
-TODO: 2-3 Sätze: Für wen ist das Board gedacht? Welches Problem löst es?
-Beispiel:
-Wer viele Filament-Sample-Spulen sammelt, kennt das Problem: Welches Sample war das
-nochmal, und wo liegt es? Das Smart Filament Sample Board löst das mit NFC-Tags,
-einem ESP32 und einer Home-Assistant-Anbindung — Tag scannen, LED zeigt den Lagerplatz. -->
+* [Funktionsweise](#funktionsweise)
+* [Benötigte Hardware](#benötigte-hardware)
+* [Galerie](#galerie)
+* [Erste Schritte](#erste-schritte)
+* [Dokumentation](#dokumentation)
+* [Mitmachen](#mitmachen)
+* [Lizenz](#lizenz)
 
 ## Funktionsweise
 
@@ -44,15 +37,12 @@ Workflow basierend auf einer eigenen JSON-Datenbank auf dem ESP32:
 4. Ein Klick im WebIF zeigt ebenfalls, wo das Filament-Sample lagert.
 
 Zusätzlich gibt es eine Anbindung an **Home Assistant** via HA-Discovery und MQTT:
-Der ESP32 sendet das ausgewählte Filament (per NFC-Tag oder Klick im WebIF) an Home
-Assistant. LEDs und Display lassen sich per HA ein-/ausschalten, der ESP übermittelt
-den Status zurück.
+
+Der ESP32 sendet das ausgewählte Filament (per NFC-Tag oder Klick im WebIF) an Home Assistant. LEDs und Display lassen sich per HA ein-/ausschalten, der ESP übermittelt den Status zurück.
 
 ## Benötigte Hardware
 
-Siehe [Hardware-Dokumentation](./docs/hardware.md)
-
-
+Siehe [Hardware-Dokumentation](./docs/hardware.md).
 
 ## Galerie
 
@@ -83,11 +73,11 @@ Kurzfassung — die ausführliche Anleitung steht in [`docs/setup.md`](docs/setu
 
 Ausführliche Anleitungen findest du im [`docs/`](docs) Ordner:
 
-| Dokument | Inhalt |
-|---|---|
-| [`docs/hardware.md`](docs/hardware.md) | Verkabelung, Pinbelegung, Schaltplan |
-| [`docs/setup.md`](docs/setup.md) | Firmware flashen, Konfiguration, Home-Assistant-Setup |
-| [`docs/usage.md`](docs/usage.md) | Alltägliche Bedienung, NFC-Tags anlegen, WebIF |
+| Dokument                               | Inhalt                                                       |
+| -------------------------------------- | ------------------------------------------------------------ |
+| [`docs/hardware.md`](docs/hardware.md) | Verkabelung, Pinbelegung, Schaltplan                         |
+| [`docs/setup.md`](docs/setup.md)       | Firmware flashen, Konfiguration, Home-Assistant-Setup        |
+| [`docs/usage.md`](docs/usage.md)       | Alltägliche Bedienung, NFC-Tags anlegen, WebIF               |
 | [`docs/3d-print.md`](docs/3d-print.md) | 3D-Druckteile aus [`3D-Daten`](3D-Daten), Druckeinstellungen |
 
 <!-- Sammlung offener Notizen/Ideen liegt aktuell in Notes/ – ggf. dort verlinken -->
@@ -95,6 +85,7 @@ Ausführliche Anleitungen findest du im [`docs/`](docs) Ordner:
 ## Mitmachen
 
 Contributions, Issues und Feature-Wünsche sind willkommen!
+
 Schau gerne im [Issues-Tab](https://github.com/mark77-DE/Smart-Filament-Sample-Board/issues) vorbei.
 
 <!-- TODO: falls gewünscht, CONTRIBUTING.md ergänzen und hier verlinken -->
