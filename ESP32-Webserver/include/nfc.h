@@ -59,9 +59,9 @@ namespace NFC
      * through the external `handleUID()` function (defined in the app).
      *
      * @param now            Aktuelle Zeit in Millisekunden (typisch: `millis()`).
-     * @param[out] isActive  Wird auf `true` gesetzt, wenn aktuell ein Tag präsent ist.
-     * @param[out] lastTagTime  Zeitpunkt (ms) der letzten festgestellten Präsenz.
-     * @param[out] tagPresentOut  Präsenzstatus nach Grace/Guards (true = „Tag gilt als da“).
+     * @param[out] isActive  Set to `true` when a tag is currently present.
+     * @param[out] lastTagTime  Time (ms) of the last detected presence.
+     * @param[out] tagPresentOut  Presence status after grace/guards (true = "tag is considered present").
      */
     void tick(unsigned long now,
               bool &isActive,
@@ -69,32 +69,32 @@ namespace NFC
               bool &tagPresentOut);
 
     /**
-     * @brief Gibt die UID des aktuell "gehaltenen" Tags zurück (leer, wenn keins aktiv ist).
+     * @brief Returns the UID of the currently "held" tag (empty if none is active).
      *
-     * Nützlich, um nach einem asynchronen Vorgang (z. B. FilaMan-Lookup) zu prüfen,
-     * ob das Tag, für das das Ergebnis gilt, noch dasselbe ist, das gerade angezeigt wird.
+     * Useful after an asynchronous operation (e.g. a FilaMan lookup) to verify whether
+     * the tag for which the result was produced is still the same one currently displayed.
      */
     String currentHoldUid();
 
 } // namespace NFC
 
 // ============================================================================
-// Optionale Hooks
+// Optional hooks
 // ============================================================================
-// Diese Symbole werden in nfc.cpp als „weak“ definiert und können vom Projekt
-// überschrieben werden, um unmittelbar bei Preemption/Aktivität zu reagieren.
+// These symbols are defined as "weak" in nfc.cpp and may be overridden by the project
+// to react immediately to preemption/activity.
 
 /**
- * @brief Wird gerufen, wenn ein neues Tag einen laufenden Effekt „überfährt“.
- *        (z. B. um ein Display sofort zu aktualisieren)
+ * @brief Called when a new tag preempts an ongoing effect.
+ *        (e.g. to refresh the display immediately)
  *
- * @param uid  UID des neuen, präemptiven Tags (Format wie in checkTag()).
+ * @param uid  UID of the new preemptive tag (same format as in checkTag()).
  */
 void NFC_OnPreempt(const String &uid);
 
 /**
- * @brief Wird in jedem `tick()` gerufen, solange ein Tag als präsent gilt.
- *        (z. B. um eine Idle-Animation zu beenden)
+ * @brief Called on every `tick()` while a tag is considered present.
+ *        (e.g. to stop an idle animation)
  */
 void NFC_OnActive();
 
@@ -106,5 +106,5 @@ struct NFCInfo
     bool available;
 };
 
-// globale Instanz
+// global instance
 extern NFCInfo g_nfcInfo;

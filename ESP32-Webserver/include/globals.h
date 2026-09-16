@@ -17,8 +17,8 @@ extern uint32_t REBOOT_DELAY_MS;        // Button-Delay (ms)
 extern uint32_t REBOOT_DELAY_WEBIF_MS;  // WebIF-Delay (ms)
 
 // ----------------- LED & Tag -----------------
-extern int targetLed;                // aktuell aktive LED
-extern unsigned long ledStartTime;   // Startzeit der LED
+extern int targetLed;                // currently active LED
+extern unsigned long ledStartTime;   // LED start time
 //extern const unsigned long LED_TIMEOUT; // 3s Timeout
 extern bool displayIdleShown;
 

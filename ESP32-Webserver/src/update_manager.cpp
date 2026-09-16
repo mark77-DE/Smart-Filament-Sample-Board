@@ -34,7 +34,7 @@ void updateInit()
         updateIntervalMs = CONFIGV2.system.updateCheckInterval * 60 * 1000UL;
     }
 
-    // erster Check nach initialDelay
+    // First check after initialDelay
     g_updateInfo.lastCheck = millis() - (updateIntervalMs - initialDelayMs);
 
     changed = true;
@@ -472,7 +472,7 @@ static void selfUpdateTask(void *parameter)
     g_selfUpdateStatus.message = "Connecting to firmware server";
 
     // ----------------------------------------
-    // Start HTTPS or lokal http connection
+    // Start HTTPS or local HTTP connection
     // ----------------------------------------
 
     bool isHttps = String(firmwareUrl).startsWith("https://");
@@ -513,12 +513,12 @@ static void selfUpdateTask(void *parameter)
         Serial.println("[SELF-UPDATE] Starting firmware download...");
 
     // in checkForUpdate(), vor und nach dem HTTP-Request
-    heap_caps_check_integrity_all(true); // vorher: sollte noch OK sein
+    heap_caps_check_integrity_all(true); // before: should still be OK
 
     int httpCode = http.GET();
 
-    heap_caps_check_integrity_all(true); // nachher: hier crasht es jetzt ggf. schon,
-                                         // statt erst Minuten später im tcpip_thread
+    heap_caps_check_integrity_all(true); // after: may already crash here,
+                                         // instead of minutes later in the tcpip thread
 
     if (CONFIGV2.system.debugMode)
     {

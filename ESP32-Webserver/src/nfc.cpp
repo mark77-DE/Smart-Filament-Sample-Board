@@ -32,15 +32,15 @@ extern void handleUID(const String& uidStr, UidSource src);
 // ============================================================================
 // Edge-/Hold-Tracking
 static bool          s_prevTagPresent  = false;   // Presence status of the previous tick
-static bool          s_holdActive      = false;   // wir sind „im Hold“ (selbes Tag)
+static bool          s_holdActive      = false;   // we are in the hold state (same tag)
 static String        s_holdUid;                   // Last triggered UID (for idle debounce)
 static unsigned long s_lastTriggerMs   = 0;       // Last handleUID() time
 static unsigned long s_lastSeenMs      = 0;       // Last raw detection (ms)
 
 // Block retriggering while an effect is running
-static bool          s_lockActive      = false;   // blockt (same uid) retrigger bis LEDs idle
+static bool          s_lockActive      = false;   // blocks retrigger for the same UID until LEDs are idle
 
-// Welche UID „besitzt“ aktuell den LED-Controller (solange nicht idle)?
+// Which UID currently "owns" the LED controller (while not idle)?
 static String        s_busyUid;
 
 // Debug throttle for raw logs
@@ -52,15 +52,15 @@ static constexpr uint16_t RAW1_PERIOD_MS        = 300; // min. alle 300 ms „ra
 // Tuning-Parameter
 // ============================================================================
 // Suppress duplicate triggers for the same UID when LEDs are idle
-// (z. B. direkt nach einem Timeout).
+// (e.g. immediately after a timeout).
 static constexpr uint16_t RETRIGGER_DEBOUNCE_MS = 300;
 
-// „Klebezeit“ gegen kurze Erkennungslücken, damit ein gehaltenes Tag
-// nicht ständig falling/rising erzeugt.
+// Sticky grace time against short detection gaps so a held tag does not keep
+// toggling between falling and rising.
 static constexpr uint16_t HOLD_GRACE_MS         = 300;
 
-// Preemption-Schutz: Neues Tag darf einen laufenden Effekt nur überfahren,
-// wenn seit dem letzten Trigger mindestens diese Zeit vergangen ist.
+// Preemption protection: a new tag may only preempt an ongoing effect if at least
+// this much time has elapsed since the last trigger.
 static constexpr uint16_t PREEMPT_MIN_GAP_MS    = 350;
 
 namespace NFC {
@@ -97,7 +97,7 @@ uint32_t init(Adafruit_PN532* nfc) {
 }
 
 // ============================================================================
-// Einmaliger Block-Leser (Debug/Tools): Gibt UID als String zurück oder "".
+// One-time block reader (debug/tools): returns UID as a string or "".
 // ============================================================================
 String checkTag() {
   if (!_nfc) return "";
@@ -119,7 +119,7 @@ String checkTag() {
 }
 
 // ============================================================================
-// Interner Helper: Hold-Zustand beenden
+// Internal helper: end the hold state
 // ============================================================================
 static inline void onHoldEnded() {
   s_holdActive     = false;
@@ -129,7 +129,7 @@ static inline void onHoldEnded() {
 }
 
 // ============================================================================
-// Reset aller Guards (z. B. bei globalem Reset/Neustart sinnvoll)
+// Reset all guards (useful for global resets / restarts)
 // ============================================================================
 void resetGuard() {
   s_prevTagPresent = false;
@@ -144,11 +144,11 @@ void resetGuard() {
 
 // ============================================================================
 // tick(..)
-// Nicht-blockierender NFC-Poll + Guards + Trigger-Entscheidung.
-// - now            : aktuelle Zeit (millis())
-// - isActive       : wird auf true gesetzt, wenn ein Tag präsent ist
-// - lastTagTime    : Zeitpunkt der letzten Präsenz (für äußere Timeouts)
-// - tagPresentOut  : gibt den (gegraceten) Präsenzstatus an den Aufrufer zurück
+// Non-blocking NFC poll + guards + trigger decision.
+// - now            : current time (millis())
+// - isActive       : set to true when a tag is present
+// - lastTagTime    : timestamp of the last presence (for external timeouts)
+// - tagPresentOut  : returns the grace-filtered presence status to the caller
 // ============================================================================
 static uint32_t lastPoll = 0;
 void tick(unsigned long now,
@@ -199,7 +199,7 @@ lastPoll = now;
   s_prevRaw = tagPresentRaw;
 
   // --------------------------------------------------------------------------
-  // 2) Grace („Sticky Presence“) gegen kurze Lücken
+  // 2) Grace ("sticky presence") against short gaps
   // --------------------------------------------------------------------------
   bool tagPresent = tagPresentRaw;
   if (!tagPresent && s_holdActive && (now - s_lastSeenMs) < HOLD_GRACE_MS) {
@@ -208,13 +208,13 @@ lastPoll = now;
   }
 
   // --------------------------------------------------------------------------
-  // 3) Präsenz-Information zuerst an den LED-Controller (steuert den Timeout)
+  // 3) Pass presence information to the LED controller first (controls the timeout)
   // --------------------------------------------------------------------------
   LEDCTRL_NFC::tagPresenceTick(tagPresent);
 
-  // 3.1) Lock & busyUid freigeben, sobald LEDs idle sind
+  // 3.1) Release lock & busyUid as soon as the LEDs are idle
   if (!LEDCTRL_NFC::isIdle()) {
-    // Effekt läuft -> busy bleibt gesetzt
+    // effect is running -> busy remains set
   } else {
     if (s_lockActive || s_busyUid.length()) {
       s_lockActive = false;
@@ -224,7 +224,7 @@ lastPoll = now;
   }
 
   // --------------------------------------------------------------------------
-  // 4) Rising-Edge: jetzt entscheiden, ob wir handleUID() auslösen
+  // 4) Rising edge: decide whether to trigger handleUID()
   // --------------------------------------------------------------------------
   if (tagPresent && !s_prevTagPresent) {
     
@@ -234,7 +234,7 @@ lastPoll = now;
     const bool ledIdle   = LEDCTRL_NFC::isIdle();
     const bool haveFresh = tagPresentRaw; // nur mit frischer UID triggern
 
-    // LEDs NICHT idle → Preemption-Logik (neue UID darf evtl. „überfahren“)
+    // LEDs are not idle → preemption logic (new UID may override the current effect)
     if (!ledIdle) {
       if (haveFresh) {
         if (uidStr == s_busyUid) {
@@ -272,7 +272,7 @@ lastPoll = now;
       return;
     }
 
-    // LEDs idle → regulärer Trigger-Pfad
+    // LEDs idle → normal trigger path
     if (haveFresh) {
       const bool sameHoldSameUid = s_holdActive && (s_holdUid == uidStr);
       const bool tooFast         = (now - s_lastTriggerMs) < RETRIGGER_DEBOUNCE_MS;
@@ -301,7 +301,7 @@ lastPoll = now;
   }
 
   // --------------------------------------------------------------------------
-  // 5) Keep-Alive für äußere Logik (Display, etc.)
+  // 5) Keep-alive for external logic (display, etc.)
   // --------------------------------------------------------------------------
   if (tagPresent) {
     lastTagTime = now;

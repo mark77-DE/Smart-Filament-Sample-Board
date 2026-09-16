@@ -17,7 +17,7 @@ AppConfigV2 CONFIGV2;
 bool configChanged = false;
 
 // ============================================================================
-// Laden / Anwenden der Konfiguration
+// Load / apply configuration
 // ============================================================================
 
 bool loadConfigV2()
@@ -247,7 +247,7 @@ bool loadConfigV2()
     CONFIGV2.filamanConfig.user       = filaman["user"] | "admin@example.com";
     CONFIGV2.filamanConfig.password   = filaman["password"] | "admin123";
 
-    // Filament-DB laden & Konfiguration anwenden
+    // Load filament DB and apply configuration
     if (CONFIGV2.system.debugMode)
     {
         Serial.println(F("Config V2 loaded successfully."));
@@ -266,7 +266,7 @@ bool loadConfigV2()
 }
 
 //----------------------------------------------------------------------------
-// Anwenden der geladenen Konfiguration (vor allem Hardware-bezogen)
+// Apply the loaded configuration (mainly hardware-related)
 //----------------------------------------------------------------------------
 
 void applyConfigV2()

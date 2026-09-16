@@ -73,7 +73,7 @@ void displayFlush()
 }
 
 // ------------------------------------------------------------
-// Umlaute → ASCII
+// Umlauts → ASCII
 // ------------------------------------------------------------
 static String fixUmlauts(String s) {
   s.replace("ä", "ae"); s.replace("ö", "oe"); s.replace("ü", "ue");
@@ -128,7 +128,7 @@ static void printLineAutoFitCenteredGfx(DisplayType* d, const String& raw,
     return;
   }
 
-  // 64px: erst DISPLAY_FONT probieren
+  // 64px: try DISPLAY_FONT first
   bool useStd = false;
   if (font != nullptr) {
     d->setFont(font);
@@ -283,7 +283,7 @@ void MYDISPLAY::show(const FilamentEntry& entry) {
 
   _display->display();
 
-  // Font-State wiederherstellen
+  // Restore font state
   _display->setFont(DISPLAY_FONT);
   _display->setTextSize(1);
 
@@ -335,7 +335,7 @@ void MYDISPLAY::showTwoLinesCentered(const String& line1, const String& line2) {
 
   const bool smallDisplay = (SCREEN_HEIGHT <= 32);
 
-  // Zeilenhöhe bestimmen
+  // Determine line height
   int16_t x1=0, y1=0; uint16_t w=0, h=0;
   int16_t lineHeight = 0;
   if (smallDisplay) {
@@ -347,7 +347,7 @@ void MYDISPLAY::showTwoLinesCentered(const String& line1, const String& line2) {
     lineHeight = (int16_t)h + 2;
   }
 
-  // Ziel: vertikal in 2 Zeilen verteilen → Start oben (wie bei show)
+  // Aim: distribute vertically over 2 lines → start at the top (same as show)
   int16_t y = smallDisplay ? 0 : lineHeight;
 
   printLineAutoFitCenteredGfx(_display, line1, y, smallDisplay, lineHeight); y += lineHeight;
@@ -371,7 +371,7 @@ void MYDISPLAY::showThreeLinesCentered(const String& line1, const String& line2,
 
   const bool smallDisplay = (SCREEN_HEIGHT <= 32);
 
-  // Zeilenhöhe bestimmen
+  // Determine line height
   int16_t x1=0, y1=0; uint16_t w=0, h=0;
   int16_t lineHeight = 0;
   if (smallDisplay) {
@@ -383,7 +383,7 @@ void MYDISPLAY::showThreeLinesCentered(const String& line1, const String& line2,
     lineHeight = (int16_t)h + 2;
   }
 
-  // Start oben (32px) oder mit Abstand (64px) – konsistent zu show()
+  // Start at the top (32px) or with spacing (64px) – consistent with show()
   int16_t y = smallDisplay ? 0 : lineHeight;
 
   printLineAutoFitCenteredGfx(_display, line1, y, smallDisplay, lineHeight); y += lineHeight;
@@ -420,7 +420,7 @@ void MYDISPLAY::showFourLinesCentered(const String& line1, const String& line2, 
     lineHeight = (int16_t)h + 3;
   }
 
-  // Start oben (32px) oder mit Abstand (64px) – konsistent zu show()
+  // Start at the top (32px) or with spacing (64px) – consistent with show()
   int16_t y = smallDisplay ? 0 : lineHeight;
 
   printLineAutoFitCenteredGfx(_display, line1, y, smallDisplay, lineHeight, &FreeMono7pt7b); y += lineHeight;
@@ -441,8 +441,8 @@ void MYDISPLAY::showBootVersion(const char* version, const char* dateShort) {
     if (!_display) return;
 
     String l1 = F("Firmware");
-    String l2 = String(version);   // z.B. "FW v0.1.0"
-    String l3 = String(dateShort);            // z.B. "21.12:25"
+    String l2 = String(version);   // e.g. "FW v0.1.0"
+    String l3 = String(dateShort);            // e.g. "21.12:25"
 
     showThreeLinesCentered(l1, l2, l3);            
 }
@@ -479,12 +479,12 @@ static const unsigned long SELF_UPDATE_RESULT_HOLD_MS = 10000;
 
 void MYDISPLAY::renderSelfUpdateStatus(const SelfUpdateStatus& status) {
 
-    // Neuer Update-Lauf erkannt (running wieder true) -> alles zurücksetzen
+    // New update run detected (running set back to true) -> reset everything
     if (status.running) {
         s_finishedHandled = false;
     }
 
-    // Kein Update aktiv, keins (unbehandelt) abgeschlossen -> nichts zu tun
+    // No update active, no pending completion -> nothing to do
     if (!status.running && (!status.finished || s_finishedHandled)) {
         s_selfUpdateActive = false;
         s_finishedShown    = false;
@@ -498,7 +498,7 @@ void MYDISPLAY::renderSelfUpdateStatus(const SelfUpdateStatus& status) {
         s_lastMessage  = "";
     }
 
-    // ---- Abschluss (Erfolg/Fehler) ----
+    // ---- Completion (success/failure) ----
     if (status.finished && !s_finishedHandled) {
         if (!s_finishedShown) {
             if (status.success) {
@@ -511,7 +511,7 @@ void MYDISPLAY::renderSelfUpdateStatus(const SelfUpdateStatus& status) {
         }
 
         if (millis() - s_finishedAt >= SELF_UPDATE_RESULT_HOLD_MS) {
-            s_finishedHandled  = true;   // wichtig: dieses Ereignis ist jetzt "verbraucht"
+            s_finishedHandled  = true;   // important: this event is now "consumed"
             s_finishedShown    = false;
             s_selfUpdateActive = false;
             DisplayAnim::startIdle(millis());
@@ -519,7 +519,7 @@ void MYDISPLAY::renderSelfUpdateStatus(const SelfUpdateStatus& status) {
         return;
     }
 
-    // ---- Läuft noch: Progress anzeigen ----
+    // ---- Still running: show progress ----
     if (status.progress != s_lastProgress || status.message != s_lastMessage) {
         char pct[8];
         snprintf(pct, sizeof(pct), "%u%%", status.progress);

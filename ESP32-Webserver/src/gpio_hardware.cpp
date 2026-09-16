@@ -10,7 +10,7 @@
 #endif
 
 // ============================================================================
-// Konfig-Defaults (greifen, falls Keys in config_v2.json fehlen)
+// Config defaults (used when keys are missing in config_v2.json)
 // ============================================================================
 
 static bool  CFG_BTN_PULLUP         = true;  // interner PullUp -> active-low
@@ -20,8 +20,8 @@ static int   CFG_BTN_DOUBLE_MS      = 400;
 static int   CFG_BTN_HOLD_MS        = 250;
 
 
-static bool  CFG_BUZ_ACTIVE_HIGH    = true;  // HIGH = an (bei aktivem Buzzer)
-static bool  CFG_BUZ_PASSIVE        = false; // false=aktiv (on/off), true=passiv (PWM/tone)
+static bool  CFG_BUZ_ACTIVE_HIGH    = true;  // HIGH = on (for an active buzzer)
+static bool  CFG_BUZ_PASSIVE        = false; // false = active (on/off), true = passive (PWM/tone)
 static int   CFG_BUZ_FREQ_HZ        = 4000;
 static int   CFG_BUZ_SINGLE_ON_MS   = 80;
 static int   CFG_BUZ_DOUBLE_ON_MS   = 60;
@@ -31,13 +31,13 @@ static int   CFG_BUZ_ERR_GAP_MS     = 60;
 static int   CFG_BUZ_ERR_COUNT      = 3;
 
 // ============================================================================
-// Interner Button-State (entprellt + Erkennung)
+// Internal button state (debounced + detected)
 // ============================================================================
 static bool           s_btnEnabled      = false;
 static bool           s_btnActiveLow    = true;    // aus PullUp abgeleitet
 static bool           s_btnStable       = false;   // entprellter Zustand (pressed = true)
 static bool           s_btnPrevStable   = false;
-static unsigned long  s_btnChangeTs     = 0;       // Zeit der letzten ROH-Änderung
+static unsigned long  s_btnChangeTs     = 0;       // Time of the last raw change
 static bool           s_btnRawLast      = false;
 
 static unsigned long  s_pressStartTs    = 0;
@@ -54,16 +54,16 @@ static bool s_evShort       = false;
 static bool s_evLong        = false;
 static bool s_evDouble      = false;
 static bool s_evHold        = false;
-static bool s_evTapRelease  = false;  // sofortiges Release-Event (beim Loslassen)
+static bool s_evTapRelease  = false;  // immediate release event (on release)
 
 // ============================================================================
 // Interner Buzzer-State (Sequencer)
 // ============================================================================
 #ifdef ARDUINO_ARCH_ESP32
   #include <esp_arduino_version.h>
-  static const int LEDC_CH   = 6;   // fixer Fallback-Kanal für alte Cores
+  static const int LEDC_CH   = 6;   // fixed fallback channel for older cores
   static const int LEDC_BITS = 10;  // 10-bit duty
-  static int s_ledcChannel   = -1;  // tatsächlich verwendeter Kanal (v3 liefert ihn)
+  static int s_ledcChannel   = -1;  // actual channel used (v3 provides it)
 #endif
 
 struct Step { bool on; uint16_t ms; };
@@ -73,7 +73,7 @@ static bool           s_buzInitialized = false;
 static unsigned long  s_buzStepUntil  = 0;
 static uint8_t        s_buzPos        = 0;
 static uint8_t        s_buzLen        = 0;
-static Step           s_buzSeq[8];        // reicht für Muster
+static Step           s_buzSeq[8];        // enough for patterns
 
 // ----------------------------------------------------------------------------
 // Buzzer Low-Level
@@ -81,14 +81,13 @@ static Step           s_buzSeq[8];        // reicht für Muster
 static inline void buzzer_output(bool on) {
 
   if (!s_buzInitialized) return;
-  // WICHTIG: Beim Re-Init wollen wir "AUS" auch dann erzwingen,
-  // wenn s_buzEnabled gerade false ist.
+  // IMPORTANT: during re-init we want to force "OFF" even when s_buzEnabled is false.
   if (!s_buzEnabled && on) return;
 
 
   if (CFG_BUZ_PASSIVE) {
   #ifdef ARDUINO_ARCH_ESP32
-    if (s_ledcChannel < 0) return; // Sicherheitsnetz
+    if (s_ledcChannel < 0) return; // safety net
     if (on) ledcWriteTone((uint8_t)s_ledcChannel, (uint32_t)CFG_BUZ_FREQ_HZ);
     else    ledcWriteTone((uint8_t)s_ledcChannel, 0);
   #else
@@ -99,7 +98,7 @@ static inline void buzzer_output(bool on) {
     return;
   }
 
-  // AKTIVER BUZZER -> Pegel schalten
+  // ACTIVE BUZZER -> switch level
   if (BUZ_PIN < 0) return;
   if (on)  digitalWrite(BUZ_PIN, CFG_BUZ_ACTIVE_HIGH ? HIGH : LOW);
   else     digitalWrite(BUZ_PIN, CFG_BUZ_ACTIVE_HIGH ? LOW  : HIGH);
@@ -124,36 +123,36 @@ static inline void buzzer_start_sequence(const Step* seq, uint8_t len) {
 void gpiohw_init() {
 
     s_buzInitialized = false;
-    // --- RE-INIT CLEANUP (wichtig bei applyConfig/import) ---
-    // Sequencer hart stoppen + Ausgang AUS
+    // --- RE-INIT CLEANUP (important for applyConfig/import) ---
+    // Stop the sequencer hard and turn output OFF
     s_buzLen = 0;
     s_buzPos = 0;
     s_buzStepUntil = 0;
 
-    // Wenn gerade ein Pattern lief: wirklich abschalten
+    // If a pattern was running, turn it off properly
     buzzer_output(false);
 
 
   #ifdef ARDUINO_ARCH_ESP32
-    // Falls vorher passiv (LEDC) aktiv war: sauber detach
+    // If it was previously passive (LEDC) and active, detach cleanly
     if (s_ledcChannel >= 0) {
       ledcWriteTone((uint8_t)s_ledcChannel, 0);
        s_buzInitialized = true;
     #if defined(ESP_ARDUINO_VERSION_MAJOR) && (ESP_ARDUINO_VERSION_MAJOR >= 3)
-      // ESP32 core v3: detach am Pin (wichtig!)
+      // ESP32 core v3: detach from the pin (important!)
       ledcDetach((uint8_t)BUZ_PIN);
     #else
-      // core v2: detach Pin vom Kanal (wichtig!)
+      // core v2: detach pin from the channel (important!)
       if (BUZ_PIN >= 0) ledcDetachPin((uint8_t)BUZ_PIN);
     #endif
       s_ledcChannel = -1;
     }
   #else
-    // AVR/andere: tone sicher aus
+    // AVR/other: turn tone off safely
     if (BUZ_PIN >= 0) noTone((uint8_t)BUZ_PIN);
   #endif
 
-    // Button-Events/Click-State hart resetten (gegen Phantom-Events nach ReInit)
+    // Hard reset button events/click state (against phantom events after re-init)
     gpiohw_reset_click_state();
   // --- Apply button from CONFIG when available; otherwise use defaults ---
   #ifdef CONFIG_HAS_GPIO
@@ -176,8 +175,8 @@ void gpiohw_init() {
     CFG_BUZ_ERR_COUNT      = CONFIGV2.buzzer.errorCount;
   #endif
 
-  // --- Button einrichten ---
-  s_btnEnabled   = CONFIGV2.button.enabled || true; // Default: aktiv
+  // --- Set up button ---
+  s_btnEnabled   = CONFIGV2.button.enabled || true; // Default: active
   s_btnActiveLow = CFG_BTN_PULLUP;
 
   if (s_btnEnabled) {
@@ -207,10 +206,10 @@ void gpiohw_init() {
     
   }
 
-  // --- Buzzer einrichten ---
-  s_buzEnabled = CONFIGV2.buzzer.enabled || true; // Default: aktiv
+  // --- Set up buzzer ---
+  s_buzEnabled = CONFIGV2.buzzer.enabled || true; // Default: active
   if (s_buzEnabled) {
-    // Sicherheits-AUS nach (Re-)Init (verhindert "spinnt nach Import")
+    // Safety OFF after (re-)init (prevents "spinning" after import)
     s_buzLen = 0;
     s_buzPos = 0;
     s_buzStepUntil = 0;
@@ -225,7 +224,7 @@ void gpiohw_init() {
       ledcSetup(s_ledcChannel, (double)CFG_BUZ_FREQ_HZ, LEDC_BITS);
       ledcAttachPin((uint8_t)BUZ_PIN, s_ledcChannel);
     #endif
-      if (s_ledcChannel >= 0) ledcWriteTone((uint8_t)s_ledcChannel, 0); // sicher aus
+      if (s_ledcChannel >= 0) ledcWriteTone((uint8_t)s_ledcChannel, 0); // safely off
     } else {
       pinMode(BUZ_PIN, OUTPUT);
       digitalWrite(BUZ_PIN, CFG_BUZ_ACTIVE_HIGH ? LOW : HIGH); // AUS
@@ -277,19 +276,19 @@ void gpiohw_tick(unsigned long now) {
         s_longFired      = false;
         s_lastHoldTick   = now;
 
-        // <<< FIX 1: Reste aus einem vorigen Short/Double _sofort_ verwerfen
-        //            (verhindert „jeder zweite Versuch“)
+        // <<< FIX 1: immediately discard leftovers from a previous short/double
+        //            (prevents "every second attempt")
         s_doubleArmed    = false;
         s_shortCandidate = false;
-        s_evTapRelease   = false; // altes Tap-Release sicher löschen
+        s_evTapRelease   = false; // safely clear stale tap-release
 
       } else {
-        // ---------------- Falling (losgelassen) ----------------
+        // ---------------- Falling (released) ----------------
         if (!s_longFired) {
           // <<< Set release event immediately (for "Cancel now")
           s_evTapRelease = true;
 
-          // vorhandene Short/Double-Logik beibehalten
+          // retain existing short/double logic
           if (s_doubleArmed && now <= s_doubleUntilTs) {
             s_doubleArmed    = false;
             s_shortCandidate = false;
@@ -300,7 +299,7 @@ void gpiohw_tick(unsigned long now) {
             s_doubleUntilTs  = now + CFG_BTN_DOUBLE_MS;
           }
         }
-        s_pressStartTs = 0; // Baseline löschen
+        s_pressStartTs = 0; // clear baseline
       }
     }
 
@@ -310,7 +309,7 @@ void gpiohw_tick(unsigned long now) {
           !s_longFired &&
           (now - s_pressStartTs) >= (unsigned long)CFG_BTN_LONG_MS) {
         s_longFired      = true;
-        s_doubleArmed    = false;       // Long verdrängt Double
+        s_doubleArmed    = false;       // long press overrides double
         s_shortCandidate = false;
         s_evLong         = true;
         s_lastHoldTick   = now;
@@ -355,10 +354,10 @@ bool button_short_press()   { bool v = s_evShort;      s_evShort = false;      r
 bool button_double_press()  { bool v = s_evDouble;     s_evDouble = false;     return v; }
 bool button_long_press()    { bool v = s_evLong;       s_evLong = false;       return v; }
 bool button_hold()          { bool v = s_evHold;       s_evHold = false;       return v; }
-bool button_tap_release()   { bool v = s_evTapRelease; s_evTapRelease = false; return v; } // sofort beim Loslassen
+bool button_tap_release()   { bool v = s_evTapRelease; s_evTapRelease = false; return v; } // immediately on release
 
 // ============================================================================
-// Public: Click-Logik hart zurücksetzen (Quality-of-Life für Cancel)
+// Public: hard reset of click logic (quality-of-life for cancel)
 // ============================================================================
 void gpiohw_reset_click_state() {
   // <<< FIX 2: Clear everything that could interfere with a subsequent long press
@@ -371,7 +370,7 @@ void gpiohw_reset_click_state() {
   s_evLong         = false;
   s_pressStartTs   = 0;
   s_longFired      = false;
-  // s_btnStable bleibt unverändert (echter physischer Zustand)
+  // s_btnStable remains unchanged (real physical state)
 }
 
 // ============================================================================
@@ -399,7 +398,7 @@ void buzzer_double_beep() {
 
 void buzzer_error_beep() {
   if (!s_buzEnabled) return;
-  const int n = max(1, min(8, CFG_BUZ_ERR_COUNT)); // limit für Sequenzpuffer
+  const int n = max(1, min(8, CFG_BUZ_ERR_COUNT)); // limit for the sequence buffer
   Step seq[2*8 + 1];
   int  idx = 0;
   for (int i=0; i<n; ++i) {

@@ -41,11 +41,11 @@ Adafruit_NeoPixel *LEDCTRL_FILAMENT::_leds = nullptr;
 uint32_t *LEDCTRL_FILAMENT::_buf = nullptr;
 int LEDCTRL_FILAMENT::_bufCount = 0;
 
-// Error-Blink-Zustand
+// Error-blink state
 bool LEDCTRL_FILAMENT::_errBlinkActive = false;
 unsigned long LEDCTRL_FILAMENT::_errBlinkStart = 0;
-uint16_t LEDCTRL_FILAMENT::_errBlinkMs = 150; // Intervall (ms)
-uint8_t LEDCTRL_FILAMENT::_errBlinkCount = 3; // 3x An-Aus
+uint16_t LEDCTRL_FILAMENT::_errBlinkMs = 150; // interval (ms)
+uint8_t LEDCTRL_FILAMENT::_errBlinkCount = 3; // 3x on-off
 uint8_t LEDCTRL_FILAMENT::_errBlinkStep = 0;
 
 // Pre-converted blink color (so blinking does NOT depend on the buffer)
@@ -59,11 +59,11 @@ unsigned long LEDCTRL_FILAMENT::_lastTagSeen = 0;
 unsigned long LEDCTRL_FILAMENT::_releaseTs = 0;
 const uint16_t LEDCTRL_FILAMENT::TAG_HELD_GRACE_MS = 200;
 
-// Reassert (gegen Glitches)
+// Reassert (against glitches)
 unsigned long LEDCTRL_FILAMENT::_lastHoldRefresh = 0;
 const uint16_t LEDCTRL_FILAMENT::HOLD_REFRESH_MS = 25;
 
-// Idle-Pulse
+// Idle pulse
 bool LEDCTRL_FILAMENT::_idlePulseEnabled = true;
 float LEDCTRL_FILAMENT::_minBrightness = 0.30f;
 unsigned long LEDCTRL_FILAMENT::_lastPulseUpdate = 0;
@@ -72,10 +72,10 @@ const uint16_t LEDCTRL_FILAMENT::PULSE_INTERVAL_MS = 33;
 const uint16_t LEDCTRL_FILAMENT::BREATHS_PER_MIN = 15;
 uint8_t LEDCTRL_FILAMENT::_ditherPhase = 0;
 
-// Idle-Blocker (wirkt nur im Idle)
+// Idle blocker (only affects idle)
 unsigned long LEDCTRL_FILAMENT::_idleBlockUntil = 0;
 
-// FIX: Network-load pause (suspend idle frames)
+// FIX: network-load pause (suspend idle frames)
 unsigned long LEDCTRL_FILAMENT::_netPauseUntil = 0;
 
 // Web interface hold: simulated presence (so the timeout applies afterward)
@@ -140,7 +140,7 @@ void LEDCTRL_FILAMENT::renderAllFromBuf(Adafruit_NeoPixel *s)
     return;
   for (int i = 0; i < _bufCount; ++i)
     s->setPixelColor(i, _buf[i]);
-  // FIX: kritische Frames doppelt
+  // FIX: critical frames sent twice
   forceShow(s);
 }
 
@@ -157,15 +157,15 @@ bool LEDCTRL_FILAMENT::bufAnyLit()
 }
 
 // ============================================================================
-// Idle-Pulse Frame (smooth + jitter-robust)
+// Idle pulse frame (smooth + jitter-robust)
 // ============================================================================
-// Änderungen:
-//  - Dither-Phase ist ZEITBASIERT (now / pulseIntervalMs), nicht framebasiert
-//  - Kein ditherPhase++ mehr am Ende (verhindert "shimmer" bei Loop-Jitter)
-//  - setBrightness() NICHT jedes Frame (weniger Overhead / weniger Jitter)
+// Changes:
+//  - Dither phase is time-based (now / pulseIntervalMs), not frame-based
+//  - No more ditherPhase++ at the end (prevents "shimmer" with loop jitter)
+//  - setBrightness() not every frame (less overhead / less jitter)
 //
-// Hinweis: ditherPhase bleibt als Referenz-Parameter drin (API-kompatibel),
-// wird aber nur noch als "Output" für Kompatibilität/Debug gesetzt.
+// Note: ditherPhase remains as a reference parameter (API-compatible),
+// but is only used as an "output" for compatibility/debugging.
 static void renderIdlePulseFrame(Adafruit_NeoPixel *s,
                                  unsigned long now,
                                  uint32_t pulseRgbHex,
@@ -177,8 +177,8 @@ static void renderIdlePulseFrame(Adafruit_NeoPixel *s,
   if (!s)
     return;
 
-  // NICHT pro Frame: s->setBrightness(...)
-  // (Brightness wird in init() / bei Änderungen gesetzt)
+  // Not per frame: s->setBrightness(...)
+  // (Brightness is set in init() / on changes)
 
   const uint8_t low8 = (uint8_t)constrain((int)lroundf(minBrightness * 255.0f), 0, 255);
   const uint8_t lvl = breath8(breathsPerMin, now, low8, 255);
@@ -259,7 +259,7 @@ void LEDCTRL_FILAMENT::init(int count, int timeout_ms, int brightness, u_int32_t
   for (int i = 0; i < _bufCount; ++i)
     _buf[i] = 0;
 
-  // State zurücksetzen
+  // Reset state
   _errBlinkActive = false;
   _errSolidActive = false;
   _tagHeld = false;
@@ -285,28 +285,28 @@ void LEDCTRL_FILAMENT::setPixel(int index, uint32_t color)
   LEDCTRL_FILAMENT::standBy(false);
   LEDCTRL_NFC::standBy(false);
 
-  // Wenn wir AUS einem Error-Zustand kommen → erst alles löschen,
-  // damit keine roten Restpixel stehen bleiben.
+  // If we are leaving an error state → clear everything first,
+  // so no stale red pixels remain.
   const bool wasError = (_errBlinkActive || _errSolidActive);
 
-  // Error-Modi sofort beenden
+  // End error modes immediately
   _errBlinkActive = false;
   _errSolidActive = false;
 
   if (wasError)
   {
     for (int i = 0; i < _bufCount; ++i)
-      _buf[i] = 0;  // Buffer leer
-    _leds->clear(); // physisch leer
+      _buf[i] = 0;  // buffer empty
+    _leds->clear(); // physically empty
   }
 
-  // Gewünschten Pixel setzen
+  // Set the requested pixel
   _buf[index] = color;
   _leds->setPixelColor(index, color);
-  // FIX: Transitions doppelt
+  // FIX: transitions doubled
   forceShow(_leds);
 
-  // Idle kurz blocken (Pulse nicht in Übergangsframe mischen)
+  // Briefly block idle (do not mix pulse into the transition frame)
   _idleBlockUntil = millis() + 2;
 }
 
@@ -318,7 +318,7 @@ void LEDCTRL_FILAMENT::allOff()
   for (int i = 0; i < _bufCount; ++i)
     _buf[i] = 0;
   _leds->clear();
-  // FIX: Transitions doppelt
+  // FIX: transitions sent twice
   forceShow(_leds);
 
   _errBlinkActive = false;
@@ -351,7 +351,7 @@ void LEDCTRL_FILAMENT::tagPresenceTick(bool present)
     {
       _tagHeld = false;
 
-      // Timeout nur starten, wenn tatsächlich etwas „aktiv“ ist
+      // Only start the timeout when something is actually active
       if (_errBlinkActive || _errSolidActive || bufAnyLit())
       {
         _releaseTs = now;
@@ -377,16 +377,16 @@ void LEDCTRL_FILAMENT::errorAll()
   _errBlinkActive = false;
   _errSolidActive = true;
 
-  // Alle rot/err füllen (Buffer + Ausgabe)
+  // Fill all red/error pixels (buffer + output)
   const uint32_t neoErr = rgbHexToNeo(_leds, LED_COLOR_ERROR);
   for (int i = 0; i < _bufCount; ++i)
     _buf[i] = neoErr;
-  renderAllFromBuf(_leds); // (doppelt)
+  renderAllFromBuf(_leds); // (twice)
 
-  // Timeout ab Tag-Entfernung
+  // Timeout starts after tag removal
   _releaseTs = _tagHeld ? 0UL : millis();
 
-  // Idle kurz blocken
+  // Briefly block idle
   _idleBlockUntil = millis() + 2;
   
 }
@@ -399,91 +399,91 @@ void LEDCTRL_FILAMENT::successAll()
   if (!_leds || !_buf)
     return;
 
-  LED_COLOR_ERROR = 0x00FF00; // grün
+  LED_COLOR_ERROR = 0x00FF00; // green
 
   _errBlinkActive = false;
   _errSolidActive = true;
 
-  // Alle rot/err füllen (Buffer + Ausgabe)
+  // Fill all red/error pixels (buffer + output)
   const uint32_t neoSuccess = rgbHexToNeo(_leds, LED_COLOR_SUCCESS);
   for (int i = 0; i < _bufCount; ++i)
     _buf[i] = neoSuccess;
-  renderAllFromBuf(_leds); // (doppelt)
+  renderAllFromBuf(_leds); // (twice)
 
-  // Timeout ab Tag-Entfernung
+  // Timeout starts after tag removal
   _releaseTs = _tagHeld ? 0UL : millis();
 
-  // Idle kurz blocken
+  // Briefly block idle
   _idleBlockUntil = millis() + 2;
   
 }
 
 // ----------------------------------------------------------------------------
-// ERROR BLINK: erst blinken (LED_COLOR_ERROR), dann – falls noch aktiv – solid-Error
-// ----------------------------------------------------------------------------
-void LEDCTRL_FILAMENT::errorBlink()
-{
-  if (!_leds)
-    return;
+// ERROR BLINK: blink first (LED_COLOR_ERROR), then – if still active – solid error
+  // ----------------------------------------------------------------------------
+  void LEDCTRL_FILAMENT::errorBlink()
+  {
+    if (!_leds)
+      return;
 
-  // Parameter (ggf. später aus Config herausziehbar)
-  static const uint16_t MIN_BLINK_MS = 25;
-  _errBlinkMs = (uint16_t)max<int>(MIN_BLINK_MS, 150); // Standard 150 ms
-  _errBlinkCount = 3;                                  // 3x An-Aus
+    // Parameters (can be moved into config later)
+    static const uint16_t MIN_BLINK_MS = 25;
+    _errBlinkMs = (uint16_t)max<int>(MIN_BLINK_MS, 150); // default 150 ms
+    _errBlinkCount = 3;                                  // 3x on-off
 
   _errBlinkActive = true;
   _errSolidActive = false;
   _errBlinkStart = millis();
   _errBlinkStep = 0;
 
-  // Blinkfarbe fest in Neo-Format (unabhängig vom Buffer)
+  // Fixed blink color in Neo format (independent of the buffer)
   s_errBlinkColorNeo = rgbHexToNeo(_leds, LED_COLOR_ERROR);
 
   // Startframe = AN (direkt rendern, ohne Buffer)
   for (int i = 0; i < _leds->numPixels(); ++i)
     _leds->setPixelColor(i, s_errBlinkColorNeo);
-  // FIX: Blink-Kante doppelt
+  // FIX: double blink edge
   forceShow(_leds);
 
-  // Timeout erst ab Entfernung
+  // Timeout starts only after removal
   _releaseTs = _tagHeld ? 0UL : millis();
 
-  // Idle blocken
+  // Block idle briefly
   _idleBlockUntil = millis() + 2;
   
 }
 
 // ----------------------------------------------------------------------------
-// SUCCESS BLINK: erst blinken (LED_COLOR_SUCCESS), dann – falls noch aktiv – solid-Success
-// ----------------------------------------------------------------------------
-void LEDCTRL_FILAMENT::successBlink()
-{
-  if (!_leds)
-    return;
+// SUCCESS BLINK: blink first (LED_COLOR_SUCCESS), then – if still active – solid success
+  // ----------------------------------------------------------------------------
+  void LEDCTRL_FILAMENT::successBlink()
+  {
+    if (!_leds)
+      return;
 
-  // Parameter (ggf. später aus Config herausziehbar)
-  static const uint16_t MIN_BLINK_MS = 25;
-  _errBlinkMs = (uint16_t)max<int>(MIN_BLINK_MS, 150); // Standard 150 ms
-  _errBlinkCount = 3;                                  // 3x An-Aus
+    // Parameters (can be moved into config later)
+    static const uint16_t MIN_BLINK_MS = 25;
+    _errBlinkMs = (uint16_t)max<int>(MIN_BLINK_MS, 150); // default 150 ms
+    _errBlinkCount = 3;                                  // 3x on-off
 
   _errBlinkActive = true;
   _errSolidActive = false;
   _errBlinkStart = millis();
   _errBlinkStep = 0;
 
-  // Blinkfarbe fest in Neo-Format (unabhängig vom Buffer)
+  // Fixed blink color in Neo format (independent of the buffer)
   s_errBlinkColorNeo = rgbHexToNeo(_leds, LED_COLOR_SUCCESS);
 
-  // Startframe = AN (direkt rendern, ohne Buffer)
+  // Start frame = ON (render directly without buffer)
   for (int i = 0; i < _leds->numPixels(); ++i)
     _leds->setPixelColor(i, s_errBlinkColorNeo);
-  // FIX: Blink-Kante doppelt
+  // FIX: blink edge double
   forceShow(_leds);
 
-  // Timeout erst ab Entfernung
+  // Timeout starts only after removal
   _releaseTs = _tagHeld ? 0UL : millis();
 
-  // Idle blocken
+  // Block idle briefly
   _idleBlockUntil = millis() + 2;
   
 }
@@ -500,13 +500,13 @@ void LEDCTRL_FILAMENT::update()
 
   const unsigned long now = millis();
 
-  // --- WebIF-Hold Ablauf: virtuelle "Tag-Entfernung" auslösen ---
+  // --- WebIF hold flow: trigger a virtual "tag removal" ---
   if (s_webifHoldUntil != 0 && (int32_t)(now - s_webifHoldUntil) >= 0)
   {
     s_webifHoldUntil = 0;
 
-    // Simuliere: Tag wurde entfernt → Timeout kann starten
-    // Wir setzen direkt _tagHeld=false und starten Release-Timer, falls was aktiv ist.
+    // Simulate: tag removed → timeout can start
+    // We directly set _tagHeld=false and start the release timer if something was active.
     if (_tagHeld)
     {
       _tagHeld = false;
@@ -528,7 +528,7 @@ void LEDCTRL_FILAMENT::update()
     if (intervals != _errBlinkStep)
     {
       _errBlinkStep = (uint8_t)min<uint32_t>(255U, intervals);
-      const bool on = ((intervals & 1U) == 0U); // gerade = AN
+      const bool on = ((intervals & 1U) == 0U); // even = ON
 
       if (on)
       {
@@ -540,7 +540,7 @@ void LEDCTRL_FILAMENT::update()
         for (int i = 0; i < _leds->numPixels(); ++i)
           _leds->setPixelColor(i, 0);
       }
-      // FIX: Blink-Kante doppelt
+      // FIX: double blink edge
       forceShow(_leds);
     }
 
@@ -556,7 +556,7 @@ void LEDCTRL_FILAMENT::update()
         const uint32_t neoErr = rgbHexToNeo(_leds, LED_COLOR_ERROR);
         for (int i = 0; i < _bufCount; ++i)
           _buf[i] = neoErr;
-        renderAllFromBuf(_leds); // (doppelt)
+        renderAllFromBuf(_leds); // (twice)
 
         _idleBlockUntil = now + 2;
         
@@ -578,7 +578,7 @@ void LEDCTRL_FILAMENT::update()
       if (now - _lastHoldRefresh >= HOLD_REFRESH_MS)
       {
         _lastHoldRefresh = now;
-        renderAllFromBuf(_leds); // (doppelt)
+        renderAllFromBuf(_leds); // (twice)
       }
       return;
     }
@@ -593,13 +593,13 @@ void LEDCTRL_FILAMENT::update()
       if (now - _lastHoldRefresh >= HOLD_REFRESH_MS)
       {
         _lastHoldRefresh = now;
-        renderAllFromBuf(_leds); // (doppelt)
+        renderAllFromBuf(_leds); // (twice)
       }
     }
     return;
   }
 
-  // 3) Normale Pixel-Anzeige
+  // 3) Normal pixel display
   if (bufAnyLit())
   {
     if (_tagHeld)
@@ -608,7 +608,7 @@ void LEDCTRL_FILAMENT::update()
       if (now - _lastHoldRefresh >= HOLD_REFRESH_MS)
       {
         _lastHoldRefresh = now;
-        renderAllFromBuf(_leds); // (doppelt)
+        renderAllFromBuf(_leds); // (twice)
       }
       return;
     }
@@ -621,13 +621,13 @@ void LEDCTRL_FILAMENT::update()
       if (now - _lastHoldRefresh >= HOLD_REFRESH_MS)
       {
         _lastHoldRefresh = now;
-        renderAllFromBuf(_leds); // (doppelt)
+        renderAllFromBuf(_leds); // (twice)
       }
     }
     return;
   }
 
-  // 4) IDLE-PULSE (nur wenn nix aktiv + nix leuchtet)
+  // 4) IDLE PULSE (only when nothing is active and nothing is lit)
   if (_idlePulseEnabled)
   {
     if (now < _idleBlockUntil || now < _netPauseUntil)
@@ -664,7 +664,7 @@ Adafruit_NeoPixel *LEDCTRL_FILAMENT::rawStrip()
   return _leds;
 }
 
-// FIX: Netz busy → Idle kurz pausieren
+// FIX: network busy → pause idle briefly
 void LEDCTRL_FILAMENT::netBusyHint(uint16_t ms)
 {
   const unsigned long now = millis();
@@ -678,12 +678,12 @@ void LEDCTRL_FILAMENT::webifHoldFor(uint16_t ms)
   const unsigned long now = millis();
   s_webifHoldUntil = now + (unsigned long)ms;
 
-  // Virtuell "Tag ist da" → verhindert, dass sofort Timeout läuft
+  // Virtual "tag is present" → prevents the timeout from starting immediately
   _tagHeld = true;
   _lastTagSeen = now;
   _releaseTs = 0;
 
-  // Idle kurz blocken, damit Pulse nicht reinmischt
+  // Block idle briefly so the pulse does not interfere
   _idleBlockUntil = now + 2;
 }
 

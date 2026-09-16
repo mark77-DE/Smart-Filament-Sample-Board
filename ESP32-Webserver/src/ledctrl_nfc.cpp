@@ -74,26 +74,26 @@ static uint8_t s_successBlinkStep = 0;         // Half-steps since start
 static bool s_successBlinkOn = false;          // even=ON / odd=OFF
 static unsigned long s_blinkStartTs = 0;       // fixed start time (phase anchor)
 static uint16_t s_blinkMs = 150;               // active blink interval
-static constexpr uint16_t MIN_BLINK_MS = 25;   // Lower bound for blink interval
-static constexpr uint8_t MAX_BLINK_COUNT = 10; // Upper limit for blink cycles
+static constexpr uint16_t MIN_BLINK_MS = 25;   // lower bound for blink interval
+static constexpr uint8_t MAX_BLINK_COUNT = 10; // upper limit for blink cycles
 
 // --- Presence/sticky hold ---
-static bool s_tagHeld = false;                 // Tag physisch vor Ort (mit Grace)
-static unsigned long s_lastTagSeen = 0;        // Zeitpunkt der letzten Roh-Erkennung
+static bool s_tagHeld = false;                 // tag physically present (including grace)
+static unsigned long s_lastTagSeen = 0;        // timestamp of the last raw detection
 static const uint16_t TAG_HELD_GRACE_MS = 200; // protection against short measurement gaps
 
-// --- Reassert (gegen halbe Frames / RMT-Glitches) ---
+// --- Reassert (against half frames / RMT glitches) ---
 static bool s_holdActive = false;
-static uint32_t s_holdColorNeo = 0; // aktuell „stabil“ anzuzeigende Farbe
+static uint32_t s_holdColorNeo = 0; // currently the color that should remain visually stable
 static unsigned long s_lastHoldRefresh = 0;
-static const uint16_t HOLD_REFRESH_MS = 25; // Reassert-Intervall
+static const uint16_t HOLD_REFRESH_MS = 25; // reassert interval
 
-// --- Timeout (startet erst nach Tag-Entfernung) ---
-static unsigned long s_releaseTs = 0; // 0 = kein Timeout aktiv
+// --- Timeout (starts only after the tag is removed) ---
+static unsigned long s_releaseTs = 0; // 0 = timeout inactive
 
-// --- Idle-Pulse (Breathing) ---
+// --- Idle pulse (breathing) ---
 static bool idlePulseEnabled = true;
-static float minBrightness = 0.30f; // minimaler Helligkeitsfaktor [0..1]
+static float minBrightness = 0.30f; // minimum brightness factor [0..1]
 static unsigned long s_lastPulseUpdate = 0;
 // FIX: Reduce idle FPS (approximately 40 FPS)
 static const uint16_t PULSE_INTERVAL_MS = 25;
@@ -102,17 +102,17 @@ static const uint8_t BAYER4[16] = {
     0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5};
 static uint8_t ditherPhase = 0;
 
-// --- Idle-Blocker (wirkt NUR im Idle) ---
+// --- Idle blocker (only affects idle) ---
 static unsigned long s_idleBlockUntil = 0;
 
 // --- Debounce for success trigger (against duplicate triggers) ---
 static unsigned long s_lastSuccessCmdTs = 0;
 static const uint16_t SUCCESS_DEBOUNCE_MS = 200;
 
-// FIX: Netzlast-Pause (Idle-Frames aussetzen)
+// FIX: network-load pause (suspend idle frames)
 unsigned long LEDCTRL_NFC::s_netPauseUntil = 0;
 
-// standby: Alle LEDs aus, kein Update (auch kein Idle-Pulse)
+// standby: all LEDs off, no update (including no idle pulse)
 static bool _standby = false;
 bool LEDCTRL_NFC::_standby = false;
 
@@ -149,14 +149,14 @@ static inline void renderAll(uint32_t neo)
 
 static inline void forceFill(uint32_t neo)
 {
-  // Doppelt senden (kurzer Abstand), um Glitches/halbe Frames zu vermeiden
+  // Send twice (short interval) to avoid glitches/partial frames
   renderAll(neo);
   neopixelShowSafe(LEDCTRL_NFC::rawStrip());
   delayMicroseconds(300);
   neopixelShowSafe(LEDCTRL_NFC::rawStrip());
 }
 
-// FIX: generisches Doppel-show wenn kein Voll-Fill (Blink/Idle/Einzelpixel)
+// FIX: generic double-show when there is no full fill (blink/idle/single pixel)
 static inline void forceShowNfc()
 {
   if (!LEDCTRL_NFC::rawStrip())
@@ -362,7 +362,7 @@ void LEDCTRL_NFC::tagPresenceTick(bool present)
 }
 
 // ---------------------------------------------------------------------------
-// Erfolg (Blink → Solid) bzw. Fehler (Solid)
+// Success (Blink → Solid) or error (Solid)
 // ---------------------------------------------------------------------------
 void LEDCTRL_NFC::confirmSuccess()
 {
@@ -371,12 +371,12 @@ void LEDCTRL_NFC::confirmSuccess()
 
   const unsigned long now = millis();
   if (now - s_lastSuccessCmdTs < SUCCESS_DEBOUNCE_MS)
-    return; // Doppeltrigger verhindern
+    return; // prevent double triggers
   s_lastSuccessCmdTs = now;
 
   _leds->setBrightness(NFC_LED_BRIGHTNESS);
 
-  // Optionaler Blink vor „Solid Success“
+  // Optional blink before "solid success"
   if (NFC_LED_SUCCESS_BLINK_ENABLED &&
       NFC_LED_SUCCESS_BLINK_COUNT > 0 &&
       currentState != LED_SUCCESS_BLINK)
@@ -391,7 +391,7 @@ void LEDCTRL_NFC::confirmSuccess()
     s_releaseTs = 0;
 
     renderAll(rgbHexToNeo(NFC_LED_COLOR_SUCCESS));
-    // FIX: Blink-Start doppelt
+    // FIX: double blink start
     forceShowNfc();
 
     DBG("confirmSuccess(BLINK) state=%s held=%u relTs=%lu blinkMs=%u count=%u\n",
@@ -399,7 +399,7 @@ void LEDCTRL_NFC::confirmSuccess()
     return;
   }
 
-  // Fallback: direkt stabiler Success (Solid)
+  // Fallback: directly stable success (solid)
   currentState = LED_SUCCESS;
   s_holdActive = true;
   s_holdColorNeo = rgbHexToNeo(NFC_LED_COLOR_SUCCESS);
@@ -524,7 +524,7 @@ void LEDCTRL_NFC::update()
       const uint32_t cOn = rgbHexToNeo(NFC_LED_COLOR_SUCCESS);
       const uint32_t cOff = 0;
       renderAll(s_successBlinkOn ? cOn : cOff);
-      // FIX: Blink-Kante doppelt
+      // FIX: double blink edge
       forceShowNfc();
     }
 
@@ -567,7 +567,7 @@ bool LEDCTRL_NFC::isIdle()
   return currentState == LED_OFF;
 }
 
-// FIX: Netz busy → Idle kurz pausieren
+// FIX: network busy → pause idle briefly
 void LEDCTRL_NFC::netBusyHint(uint16_t ms)
 {
   const unsigned long now = millis();

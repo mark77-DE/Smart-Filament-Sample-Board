@@ -27,11 +27,11 @@ extern uint16_t NFC_LED_SUCCESS_BLINK_MS;      // Blink interval in ms (min. 25 
 
 // ============================================================================
 // LEDCTRL_NFC - controller for the NFC LED strip
-// - Zustandsautomat mit Idle-Breath, Success (Blink → Solid), Error (Solid)
+// - State machine with idle breath, success (blink → solid), error (solid)
 // - Timeout starts only after the NFC tag is removed (presence tracking)
-// - Reassert/Refresh gegen RMT/Glitches
-// - Thread-sicheres show() via neopixel_guard
-// Optionales Debug (Build-Flag -DLED_NFC_DEBUG) mit kompakten Logs.
+// - Reassert/refresh against RMT/glitches
+// - Thread-safe show() via neopixel_guard
+// Optional debug (build flag -DLED_NFC_DEBUG) with compact logs.
 // ============================================================================
 class LEDCTRL_NFC {
 public:
@@ -67,9 +67,9 @@ public:
   static void tagPresenceTick(bool present);
 
   // --------------------------------------------------------------------------
-  // Ergebnis-Trigger nach erfolgreicher/fehlgeschlagener UID-Verarbeitung.
-  // confirmSuccess(): optionales Blink → Solid Success (mit Reassert)
-  // confirmError()  : sofort Solid Error (mit Reassert)
+  // Result trigger after successful/failed UID processing.
+  // confirmSuccess(): optional blink → solid success (with reassert)
+  // confirmError()  : immediate solid error (with reassert)
   // --------------------------------------------------------------------------
   static void confirmSuccess();
   static void confirmError();
@@ -91,8 +91,8 @@ public:
   static void setPixel(int index, uint32_t color);
 
   // --------------------------------------------------------------------------
-  // True, wenn der Controller im Idle-State (Breath) ist.
-  // Praktisch um z. B. Display-Idle mit den LEDs zu synchronisieren.
+  // True if the controller is in the idle state (breath).
+  // Useful to synchronize display idle with the LEDs, for example.
   // --------------------------------------------------------------------------
   static bool isIdle();
 
@@ -104,13 +104,13 @@ public:
   static Adafruit_NeoPixel* rawStrip();
 
   // --------------------------------------------------------------------------
-  // Netzlast-Hinweis (Idle kurz pausieren)
+  // Network-load hint (pause idle briefly)
   // --------------------------------------------------------------------------
   /**
   * @brief Notification from the web server/WS that the network is busy.
   *        Pauses IDLE frames for the next @p ms milliseconds.
-   *        Transitions (Blink/Solid/Reassert) bleiben unbeeinflusst.
-   */
+  *        Transitions (Blink/Solid/Reassert) remain unaffected.
+  */
   static void netBusyHint(uint16_t ms); // FIX: added
 
 

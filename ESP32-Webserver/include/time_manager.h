@@ -4,7 +4,7 @@
 
 namespace TimeManager {
     void init();
-    void loop();          // NEU - regelmäßig aufrufen
+    void loop();          // NEW - call regularly
     bool isSynced();
     String getTimestampISO();
     time_t getEpoch();

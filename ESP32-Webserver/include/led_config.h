@@ -70,7 +70,7 @@ static_assert(
 );
 
 // ============================================================================
-// Runtime: NeoPixel-Typ aus Konfiguration erzeugen
+// Runtime: create the NeoPixel type from the configuration
 // ============================================================================
 
 neoPixelType getNeoPixelType(LedType type, LedOrder order);

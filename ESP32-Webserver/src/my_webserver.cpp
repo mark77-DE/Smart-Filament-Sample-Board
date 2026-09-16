@@ -359,7 +359,7 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
 
         SysInfo info = getSysInfo();
 
-        // FIX: Netzlast-Hinweis – JSON bauen/senden
+        // FIX: network-load hint – build/send JSON
         LEDCTRL_FILAMENT::netBusyHint(250);
         LEDCTRL_NFC::netBusyHint(250);
 
@@ -380,7 +380,7 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
         doc["nfc_available"]            = g_nfcInfo.available;
         doc["nfc_fwVerMajor"]           = g_nfcInfo.fwVerMajor;
         doc["nfc_fwVerMinor"]           = g_nfcInfo.fwVerMinor;
-        char chipHex[6]; // genug für 0xFFFF
+        char chipHex[6]; // enough for 0xFFFF
         sprintf(chipHex, "0x%04X", g_nfcInfo.chipID);
         doc["nfc_chipID"]               = chipHex; // als String
         String mac                      = WiFi.macAddress();
@@ -415,7 +415,7 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
     server.on("/api/pinout", HTTP_GET, [](AsyncWebServerRequest *request)
               {
 
-    // Netzlast-Hinweis
+    // Network-load hint
     LEDCTRL_FILAMENT::netBusyHint(250);
     LEDCTRL_NFC::netBusyHint(250);
 
@@ -495,7 +495,7 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
     // Filament-Liste als JSON
     server.on("/filaments.json", HTTP_GET, [](AsyncWebServerRequest *request)
               {
-        // FIX: Netzlast-Hinweis – Dateizugriff + JSON
+        // FIX: network-load hint – file access + JSON
         LEDCTRL_FILAMENT::netBusyHint(350);
         LEDCTRL_NFC::netBusyHint(350);
 
@@ -525,7 +525,7 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
     // --- api to export ALL (filaments + config) ---
     server.on("/api/exportAll", HTTP_GET, [](AsyncWebServerRequest *req)
               {
-        // FIX: Netzlast-Hinweis – relativ große JSON-Antwort
+        // FIX: network-load hint – relatively large JSON response
         LEDCTRL_FILAMENT::netBusyHint(500);
         LEDCTRL_NFC::netBusyHint(500);
 
@@ -546,12 +546,12 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
     // --- api to import ALL ---
     server.on("/api/importAll", HTTP_POST, [](AsyncWebServerRequest *req)
               { 
-            // FIX: Netzlast-Hinweis – Upload startet
+            // FIX: network-load hint – upload starts
             LEDCTRL_FILAMENT::netBusyHint(500);
             LEDCTRL_NFC::netBusyHint(500);
             req->send(200, "text/plain", "Upload started"); }, nullptr, [](AsyncWebServerRequest *req, uint8_t *data, size_t len, size_t index, size_t total)
               {
-            // FIX: Netzlast-Hinweis – bei jedem Chunk
+            // FIX: network-load hint – for every chunk
             LEDCTRL_FILAMENT::netBusyHint(500);
             LEDCTRL_NFC::netBusyHint(500);
 
@@ -581,12 +581,12 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
     // Update single filament
     server.on("/api/update", HTTP_POST, [](AsyncWebServerRequest *req)
               {
-            // FIX: Netzlast-Hinweis – kurzer Upload/JSON
+            // FIX: network-load hint – short upload/JSON
             LEDCTRL_FILAMENT::netBusyHint(350);
             LEDCTRL_NFC::netBusyHint(350);
             req->send(200, "text/plain", "Processing"); }, nullptr, [](AsyncWebServerRequest *req, uint8_t *data, size_t len, size_t index, size_t total)
               {
-            // FIX: Netzlast-Hinweis – pro Chunk
+            // FIX: network-load hint – per chunk
             LEDCTRL_FILAMENT::netBusyHint(350);
             LEDCTRL_NFC::netBusyHint(350);
 
@@ -612,7 +612,7 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
                 return;
             }
 
-            // Index aus JSON auslesen
+            // Read the index from JSON
             int idx = doc["idx"] | -1;
             if(idx < 0){
                 if(CONFIGV2.system.debugMode) {
@@ -643,15 +643,15 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
                 }
             } });
 
-    // Neuen Eintrag anlegen
+    // Add a new entry
     server.on("/api/add", HTTP_POST, [](AsyncWebServerRequest *req)
               {
-            // FIX: Netzlast-Hinweis – kurzer Upload/JSON
+            // FIX: network-load hint – short upload/JSON
             LEDCTRL_FILAMENT::netBusyHint(350);
             LEDCTRL_NFC::netBusyHint(350);
             req->send(200, "text/plain", "Processing"); }, nullptr, [](AsyncWebServerRequest *req, uint8_t *data, size_t len, size_t index, size_t total)
               {
-            // FIX: Netzlast-Hinweis – pro Chunk
+            // FIX: network-load hint – per chunk
             LEDCTRL_FILAMENT::netBusyHint(350);
             LEDCTRL_NFC::netBusyHint(350);
 
@@ -697,7 +697,7 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
 
     server.on("/api/delete", HTTP_POST, [](AsyncWebServerRequest *request)
               {
-        // FIX: Netzlast-Hinweis – kleiner JSON-Response + DB-Zugriff
+        // FIX: network-load hint – small JSON response + DB access
         LEDCTRL_FILAMENT::netBusyHint(250);
         LEDCTRL_NFC::netBusyHint(250);
 
@@ -722,7 +722,7 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
     // Config als JSON ausliefern
     server.on("/config_v2.json", HTTP_GET, [](AsyncWebServerRequest *request)
               {
-        // FIX: Netzlast-Hinweis – FS-Read + JSON
+        // FIX: network-load hint – FS read + JSON
         LEDCTRL_FILAMENT::netBusyHint(250);
         LEDCTRL_NFC::netBusyHint(250);
 
@@ -735,16 +735,16 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
     // server.on("/logo.png", HTTP_GET, ...);    // entfernt
     // server.on("/favicon.ico", HTTP_GET, ...); // entfernt
 
-    // Update LED Config (sicherer Upload-Handler)
+    // Update LED config (safer upload handler)
     server.on("/api/updateConfig", HTTP_POST, [](AsyncWebServerRequest *req)
               { 
-            // FIX: Netzlast-Hinweis – Start der Config-Übertragung
+            // FIX: network-load hint – start of config upload
             LEDCTRL_FILAMENT::netBusyHint(400);
-            LEDCTRL_NFC::netBusyHint(400); },     // keine GET-Handler nötig
-              nullptr, // kein Body-Upload-Handler für Chunked POST
+            LEDCTRL_NFC::netBusyHint(400); },     // no GET handler needed
+              nullptr, // no body-upload handler for chunked POST
               [](AsyncWebServerRequest *req, uint8_t *data, size_t len, size_t index, size_t total)
               {
-            // FIX: Netzlast-Hinweis – pro Chunk
+            // FIX: network-load hint – per chunk
             LEDCTRL_FILAMENT::netBusyHint(400);
             LEDCTRL_NFC::netBusyHint(400);
 
@@ -782,7 +782,7 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
 
     server.on("/api/reboot", HTTP_POST, [](AsyncWebServerRequest *request)
               {
-        // FIX: Netzlast-Hinweis – Request bearbeiten
+        // FIX: network-load hint – process request
         LEDCTRL_FILAMENT::netBusyHint(250);
         LEDCTRL_NFC::netBusyHint(250);
 
@@ -797,11 +797,11 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
             // Button-States flushen, damit kein sofortiges Cancel aus altem Zustand kommt
             gpiohw_reset_click_state();
 
-            // WICHTIG: sofort LEDs + UI „armen“ (idempotent)
-            // FIX: compile-sicher dank Vorwärtsdeklaration oben
+            // IMPORTANT: immediately arm the LEDs + UI (idempotent)
+            // FIX: compile-safe thanks to the forward declaration above
             renderRebootCountdown(nowMs);
         }
-        // optional: Status-JSON zurückgeben
+        // optional: return status JSON
         request->send(200, "application/json", "{\"status\":\"ok\",\"pending\":true}"); });
 
     server.on("/api/otaUpdate", HTTP_POST, [](AsyncWebServerRequest *req)
@@ -861,7 +861,7 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
                     F("erwartet")
                 );
                 LEDCTRL_NFC::showError();        // NFC-Ring sofort rot (solid)
-                LEDCTRL_FILAMENT::errorBlink();  // Filament: blinkt -> rot (wie gewünscht)
+                LEDCTRL_FILAMENT::errorBlink();  // Filament: blinks -> red (as desired)
 
                 req->send(409, "application/json",
                     "{\"status\":\"error\",\"msg\":\"" + msg + "\"}");
@@ -876,7 +876,7 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
                 Serial.println("OTA begin failed");
                 MYDISPLAY::showThreeLinesCentered(F("FW OTA"), F("update"), F("failed"));
                 LEDCTRL_NFC::showError();        // NFC-Ring sofort rot (solid)
-                LEDCTRL_FILAMENT::errorAll();  // Filament: rot (wie gewünscht)
+                LEDCTRL_FILAMENT::errorAll();  // Filament: red (as desired)
                 req->send(500, "application/json",
                     "{\"status\":\"error\",\"msg\":\"Update.begin failed\"}");
                 otaAborted = true;
@@ -888,7 +888,7 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
             Serial.printf("FW update write failed! Error: %d\n", Update.getError());
             MYDISPLAY::showThreeLinesCentered(F("FW OTA"), F("update"), F("failed"));
             LEDCTRL_NFC::showError();        // NFC-Ring sofort rot (solid)
-            LEDCTRL_FILAMENT::errorAll();  // Filament: rot (wie gewünscht)
+            LEDCTRL_FILAMENT::errorAll();  // Filament: red (as desired)
             req->send(500, "application/json",
                 "{\"status\":\"error\",\"msg\":\"Write failed\"}");
             otaAborted = true;
@@ -899,7 +899,7 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
             if (Update.end(false)) {
                 Serial.println("FW OTA applied successfully");
                 MYDISPLAY::showThreeLinesCentered(F("FW OTA"), F("update"), F("success"));
-                LEDCTRL_FILAMENT::successAll();  // Filament: grün (wie gewünscht)
+                LEDCTRL_FILAMENT::successAll();  // Filament: green (as desired)
                 req->send(200, "application/json",
                     "{\"status\":\"ok\",\"msg\":\"FW update successful, rebooting\"}");
                 
@@ -910,7 +910,7 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
             } else {
                 Serial.printf("Update.end failed! Error: %d\n", Update.getError());
                 MYDISPLAY::showThreeLinesCentered(F("FW OTA"), F("update"), F("failed"));
-                LEDCTRL_FILAMENT::errorAll();  // Filament: rot (wie gewünscht)
+                LEDCTRL_FILAMENT::errorAll();  // Filament: red (as desired)
                 req->send(500, "application/json",
                     "{\"status\":\"error\",\"msg\":\"FW update failed\"}");
             }
@@ -928,7 +928,7 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
             "{\"status\":\"error\",\"msg\":\"Firmware update could not be started\"}");
             MYDISPLAY::showThreeLinesCentered(F("FW update"), F("failed"), F("pls reboot"));
             LEDCTRL_NFC::showError();        // NFC-Ring sofort rot (solid)
-            LEDCTRL_FILAMENT::errorAll();  // Filament: rot (wie gewünscht)
+            LEDCTRL_FILAMENT::errorAll();  // Filament: red (as desired)
     } });
 
     server.on("/api/filamanSync", HTTP_POST, [](AsyncWebServerRequest *req)

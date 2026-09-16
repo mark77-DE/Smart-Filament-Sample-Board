@@ -2,75 +2,74 @@
 
 /**
  * @file neopixel_guard.cpp
- * @brief Thread-sichere (oder optionale) Hüllfunktionen um Adafruit_NeoPixel::show().
+ * @brief Thread-safe (or optional) wrapper functions around Adafruit_NeoPixel::show().
  *
- * Ziel:
- *  - Den nicht-reentranten RMT-/NeoPixel-Treiber vor parallelen Aufrufen schützen.
- *  - Optional non-blocking Verhalten anbieten.
- *  - Optional zwei Stripes „so gleichzeitig wie möglich“ aktualisieren.
+ * Goal:
+ *  - Protect the non-reentrant RMT/NeoPixel driver from parallel calls.
+ *  - Optionally provide non-blocking behavior.
+ *  - Optionally update two strips "as simultaneously as possible".
  *
- * Build-Optionen (einmalig in der Build-Konfiguration definieren):
+ * Build options (define once in the build configuration):
  *   - NEOPIXEL_SHOW_DIRECT
- *       Keine Locks, keine Wartezyklen — maximal schnell, aber unsicher bei
- *       mehreren Tasks/Stripes. Nur nutzen, wenn wirklich single-threaded
- *       und genau ein Strip gesteuert wird.
+ *       No locks, no waiting loops — maximum speed, but unsafe with multiple
+ *       tasks/strips. Only use when truly single-threaded and a single strip is used.
  *
  *   - NEOPIXEL_SHOW_NONBLOCK
- *       Non-blocking: sendet nur, wenn sowohl der Treiber sofort senden kann
- *       (strip->canShow()) als auch der globale Lock sofort verfügbar ist.
- *       Andernfalls wird einfach nichts gesendet (Try-Semantik).
+ *       Non-blocking: sends only when the driver can send immediately
+ *       (strip->canShow()) and the global lock is immediately available.
+ *       Otherwise nothing is sent (try-semantics).
  *
- *   - (Default, wenn nichts definiert ist)
- *       Blocking & threadsafe: globaler Mutex + aktives Warten auf canShow().
- *       Empfohlen bei mehreren Tasks oder mehreren Stripes.
+ *   - (Default, if nothing is defined)
+ *       Blocking & thread-safe: global mutex + active waiting on canShow().
+ *       Recommended for multiple tasks or multiple strips.
  */
 
 #if !defined(NEOPIXEL_SHOW_DIRECT)
-  // Im Blocking- und Non-Blocking-Modus nutzen wir einen globalen Mutex.
+  // In blocking and non-blocking modes we use a global mutex.
   #include <freertos/FreeRTOS.h>
   #include <freertos/semphr.h>
 
-  /// Ein globaler Lock für ALLE Strips (Adafruit-Implementierung ist nicht reentrant).
+  /// One global lock for ALL strips (Adafruit implementation is not reentrant).
   static SemaphoreHandle_t s_globalShowMutex = nullptr;
 
-  /// Stellt sicher, dass der globale Mutex existiert.
+  /// Ensures that the global mutex exists.
   static inline void ensureMutex() {
     if (!s_globalShowMutex) {
       s_globalShowMutex = xSemaphoreCreateMutex();
     }
   }
 
-  /// Kurzes aktives Warten, bis der Treiber wieder senden darf.
+  /// Short active wait until the driver is allowed to send again.
   static inline void waitCanShow(Adafruit_NeoPixel* s) {
     while (!s->canShow()) {
-      delayMicroseconds(10);  // kleine Poll-Periode → geringe CPU-Last
+      delayMicroseconds(10);  // short poll interval → low CPU load
     }
   }
 #endif
 
 // ============================================================================
-//  Öffentliche API
+//  Public API
 // ============================================================================
 
 /**
- * @brief Thread-sichere Variante von strip->show().
+ * @brief Thread-safe variant of strip->show().
  *
- * Verhalten je nach Build-Option:
- *  - NEOPIXEL_SHOW_DIRECT:    Kein Lock, busy-spin bis canShow, dann show().
- *  - NEOPIXEL_SHOW_NONBLOCK:  Sendet nur, wenn canShow() und Mutex sofort frei.
- *  - (Default, Blocking):     Nimmt globalen Mutex, wartet auf canShow(), sendet.
+ * Behavior depends on the build option:
+ *  - NEOPIXEL_SHOW_DIRECT:    No lock; busy-spin until canShow(), then show().
+ *  - NEOPIXEL_SHOW_NONBLOCK:  Sends only when canShow() and the mutex are immediately free.
+ *  - (Default, Blocking):     Takes the global mutex, waits for canShow(), then sends.
  */
 void neopixelShowSafe(Adafruit_NeoPixel* strip) {
   if (!strip) return;
 
 #if defined(NEOPIXEL_SHOW_DIRECT)
-  // Keine Safety – NUR benutzen, wenn garantiert single-threaded & ein Strip.
-  while (!strip->canShow()) { /* busy spin (minimale Latenz) */ }
+  // No safety — use only when single-threaded & exactly one strip are guaranteed.
+  while (!strip->canShow()) { /* busy spin (minimum latency) */ }
   strip->show();
   return;
 
 #elif defined(NEOPIXEL_SHOW_NONBLOCK)
-  // Non-blocking: sende nur, wenn sofort möglich.
+  // Non-blocking: send only if possible immediately.
   if (!strip->canShow()) return;
   ensureMutex();
   if (!s_globalShowMutex) { strip->show(); return; }
@@ -81,7 +80,7 @@ void neopixelShowSafe(Adafruit_NeoPixel* strip) {
   return;
 
 #else
-  // Blocking & threadsafe (empfohlen, besonders bei MEHREREN Strips).
+  // Blocking & thread-safe (recommended, especially with multiple strips).
   ensureMutex();
   if (!s_globalShowMutex) {
     waitCanShow(strip);
@@ -97,10 +96,10 @@ void neopixelShowSafe(Adafruit_NeoPixel* strip) {
 }
 
 /**
- * @brief „Try“-Variante von show(): sendet nur, wenn es SOFORT geht.
+ * @brief "Try" variant of show(): sends only if it can do so immediately.
  *
- * @return true  wenn gesendet wurde,
- *         false wenn entweder canShow() false war oder (im Mutex-Modus) der Lock belegt war.
+ * @return true  if sent,
+ *         false if either canShow() was false or (in mutex mode) the lock was busy.
  */
 bool neopixelTryShow(Adafruit_NeoPixel* strip) {
   if (!strip) return false;
@@ -121,7 +120,7 @@ bool neopixelTryShow(Adafruit_NeoPixel* strip) {
   return ok;
 
 #else
-  // Blocking-Modus: „try“ nur erfolgreich, wenn Lock + canShow sofort frei.
+  // Blocking mode: "try" succeeds only if the lock + canShow are immediately free.
   if (!strip->canShow()) return false;
   ensureMutex();
   if (!s_globalShowMutex) { strip->show(); return true; }
@@ -134,11 +133,11 @@ bool neopixelTryShow(Adafruit_NeoPixel* strip) {
 }
 
 /**
- * @brief Aktualisiert zwei Stripes unter EINEM globalen Lock (so „gleichzeitig“ wie möglich).
+ * @brief Updates two strips under ONE global lock (as simultaneously as possible).
  *
- * - DIRECT:     Kein Lock; sendet A gefolgt von B (nur sicher in Single-Thread-Setups).
- * - NONBLOCK:   Sendet nur, wenn beide canShow() true und der Lock sofort frei ist.
- * - Blocking:   Holt den globalen Lock, wartet auf A/B canShow(), dann show() A, show() B.
+ * - DIRECT:     No lock; sends A then B (only safe in single-thread setups).
+ * - NONBLOCK:   Sends only if both canShow() are true and the lock is immediately free.
+ * - Blocking:   Takes the global lock, waits for A/B canShow(), then show() A, show() B.
  */
 void neopixelShowPairSafe(Adafruit_NeoPixel* a, Adafruit_NeoPixel* b) {
   if (!a && !b) return;
@@ -146,7 +145,7 @@ void neopixelShowPairSafe(Adafruit_NeoPixel* a, Adafruit_NeoPixel* b) {
   if (b && !a) { neopixelShowSafe(b); return; }
 
 #if defined(NEOPIXEL_SHOW_DIRECT)
-  // Best-Effort direkt, ohne globalen Lock (nur sicher, wenn single-threaded!).
+  // Best effort directly, without a global lock (only safe in a single-thread setup!).
   while (!a->canShow()) { /* busy spin */ }
   a->show();
   while (!b->canShow()) { /* busy spin */ }
@@ -154,7 +153,7 @@ void neopixelShowPairSafe(Adafruit_NeoPixel* a, Adafruit_NeoPixel* b) {
   return;
 
 #elif defined(NEOPIXEL_SHOW_NONBLOCK)
-  // Non-blocking: sende nur, wenn beide sofort können und der Lock frei ist.
+  // Non-blocking: send only if both can send immediately and the lock is free.
   if (!a->canShow() || !b->canShow()) return;
   ensureMutex();
   if (!s_globalShowMutex) { a->show(); b->show(); return; }
@@ -163,11 +162,11 @@ void neopixelShowPairSafe(Adafruit_NeoPixel* a, Adafruit_NeoPixel* b) {
   if (a->canShow()) { a->show(); sentA = true; }
   if (b->canShow()) { b->show(); sentB = true; }
   xSemaphoreGive(s_globalShowMutex);
-  (void)sentA; (void)sentB; // Platzhalter, falls später Logging gewünscht ist.
+  (void)sentA; (void)sentB; // placeholder for future logging if desired.
   return;
 
 #else
-  // Blocking: globaler Lock -> A dann B, minimaler Zeitversatz im selben „Frame“.
+  // Blocking: global lock -> A then B, minimal time offset in the same "frame".
   ensureMutex();
   if (!s_globalShowMutex) {
     while (!a->canShow()) { delayMicroseconds(10); }

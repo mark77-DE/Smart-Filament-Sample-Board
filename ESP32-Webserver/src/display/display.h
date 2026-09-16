@@ -47,45 +47,45 @@ public:
     static void init(DisplayType *disp) { _display = disp; }
 
     /**
-     * @brief Zeigt Filament-Daten (vendor / type / color) in drei Zeilen.
+     * @brief Shows filament data (vendor / type / color) in three lines.
      */
     static void show(const FilamentEntry &entry);
 
     /**
-     * @brief Zeigt eine einzelne zentrierte Zeile.
+     * @brief Shows a single centered line.
      * @param msg Text
      */
     static void showCentered(const String &msg, const int FOREGROUND_COLOR = TFT_WHITE, const int BACKGROUND_COLOR = TFT_BLACK);
 
     /**
-     * @brief Zeigt zwei zentrierte Zeilen (bestehende API beibehalten).
-     * @param line1 Erste Zeile
-     * @param line2 Zweite Zeile
+     * @brief Shows two centered lines (keeps the existing API).
+     * @param line1 First line
+     * @param line2 Second line
      */
     static void showTwoLinesCentered(const String &line1, const String &line2);
 
     /**
      * @brief Shows three centered lines (new, for reboot countdown).
      *        Truncates with "..." when needed and adjusts the font to the display height.
-     * @param line1 Erste Zeile (oben)
-     * @param line2 Zweite Zeile (Mitte)
-     * @param line3 Dritte Zeile (unten)
+     * @param line1 First line (top)
+     * @param line2 Second line (middle)
+     * @param line3 Third line (bottom)
      */
     static void showThreeLinesCentered(const String &line1, const String &line2, const String &line3, int foregroundColor = TFT_WHITE, int backgroundColor = TFT_BLACK);
 
     /**
-     * @brief Zeigt vier zentrierte Zeilen.
-     * @param line1 Erste Zeile (oben)
-     * @param line2 Zweite Zeile
-     * @param line3 Dritte Zeile
-     * @param line4 Vierte Zeile (unten)
+     * @brief Shows four centered lines.
+     * @param line1 First line (top)
+     * @param line2 Second line
+     * @param line3 Third line
+     * @param line4 Fourth line (bottom)
      */
     static void showFourLinesCentered(const String &line1, const String &line2, const String &line3, const String &line4);
 
     /**
-     * @brief Bootscreen mit Firmware-Version/Datum
-     * @param version Versionstext
-     * @param dateShort Datum
+     * @brief Boot screen with firmware version/date
+     * @param version Version text
+     * @param dateShort Date
      */
     static void showBootVersion(const char *version, const char *dateShort);
 
@@ -95,10 +95,10 @@ public:
     static void clear();
 
     /**
-     * @brief Zeigt eine Fehlermeldung zentriert an (z.B. bei unbekanntem Tag).
-     * @param msg Fehlermeldungstext
-     * @param FOREGROUND_COLOR Textfarbe
-     * @param BACKGROUND_COLOR Hintergrundfarbe
+     * @brief Shows an error message centered (e.g. for an unknown tag).
+     * @param msg Error message text
+     * @param FOREGROUND_COLOR Text color
+     * @param BACKGROUND_COLOR Background color
      */
     static void showErrorCentered(const String &msg, const int FOREGROUND_COLOR = TFT_RED, const int BACKGROUND_COLOR = TFT_BLACK);
 

@@ -167,7 +167,7 @@ void tickIdle(LGFX &display, unsigned long now) {
     // -------------------
     // Update-Hinweis unten rechts
     // -------------------
-    const UpdateInfo &info = getUpdateInfo();  // globale Struktur abfragen
+    const UpdateInfo &info = getUpdateInfo();  // query the global structure
     if (info.updateAvailable) {
         const String updateText = "UPDATE";
         display.setTextSize(2);
@@ -256,7 +256,7 @@ void playThreeLineTypewriter(
         delay(eraseLinePauseMs);
     }
 
-    // final sicher schwarz
+    // final black safely
     display.fillRect(0, 0, display.width(), display.height(), TFT_BLACK);
 }
 }

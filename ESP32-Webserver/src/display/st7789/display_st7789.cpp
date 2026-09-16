@@ -233,7 +233,7 @@ void MYDISPLAY::renderSelfUpdateStatus(const SelfUpdateStatus& status) {
 
 
 // -----------------------------
-// WICHTIG: Definition des statischen Members
+// IMPORTANT: definition of the static members
 // -----------------------------
 DisplayType* MYDISPLAY::_display = nullptr;
 

@@ -14,7 +14,7 @@
 // ============================================================================
 /**
  * @brief System
- * -Konfiguration
+ * Configuration
  */
 
 struct systemConfig {
@@ -32,7 +32,7 @@ struct systemConfig {
 
 
 /**
- * @brief Globale LED-Hardware-Konfiguration
+ * @brief Global LED hardware configuration
  *
  * Applies to all addressable LEDs in the device.
  * Defaults come from platformio.ini.
@@ -44,7 +44,7 @@ struct LedHardwareConfigV2 {
 
 
 /**
- * @brief LED-Konfiguration (Filament-Stripe)
+ * @brief LED configuration (filament strip)
  */
 struct LedConfigV2 {
   int      count;       ///< Number of LEDs
@@ -57,7 +57,7 @@ struct LedConfigV2 {
 };
 
 /**
- * @brief NFC-LED-Konfiguration
+ * @brief NFC LED configuration
  */
 struct NfcLedConfigV2 {
   int      count;                 ///< Number of LEDs
@@ -73,7 +73,7 @@ struct NfcLedConfigV2 {
 };
 
 /**
- * @brief Button-Konfiguration
+ * @brief Button configuration
  */
 struct ButtonConfigV2 {
   bool enabled       = true; ///< Button enabled?
@@ -86,7 +86,7 @@ struct ButtonConfigV2 {
 };
 
 /**
- * @brief Buzzer-Konfiguration
+ * @brief Buzzer configuration
  */
 struct BuzzerConfigV2 {
   bool enabled       = true; ///< Buzzer enabled?
@@ -94,16 +94,16 @@ struct BuzzerConfigV2 {
   bool activeHigh    = true;  ///< Active level HIGH?
   bool passive       = false; ///< false = active buzzer, true = passive (PWM)
   int  freqHz        = 4000;  ///< Frequency for tone()
-  int  singleMs      = 80;    ///< Dauer Single-Beep
-  int  doubleOnMs    = 60;    ///< Ein-Zeit Double-Beep
-  int  doubleGapMs   = 80;    ///< Pause Double-Beep
-  int  errorOnMs     = 50;    ///< Ein-Zeit Error-Sequenz
-  int  errorGapMs    = 60;    ///< Pause Error-Sequenz
-  int  errorCount    = 3;     ///< Wiederholungen Error-Sequenz
+  int  singleMs      = 80;    ///< Duration of single beep
+  int  doubleOnMs    = 60;    ///< Duration of one double-beep pulse
+  int  doubleGapMs   = 80;    ///< Pause between double-beep pulses
+  int  errorOnMs     = 50;    ///< Duration of one error-sequence pulse
+  int  errorGapMs    = 60;    ///< Pause between error-sequence pulses
+  int  errorCount    = 3;     ///< Number of error-sequence repetitions
 };
 
 /**
- * @brief MQTT-Konfiguration
+ * @brief MQTT configuration
  */
 
 struct MqttConfigV2 {
@@ -114,13 +114,13 @@ struct MqttConfigV2 {
   String password;
   String baseTopic;
   String clientId;
-  bool haDiscovery;          ///< Home Assistant Discovery aktiv
+  bool haDiscovery;          ///< Home Assistant discovery active
   String haDiscoveryPrefix;  ///< Prefix for HA Discovery (e.g. "homeassistant")
 };
 
 
 /**
- * @brief Filaman Konfiguration
+ * @brief Filaman configuration
  */
 
 struct FilamanConfig 
@@ -138,7 +138,7 @@ struct FilamanConfig
 
 
 /**
- * @brief Haupt-Konfigurationsstruktur der App
+ * @brief Main application configuration structure
  */
 struct AppConfigV2 {
   systemConfig system;     ///< System configuration
