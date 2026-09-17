@@ -27,6 +27,7 @@ inline void applyFilamanSyncToLocalDb(const std::vector<FilamentSyncEntry>& sync
     bool exists = FilamentDB::findByUID(s.uid, entry);
 
     entry.uid = s.uid;
+    entry.filamentId = s.filamentId;
     entry.vendor = s.vendor;
     entry.type = s.type;
     entry.color = s.color;

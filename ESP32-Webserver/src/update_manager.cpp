@@ -9,6 +9,7 @@
 #include <Update.h>
 #include <WiFi.h>
 #include <esp_heap_caps.h>
+#include "filaman_manager.h"
 
 static bool changed = false;
 
@@ -51,6 +52,8 @@ void updateInit()
 // ----------------------------------------
 bool checkForUpdate(String &latestVersion)
 {
+    
+
     if (WiFi.status() != WL_CONNECTED)
     {
         if (CONFIGV2.system.debugMode)
@@ -121,6 +124,14 @@ bool checkForUpdate(String &latestVersion)
     }
 
     String response = http.getString();
+
+    if (CONFIGV2.system.debugMode)
+{
+    Serial.println("[UPDATE-CHECK] Response length: " + String(response.length()));
+    Serial.println("[UPDATE-CHECK] Response: " + response);
+}
+
+
     JsonDocument releaseDoc;
     DeserializationError err = deserializeJson(releaseDoc, response);
     if (err)
@@ -215,6 +226,9 @@ void updateTask(void *parameter)
 // ----------------------------------------
 void startUpdateTask()
 {
+    if (FilamanManager::isSyncBusy()) return;
+
+    
     if (updateTaskRunning)
     {
         if (CONFIGV2.system.debugMode)

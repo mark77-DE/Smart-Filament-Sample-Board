@@ -134,7 +134,7 @@ public:
   static void netBusyHint(uint16_t ms); // FIX: added
 
   // WebIF: start a virtual "tag hold" so timeout/idle logic can resume
-
+  static void webifHoldFor(uint16_t ms);
   
 
    /**

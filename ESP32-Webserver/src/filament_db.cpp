@@ -86,6 +86,7 @@ bool loadFromJsonArray(JsonArray arr) {
         db[dbCount].info1       = o["info1"]    | "";
         db[dbCount].info2       = o["info2"]    | "";
         db[dbCount].storage     = o["storage"]  | "";
+        db[dbCount].filamentId  = o["filamentId"] | -1;
 
         dbCount++;
     }
@@ -112,15 +113,10 @@ JsonArray toJsonArray(JsonDocument &doc) {
         o["info1"]      = db[i].info1;
         o["info2"]      = db[i].info2;
         o["storage"]    = db[i].storage;
+        o["filamentId"] = db[i].filamentId;
     }
 
     return arr;
 }
 
-
-
-
-
-
 } // namespace FilamentDB
-

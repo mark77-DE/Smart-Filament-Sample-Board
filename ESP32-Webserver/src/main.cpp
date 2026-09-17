@@ -269,8 +269,6 @@ void handleUID(const String &uid, UidSource source)
 {
   lastTagTime = millis();
   isActive = true;
-
-  // Idle-Animation stoppen
   DisplayAnim::stop();
 
   FilamentEntry entry;
@@ -289,13 +287,10 @@ void handleUID(const String &uid, UidSource source)
 
   if (FilamentDB::findByUID(uid, entry))
   {
-    // --- BEKANNTES TAG ---
-
-    // Activate your target pixel (your existing logic)
+    // --- BEKANNTES TAG (lokal synchronisiert) ---
     activateLed(entry.ledIndex);
 
-    // Display mit Filament-Infos
-    // MYDISPLAY::show(entry);
+    // Sofort mit dem lokal bekannten (ggf. etwas veralteten) Lagerort anzeigen
     MYDISPLAY::showFourLinesCentered(entry.vendor, entry.type, entry.color, entry.storage);
 
     if (CONFIGV2.mqttConfig.enabled)
@@ -303,42 +298,39 @@ void handleUID(const String &uid, UidSource source)
       publishFilamentState(entry);
     }
 
-    // NFC feedback (green with optional blink -> solid -> timeout after removal)
     if (isNfc)
     {
       LEDCTRL_NFC::showSuccess();
     }
 
-    // only beep if triggered by NFC and (optionally) no beep is currently running
     if (isNfc && !buzzer_busy())
     {
       buzzer_single_beep();
     }
 
-    // Event for the WebSocket
     doc["action"] = "knownUID";
     doc["ledIndex"] = entry.ledIndex;
     doc["vendor"] = entry.vendor;
     doc["type"] = entry.type;
     doc["color"] = entry.color;
 
-    // First try FilaMan as a fallback if enabled — non-blocking.
-    if (CONFIGV2.filamanConfig.enabled && FilamanManager::requestLookup(uid))
+    // Lagerort im Hintergrund live nachladen — bewusst OHNE "Suche..."
+    // Zwischenbildschirm, da Identität schon feststeht und angezeigt ist;
+    // nur der (potenziell veraltete) Lagerort wird per loop()-Poll ersetzt.
+    if (CONFIGV2.filamanConfig.enabled && entry.filamentId >= 0)
     {
-
-      if (CONFIGV2.system.debugMode)
+      if (FilamanManager::requestLocationLookup(entry.filamentId, uid) && CONFIGV2.system.debugMode)
       {
-        Serial.println("[FILAMAN] request search");
+        Serial.println("[FILAMAN] request live location");
       }
-
-      // Intermediate state until the result arrives in loop()
-      MYDISPLAY::showCentered(I18N::get("txt_searching")); // optional text key can be added, e.g. "Searching..."
-      
     }
   }
   else
   {
-    // --- UNKNOWN TAG (local) ---
+    // --- UNBEKANNTES TAG ---
+    // Kein Live-Fallback mehr möglich: sampleboard_uid/_led sitzen nur noch
+    // am Filament in FilaMan, nicht mehr an einer Spule. Ein wirklich
+    // unbekanntes Tag wird erst nach dem nächsten FilaMan-Sync auflösbar.
 
     if (CONFIGV2.system.debugMode)
     {
@@ -352,30 +344,15 @@ void handleUID(const String &uid, UidSource source)
       ledStartTime = millis();
     }
 
-    // First try FilaMan as a fallback if enabled — non-blocking.
-    if (CONFIGV2.filamanConfig.enabled && FilamanManager::requestLookup(uid))
+    MYDISPLAY::showErrorCentered(I18N::get("txt_unknown"), TFT_RED);
+
+    if (isNfc)
     {
-
-      if (CONFIGV2.system.debugMode)
-      {
-        Serial.println("[FILAMAN] request search");
-      }
-
-      // Intermediate state until the result arrives in loop()
-      MYDISPLAY::showCentered(I18N::get("txt_searching")); // optional text key can be added, e.g. "Searching..."
-      
+      LEDCTRL_NFC::showError();
+      LEDCTRL_FILAMENT::errorBlink();
     }
-    else
-    {
-      // Display-Hinweis
-      MYDISPLAY::showErrorCentered(I18N::get("txt_unknown"), TFT_RED);
 
-      if (isNfc)
-      {
-        LEDCTRL_NFC::showError();
-        LEDCTRL_FILAMENT::errorBlink();
-      }
-    }
+    doc["action"] = "unknownUID";
   }
 
   String msg;
@@ -774,24 +751,28 @@ void loop()
     FilamanManager::requestWarmup();
   }
 
-  std::vector<FilamentSyncEntry> syncEntries;
-  bool syncOk;
-  if (FilamanManager::pollSyncResult(syncEntries, syncOk))
   {
-    if (syncOk)
+  String resUid, resLocation;
+  bool resFound;
+  if (FilamanManager::pollResult(resUid, resFound, resLocation))
+  {
+    if (resUid == NFC::currentHoldUid())
     {
-      applyFilamanSyncToLocalDb(syncEntries);
-      // optional display feedback: "Sync: X filaments updated"
-      if (CONFIGV2.system.debugMode)
+      FilamentEntry entry;
+      if (resFound && FilamentDB::findByUID(resUid, entry))
       {
-        Serial.printf("[FILAMAN] %d filamenst synced", syncEntries);
+        // Vendor/Typ/Farbe unverändert aus dem lokalen Sync, nur der
+        // Lagerort wird durch das frische Live-Ergebnis ersetzt.
+        MYDISPLAY::showFourLinesCentered(entry.vendor, entry.type, entry.color, resLocation);
+        LEDCTRL_NFC::showSuccess(); // Rückweg-Timer erneut setzen
       }
-    }
-    else if (CONFIGV2.system.debugMode)
-    {
-      Serial.println("[FILAMAN] sync failed");
+      // resFound == false -> Live-Lookup fehlgeschlagen oder kein Bestand
+      // gefunden. Bewusst NICHT überschreiben: der lokal bekannte (statische)
+      // Lagerort bleibt einfach stehen, statt einen Fehler zu zeigen, obwohl
+      // die Identität ja bekannt ist.
     }
   }
+}
 
   // ---------------------------------------------------------------------------
   // LAST) (Optional) yield() und chrash check

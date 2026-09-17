@@ -1,6 +1,10 @@
 // filaman_manager.h
-// Non-blocking wrapper around FilamanClient: runs the lookup on a background
-// FreeRTOS task so handleUID()/loop() never wait on the network round trip.
+// Non-blocking wrapper around FilamanClient: runs lookups/sync on a
+// background FreeRTOS task so handleUID()/loop() never wait on the network
+// round trip. Identity (vendor/type/color/ledIndex) comes entirely from the
+// synced local FilamentDB — this manager's live job is only refreshing the
+// location for an already-known filament_id, plus the periodic/manual sync
+// itself.
 #pragma once
 #include <Arduino.h>
 #include <vector>
@@ -12,10 +16,14 @@ namespace FilamanManager {
   // so the client picks up the current filamanConfig without a reboot.
   void applyConfig();
 
-  // Starts a background lookup for `uid`. Returns immediately (non-blocking).
-  // Returns false without doing anything if FilaMan is disabled in the config
-  // or a lookup is already in flight (kept deliberately simple: one at a time).
-  bool requestLookup(const String& uid);
+  // Starts a background live location lookup for a filament that's already
+  // known locally (filamentId comes from FilamentDB, populated during sync).
+  // `uid` is only carried through so the caller can later check the result
+  // still belongs to the tag currently being displayed (NFC::currentHoldUid()).
+  // Returns immediately (non-blocking). Returns false without doing anything
+  // if FilaMan is disabled, filamentId is invalid, or a lookup/warmup/sync is
+  // already in flight (kept deliberately simple: one thing at a time).
+  bool requestLocationLookup(int filamentId, const String& uid);
 
   // Call once per loop() iteration. Returns true exactly once when a result
   // becomes available. `uid` tells you which tag this result belongs to —
@@ -27,11 +35,8 @@ namespace FilamanManager {
   // Non-blocking: logs in and pre-fetches the location cache in the background.
   // Call once after WiFi connects, and optionally on a periodic timer
   // afterwards. Shares the same "one background task at a time" slot as
-  // requestLookup(), so it's simply skipped if a real lookup is in flight.
+  // requestLocationLookup(), so it's simply skipped if a real lookup is in flight.
   bool requestWarmup();
-
-  // True while a lookup or warmup is currently running (e.g. to show a "searching..." state).
-  bool isBusy();
 
   // Non-blocking: syncs all filaments tagged with sampleboard_uid from FilaMan
   // into a background-collected list. Meant to be triggered rarely (WebIF
@@ -49,7 +54,13 @@ namespace FilamanManager {
   // run has finished. `entries` holds everything found (already includes
   // per-filament spool count/weight); merging them into FilamentDB is left
   // to the caller (single-threaded in loop(), to avoid touching FilamentDB
-  // from a background task).
-  bool pollSyncResult(std::vector<FilamentSyncEntry>& entries, bool& success);
+  // from a background task). `summary` gives the headline numbers (scanned/
+  // tagged/spools found/tagged-without-spools) for a status line or log,
+  // without having to derive them from `entries` yourself.
+  bool pollSyncResult(std::vector<FilamentSyncEntry>& entries, bool& success, FilamentSyncSummary& summary);
+
+  // True while a lookup, warmup, or sync is currently running (e.g. to show
+  // a "busy" state).
+  bool isBusy();
 
 } // namespace FilamanManager

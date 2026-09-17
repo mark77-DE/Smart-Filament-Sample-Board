@@ -1,6 +1,16 @@
 // FilamanClient.h
 // Talks to the FilaMan-System core API using cookie-based session auth
 // (Viewer-role account, read-only usage — no CSRF token needed since we only do GET)
+//
+// Tags (sampleboard_uid, sampleboard_led) live ONLY on the FILAMENT in
+// FilaMan, never on a spool. This works because the plain, unfiltered
+// pagination over /api/v1/filaments is unaffected by FilaMan's known bug in
+// server-side custom-field search/filtering — only search/filter is broken,
+// not reading the data. So identity resolution (vendor/type/color/ledIndex)
+// happens entirely through the periodic sync (fetchAllTaggedFilaments), and
+// this client's only LIVE per-scan job is refreshing the location for an
+// already-known filament_id (findLocationsByFilamentId), since locations
+// change too often to cache (AMS/Bambuddy slot reassignment etc.).
 #pragma once
 #include <WiFi.h>
 #include <WiFiClient.h>
@@ -16,28 +26,20 @@ struct FilamanLocation {
 };
 
 // One spool of a given filament, at a given location, with its remaining weight.
-// Used to aggregate "where can I find filament X" across all its spools.
+// Used both for the live "where can I find filament X" lookup and for the
+// stock-summary shown during sync (see FilamentSyncEntry).
 struct FilamentSpoolLocation {
   int locationId;
   float remainingWeightG;
 };
 
-// Result of a full sampleboard_uid -> filament -> locations lookup.
-struct FilamentLocationResult {
-  bool found = false;
-  int filamentId = -1;
-  // Sorted descending by remainingWeightG (most stock first) — change the
-  // sort in findLocationsByFilamentId() if you'd rather prioritize by
-  // last_used_at or show them in a different order.
-  std::vector<FilamentSpoolLocation> locations;
-};
-
-
 // One filament tagged with sampleboard_uid, ready to merge into the local
 // FilamentDB. Deliberately carries no storage/location info — that stays
-// live via lookupLocationsByUid(), never synced into the local cache.
+// live via findLocationsByFilamentId(), never synced into the local cache.
 struct FilamentSyncEntry {
   String uid;              // sampleboard_uid
+  int filamentId = -1;     // FilaMan's filament id — kept locally so the live
+                            // location lookup never needs a spool search again
   String vendor;
   String type;              // material_type
   String color;             // manufacturer_color_name
@@ -45,6 +47,21 @@ struct FilamentSyncEntry {
   String shopUrl;
   int spoolCount = 0;
   float totalRemainingWeightG = 0.0f;
+};
+
+// Summary of one sync run — lets the caller (or a display/WebIF status line)
+// report something like "1300 Filamente gescannt, 63 Spulen gefunden,
+// 2 Filamente mit Sample-UID aber ohne passende Spule" instead of having to
+// count log lines.
+struct FilamentSyncSummary {
+  int totalFilamentsScanned = 0;   // "total" from FilaMan's pagination (whole catalog, not just tagged)
+  int taggedFilamentsFound = 0;    // filaments with a sampleboard_uid tag
+  int totalSpoolsFound = 0;        // summed spoolCount across all tagged filaments
+  // Human-readable description (vendor/type/color/uid) for each tagged
+  // filament that had zero matching spools — usually means the wrong
+  // catalog entry got tagged (FilaMan pre-populates ~1300 filaments from an
+  // external DB, most with spool_count 0 since they were never bought).
+  std::vector<String> taggedWithoutSpools;
 };
 
 class FilamanClient {
@@ -134,54 +151,67 @@ public:
     return success;
   }
 
-  // Two-stage lookup, interim workaround until FilaMan's custom-field search
-  // works on /api/v1/filaments directly (tracked upstream on GitHub):
-  //   1) find the filament_id via the spool(s) tagged with
-  //      custom_fields.sampleboard_uid == uid (copies of the same spool are
-  //      fine and expected; different filaments sharing the UID are not)
-  //   2) fetch ALL non-archived spools of that filament_id and aggregate
-  //      their locations + remaining weight
-  // Once the upstream fix lands, step 1 can search /api/v1/filaments directly
-  // by custom field, and the tag can move from a representative spool onto
-  // the filament itself — step 2 stays exactly the same.
-  FilamentLocationResult lookupLocationsByUid(const String& uid) {
-    FilamentLocationResult result;
+  // Live per-scan call for an ALREADY-KNOWN filament_id (from the local,
+  // synced FilamentDB): all non-archived spools of this filament, with
+  // remaining stock. Sorted descending by remainingWeightG (most stock
+  // first) as the default "best place to grab it from" ordering.
+  std::vector<FilamentSpoolLocation> findLocationsByFilamentId(int filamentId) {
+    std::vector<FilamentSpoolLocation> out;
+    if (!_enabled) return out;
 
-    int filamentId = findFilamentIdByTaggedSpool(uid);
-    if (filamentId < 0) return result; // uid not found (or conflicting) -> result.found stays false
+    if (_sessionCookie.length() == 0) {
+      if (!login()) return out;
+    }
 
-    result.filamentId = filamentId;
-    result.locations = findLocationsByFilamentId(filamentId);
-    result.found = !result.locations.empty();
-    return result;
+    String url = "http://" + _host + ":" + String(_port) +
+                 "/api/v1/spools?filament_id=" + String(filamentId) +
+                 "&include_archived=false&page_size=100";
+
+    int code = doGet(url);
+    if (code == 401) {
+      if (!login()) return out;
+      code = doGet(url);
+    }
+    if (code != 200) return out;
+
+    JsonDocument jsonDoc; // ArduinoJson v7
+    if (deserializeJson(jsonDoc, _lastBody) != DeserializationError::Ok) return out;
+
+    for (JsonObject item : jsonDoc["items"].as<JsonArray>()) {
+      float remaining = item["remaining_weight_g"] | 0.0f;
+      // Skip spools with (essentially) nothing left — no point sending
+      // someone to an empty spool, and no point counting it as stock.
+      if (remaining <= 1.0f) continue;
+
+      int locId = item["location_id"] | -1;
+      if (locId < 0) continue;
+
+      out.push_back({locId, remaining});
+    }
+
+    std::sort(out.begin(), out.end(), [](const FilamentSpoolLocation& a, const FilamentSpoolLocation& b) {
+      return a.remainingWeightG > b.remainingWeightG;
+    });
+
+    return out;
   }
-
-  // Warms up the client: logs in and pre-fetches the location list.
-  // Call once after WiFi comes up (a cold login can otherwise silently fail
-  // if it races with WiFi/DNS not being fully ready yet), and optionally
-  // periodically afterwards to keep the session and location cache fresh.
-  bool warmup() {
-    if (!_enabled) return false;
-    if (!login()) return false;
-    return refreshLocations();
-  }
-
 
   // Fetches every filament that has a sampleboard_uid tag, paginating through
   // the FULL filament catalog. Interim workaround until FilaMan's custom-field
-  // search works on /api/v1/filaments (same upstream issue as
-  // lookupLocationsByUid() above). Meant to run rarely (e.g. a user- or
-  // button-triggered sync), NOT per scan — with ~1300 filaments this issues
-  // many requests and can take a while.
-  bool fetchAllTaggedFilaments(std::vector<FilamentSyncEntry>& out) {
+  // search works on /api/v1/filaments (upstream issue) — plain, unfiltered
+  // pagination is unaffected by that bug, only search/filter is. Meant to run
+  // rarely (a user- or button-triggered sync), NOT per scan — with ~1300
+  // filaments this issues many requests and can take a while.
+  bool fetchAllTaggedFilaments(std::vector<FilamentSyncEntry>& out, FilamentSyncSummary& summary) {
     out.clear();
+    summary = FilamentSyncSummary{};
     if (!_enabled) return false;
 
     if (_sessionCookie.length() == 0) {
       if (!login()) return false;
     }
 
-    const int pageSize = 100;
+    const int pageSize = 20;
     int page = 1;
     int total = -1;
 
@@ -200,6 +230,7 @@ public:
       if (deserializeJson(jsonDoc, _lastBody) != DeserializationError::Ok) return false;
 
       total = jsonDoc["total"] | 0;
+      summary.totalFilamentsScanned = total;
 
       for (JsonObject item : jsonDoc["items"].as<JsonArray>()) {
         const char* uid = item["custom_fields"]["sampleboard_uid"] | "";
@@ -207,6 +238,7 @@ public:
 
         FilamentSyncEntry entry;
         entry.uid = uid;
+        entry.filamentId = item["id"] | -1;
         entry.vendor = item["manufacturer"]["name"] | "";
         entry.type = item["material_type"] | "";
         entry.color = item["manufacturer_color_name"] | "";
@@ -215,14 +247,21 @@ public:
         const char* ledStr = item["custom_fields"]["sampleboard_led"] | "";
         entry.ledIndex = (strlen(ledStr) > 0) ? atoi(ledStr) : -1;
 
-        int filamentId = item["id"] | -1;
-        if (filamentId >= 0) {
-          aggregateSpoolStock(filamentId, entry.spoolCount, entry.totalRemainingWeightG);
+        if (entry.filamentId >= 0) {
+          aggregateSpoolStock(entry.filamentId, entry.spoolCount, entry.totalRemainingWeightG);
+        }
+
+        summary.taggedFilamentsFound++;
+        summary.totalSpoolsFound += entry.spoolCount;
+
+        if (entry.spoolCount == 0) {
+          String desc = entry.vendor + " " + entry.type + " " + entry.color + " (uid=" + entry.uid + ")";
+          summary.taggedWithoutSpools.push_back(desc);
         }
 
         if (CONFIGV2.system.debugMode) {
-          Serial.printf("[FILAMAN] sync: tagged filament uid=%s vendor=%s type=%s spools=%d weight=%.0fg\n",
-                         entry.uid.c_str(), entry.vendor.c_str(), entry.type.c_str(),
+          Serial.printf("[FILAMAN] sync: tagged filament uid=%s filament_id=%d vendor=%s type=%s spools=%d weight=%.0fg\n",
+                         entry.uid.c_str(), entry.filamentId, entry.vendor.c_str(), entry.type.c_str(),
                          entry.spoolCount, entry.totalRemainingWeightG);
         }
 
@@ -230,6 +269,19 @@ public:
       }
 
       page++;
+    }
+
+    // Always printed (not gated by debugMode) — a sync is a rare, deliberately
+    // triggered action, and its outcome is worth seeing regardless of debug mode.
+    Serial.println(F("[FILAMAN] --- Sync Summary ---"));
+    Serial.printf("[FILAMAN] %d Filamente gescannt, %d mit Sample-UID getaggt, %d Spulen insgesamt gefunden\n",
+                   summary.totalFilamentsScanned, summary.taggedFilamentsFound, summary.totalSpoolsFound);
+    if (!summary.taggedWithoutSpools.empty()) {
+      Serial.printf("[FILAMAN] %d getaggte(s) Filament(e) OHNE passende Spule (evtl. falscher Katalogeintrag getaggt?):\n",
+                     (int)summary.taggedWithoutSpools.size());
+      for (auto& desc : summary.taggedWithoutSpools) {
+        Serial.printf("[FILAMAN]   - %s\n", desc.c_str());
+      }
     }
 
     return true;
@@ -251,130 +303,20 @@ public:
     return findCachedLocation(locationId, outName);
   }
 
+  // Warms up the client: logs in and pre-fetches the location list.
+  // Call once after WiFi comes up (a cold login can otherwise silently fail
+  // if it races with WiFi/DNS not being fully ready yet), and optionally
+  // periodically afterwards to keep the session and location cache fresh.
+  bool warmup() {
+    if (!_enabled) return false;
+    if (!login()) return false;
+    return refreshLocations();
+  }
+
 private:
-  // Stage 1: finds the filament_id via the spool(s) carrying the sampleboard_uid tag.
-  // Multiple spools with the SAME uid pointing at the SAME filament_id are fine
-  // (e.g. a copied spool entry) — only a mismatch across filaments is treated
-  // as a real data problem and rejected.
-  int findFilamentIdByTaggedSpool(const String& uid) {
-    if (CONFIGV2.system.debugMode) {
-      Serial.println("[FILAMAN] lookup by UID");
-    }
-    if (!_enabled) return -1;
-
-    if (_sessionCookie.length() == 0) {
-      if (!login()) return -1;
-    }
-
-    String url = "http://" + _host + ":" + String(_port) +
-                 "/api/v1/spools?search=" + urlEncode(uid);
-
-    if (CONFIGV2.system.debugMode) {
-      Serial.print("[FILAMAN] lookup url: ");
-      Serial.println(url);
-    }
-
-    int code = doGet(url);
-    if (code == 401) {
-      if (!login()) return -1;
-      code = doGet(url);
-    }
-    if (code != 200) return -1;
-
-    JsonDocument jsonDoc; // ArduinoJson v7
-    if (deserializeJson(jsonDoc, _lastBody) != DeserializationError::Ok) return -1;
-
-    int matchCount = 0;
-    int matchedFilamentId = -1;
-    bool conflicting = false;
-
-    for (JsonObject item : jsonDoc["items"].as<JsonArray>()) {
-      const char* fieldUid = item["custom_fields"]["sampleboard_uid"] | "";
-      if (uid.equals(fieldUid)) {
-        int fid = item["filament_id"] | -1;
-        if (matchCount == 0) {
-          matchedFilamentId = fid;
-        } else if (fid != matchedFilamentId) {
-          // Same UID on spools of DIFFERENT filaments — that's a real data
-          // problem, not just a copied spool. Refuse rather than guess.
-          conflicting = true;
-        }
-        matchCount++;
-      }
-    }
-
-    if (conflicting || matchCount == 0 || matchedFilamentId < 0) {
-      if (CONFIGV2.system.debugMode) {
-        Serial.println("[FILAMAN] spool not found (or conflicting filament ids)");
-      }
-      return -1;
-    }
-
-    if (CONFIGV2.system.debugMode) {
-      Serial.printf("[FILAMAN] spool found, filament_id=%d (%d Spule(n) mit dieser UID)\n",
-                     matchedFilamentId, matchCount);
-    }
-
-    return matchedFilamentId;
-  }
-
-  // Stage 2: all non-archived spools of this filament, with remaining stock.
-  // Sorted descending by remainingWeightG (most stock first) as the default
-  // "best place to grab it from" ordering.
-  std::vector<FilamentSpoolLocation> findLocationsByFilamentId(int filamentId) {
-    std::vector<FilamentSpoolLocation> out;
-    if (!_enabled) return out;
-
-    if (_sessionCookie.length() == 0) {
-      if (!login()) return out;
-    }
-
-    String url = "http://" + _host + ":" + String(_port) +
-                 "/api/v1/spools?filament_id=" + String(filamentId) +
-                 "&include_archived=false&page_size=100";
-
-    if (CONFIGV2.system.debugMode) {
-      Serial.print("[FILAMAN] locations url: ");
-      Serial.println(url);
-    }
-
-    int code = doGet(url);
-    if (code == 401) {
-      if (!login()) return out;
-      code = doGet(url);
-    }
-    if (code != 200) return out;
-
-    JsonDocument jsonDoc; // ArduinoJson v7
-    if (deserializeJson(jsonDoc, _lastBody) != DeserializationError::Ok) return out;
-
-    for (JsonObject item : jsonDoc["items"].as<JsonArray>()) {
-      float remaining = item["remaining_weight_g"] | 0.0f;
-      // Skip spools with (essentially) nothing left — no point sending
-      // someone to an empty spool. Adjust the threshold to taste.
-      if (remaining <= 1.0f) continue;
-
-      int locId = item["location_id"] | -1;
-      if (locId < 0) continue;
-
-      out.push_back({locId, remaining});
-    }
-
-    std::sort(out.begin(), out.end(), [](const FilamentSpoolLocation& a, const FilamentSpoolLocation& b) {
-      return a.remainingWeightG > b.remainingWeightG;
-    });
-
-    if (CONFIGV2.system.debugMode) {
-      Serial.printf("[FILAMAN] %d Lagerort(e) mit Bestand gefunden\n", (int)out.size());
-    }
-
-    return out;
-  }
-
-
   // Sums spool count and remaining weight across all (non-empty, non-archived)
-  // spools of a filament — reuses the same data findLocationsByFilamentId()
-  // already fetches for the live location lookup.
+  // spools of a filament — reuses findLocationsByFilamentId()'s data, no
+  // separate request needed.
   void aggregateSpoolStock(int filamentId, int& outCount, float& outTotalWeight) {
     std::vector<FilamentSpoolLocation> spools = findLocationsByFilamentId(filamentId);
     outCount = (int)spools.size();
@@ -419,6 +361,25 @@ private:
   }
 
   int doGet(const String& url) {
+    int code = doGetOnce(url);
+
+    // code=200 with an empty body usually means a transient hiccup (chunked
+    // encoding quirk already handled via useHTTP10, or memory pressure from
+    // something else running concurrently, e.g. an HTTPS update check) rather
+    // than a real server error. One retry after a short pause is cheap
+    // insurance against treating that as a hard failure.
+    if (code == 200 && _lastBody.length() == 0) {
+      if (CONFIGV2.system.debugMode) {
+        Serial.println("[FILAMAN] GET returned 200 with empty body, retrying once...");
+      }
+      delay(300);
+      code = doGetOnce(url);
+    }
+
+    return code;
+  }
+
+  int doGetOnce(const String& url) {
     HTTPClient http;
     http.begin(url);
     http.useHTTP10(true); // avoids chunked transfer-encoding, which getString() can return empty for on larger responses
@@ -427,23 +388,10 @@ private:
     _lastBody = (code > 0) ? http.getString() : "";
     http.end();
     if (CONFIGV2.system.debugMode) {
-      Serial.printf("[FILAMAN] GET %s -> code=%d, bodyLen=%d\n", url.c_str(), code, _lastBody.length());
+      Serial.printf("[FILAMAN] GET %s -> code=%d, bodyLen=%d, free heap=%u bytes\n",
+                     url.c_str(), code, _lastBody.length(), ESP.getFreeHeap());
     }
     return code;
-  }
-
-  String urlEncode(const String& s) {
-    String out;
-    for (char c : s) {
-      if (isalnum(c) || c == '-' || c == '_' || c == '.' || c == '~') {
-        out += c;
-      } else {
-        char buf[4];
-        snprintf(buf, sizeof(buf), "%%%02X", (unsigned char)c);
-        out += buf;
-      }
-    }
-    return out;
   }
 
   bool _enabled;

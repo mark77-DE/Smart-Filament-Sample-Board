@@ -10,6 +10,7 @@
  * - Vendor
  * - Type
  * - Color
+ * - FilaMan filament_id (set by the sync; -1 for purely local/manual entries)
  */
 struct FilamentEntry {
     uint16_t ledIndex;   ///< LED index (0..n), uint16_t prevents overflow
@@ -20,6 +21,11 @@ struct FilamentEntry {
     String info1;         ///< Info text
     String info2;         ///< Link to the vendor or similar
     String storage;
+    int filamentId = -1;  ///< FilaMan's filament id, from the sync — lets the
+                            ///< live location lookup skip straight to
+                            ///< findLocationsByFilamentId() with no spool
+                            ///< search needed. -1 for entries never synced
+                            ///< from FilaMan (e.g. purely local/manual ones).
 };
 
 namespace FilamentDB {
