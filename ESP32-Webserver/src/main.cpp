@@ -49,6 +49,11 @@ NFCInfo g_nfcInfo = {0, 0, 0, false};
 
 bool rebootReason = false;
 
+static String g_lastHandledUid;
+static UidSource g_lastHandledSource = UidSource::NFC;
+
+
+
 static void printOtaInfo()
 {
   const esp_partition_t *boot = esp_ota_get_boot_partition();
@@ -269,6 +274,8 @@ void handleUID(const String &uid, UidSource source)
 {
   lastTagTime = millis();
   isActive = true;
+  g_lastHandledUid = uid;
+  g_lastHandledSource = source;
   DisplayAnim::stop();
 
   FilamentEntry entry;
@@ -634,36 +641,51 @@ void loop()
   // ---------------------------------------------------------------------------
   LEDCTRL_FILAMENT::tagPresenceTick(tagPresent);
 
-  //
-
   // ---------------------------------------------------------------------------
   // 1c) FilaMan: fetch the result of a background lookup (if any)
   // ---------------------------------------------------------------------------
   {
-    String resUid, resLocation;
-    bool resFound;
-    if (FilamanManager::pollResult(resUid, resFound, resLocation))
+  String resUid, resLocation;
+  bool resFound;
+  if (FilamanManager::pollResult(resUid, resFound, resLocation))
+  {
+    // Relevant, wenn's noch der zuletzt behandelte Tag ist — bei NFC-Quelle
+    // zusätzlich nur, solange das Tag noch physisch aufliegt (verhindert
+    // veraltete Anzeige nach Entfernen); bei WebIF-Quelle gibt's keine
+    // physische Präsenz, die Prüfung entfällt dort.
+    bool stillRelevant = (resUid == g_lastHandledUid) &&
+                          (g_lastHandledSource != UidSource::NFC || resUid == NFC::currentHoldUid());
+
+    if (stillRelevant)
     {
-      // Only apply if the tag is still the same one currently displayed —
-      // otherwise it was removed/changed in the meantime, so discard the result.
-      if (resUid == NFC::currentHoldUid()) // s_holdUid comes from nfc.cpp; getter may be added if needed
+      if (resFound)
       {
-        if (resFound)
+        FilamentEntry entry;
+        if (FilamentDB::findByUID(resUid, entry))
         {
-          MYDISPLAY::showTwoLinesCentered(F("Sample found:"), resLocation);
-          if (buzzer_busy() == false)
-            buzzer_single_beep();
-          LEDCTRL_NFC::showSuccess();
+          MYDISPLAY::showFourLinesCentered(entry.vendor, entry.type, entry.color, resLocation);
+          
         }
-        else
-        {
-          MYDISPLAY::showErrorCentered(I18N::get("txt_unknown"), TFT_RED);
-          LEDCTRL_NFC::showError();
-          LEDCTRL_FILAMENT::errorBlink();
-        }
+        if (buzzer_busy() == false)
+          buzzer_single_beep();
+        LEDCTRL_NFC::showSuccess();
       }
     }
+
+    // Unabhängig davon immer an alle WebIF-Clients broadcasten
+    JsonDocument locDoc;
+    locDoc["action"] = "filamanLocation";
+    locDoc["uid"] = resUid;
+    locDoc["found"] = resFound;
+    if (resFound)
+    {
+      locDoc["location"] = resLocation;
+    }
+    String locMsg;
+    serializeJson(locDoc, locMsg);
+    ws.textAll(locMsg);
   }
+}
 
   // ---------------------------------------------------------------------------
   // 2) Reboot (falls angefordert) + Countdown-UI
@@ -743,6 +765,9 @@ void loop()
   // ---------------------------------------------------------------------------
   // 8) refresh filaman locations cache / sync Filaman database locally
   // ---------------------------------------------------------------------------
+    // ---------------------------------------------------------------------------
+  // 8) refresh filaman locations cache / sync Filaman database locally
+  // ---------------------------------------------------------------------------
   static unsigned long lastFilamanWarmup = 0;
   const unsigned long FILAMAN_WARMUP_INTERVAL_MS = 30UL * 60UL * 1000UL;
   if (millis() - lastFilamanWarmup > FILAMAN_WARMUP_INTERVAL_MS)
@@ -752,27 +777,21 @@ void loop()
   }
 
   {
-  String resUid, resLocation;
-  bool resFound;
-  if (FilamanManager::pollResult(resUid, resFound, resLocation))
-  {
-    if (resUid == NFC::currentHoldUid())
+    std::vector<FilamentSyncEntry> syncEntries;
+    FilamentSyncSummary syncSummary;
+    bool syncOk;
+    if (FilamanManager::pollSyncResult(syncEntries, syncOk, syncSummary))
     {
-      FilamentEntry entry;
-      if (resFound && FilamentDB::findByUID(resUid, entry))
+      if (syncOk)
       {
-        // Vendor/Typ/Farbe unverändert aus dem lokalen Sync, nur der
-        // Lagerort wird durch das frische Live-Ergebnis ersetzt.
-        MYDISPLAY::showFourLinesCentered(entry.vendor, entry.type, entry.color, resLocation);
-        LEDCTRL_NFC::showSuccess(); // Rückweg-Timer erneut setzen
+        applyFilamanSyncToLocalDb(syncEntries);
       }
-      // resFound == false -> Live-Lookup fehlgeschlagen oder kein Bestand
-      // gefunden. Bewusst NICHT überschreiben: der lokal bekannte (statische)
-      // Lagerort bleibt einfach stehen, statt einen Fehler zu zeigen, obwohl
-      // die Identität ja bekannt ist.
+      else if (CONFIGV2.system.debugMode)
+      {
+        Serial.println("[FILAMAN] sync failed");
+      }
     }
   }
-}
 
   // ---------------------------------------------------------------------------
   // LAST) (Optional) yield() und chrash check

@@ -63,4 +63,12 @@ namespace FilamanManager {
   // a "busy" state).
   bool isBusy();
 
+  // filaman_manager.h – Ergänzung
+  // Wie pollResult(), aber nicht-konsumierend: liefert das jeweils neueste
+  // Ergebnis, solange sich lastSeenVersion von der aktuellen Version
+  // unterscheidet. Erlaubt mehreren unabhängigen Konsumenten (NFC-Scan-Loop
+  // UND WebIF-Anfrage), denselben Lookup zu beobachten, ohne sich gegenseitig
+  // das Ergebnis wegzuschnappen.
+  bool peekResult(unsigned long& lastSeenVersion, String& uid, bool& found, String& locationName);
+
 } // namespace FilamanManager

@@ -128,7 +128,7 @@ bool checkForUpdate(String &latestVersion)
     if (CONFIGV2.system.debugMode)
 {
     Serial.println("[UPDATE-CHECK] Response length: " + String(response.length()));
-    Serial.println("[UPDATE-CHECK] Response: " + response);
+    //Serial.println("[UPDATE-CHECK] Response: " + response);
 }
 
 

@@ -144,8 +144,13 @@ function connectWS() {
     }
 
       // UID
-      if (msg && msg.uid) {
+      if (msg.uid) {
         highlightUID(msg.uid);
+        console.log("Received msg.UID:", msg.uid);
+      }
+
+      if (msg.storageLocation) {
+        console.log(("Received msg.storageLocation: " + msg.storageLocation));
       }
 
     } catch (e) {
@@ -295,7 +300,7 @@ function sendHighlight(uid) {
 
 
 // ---------------- Highlight-Funktion (UI) ----------------
-function highlightUID(uid, opts = {}) {
+function highlightUID(uid, opts = {}, storage) {
   const { bypassDebounce = false } = opts;
   const now = Date.now();
 
@@ -321,13 +326,22 @@ function highlightUID(uid, opts = {}) {
 
   // Passende Kachel suchen
   const tile = Array.from(tiles).find(t => t.dataset.uid === uid);
-  if (tile) {
+
+if (tile) {
     tile.classList.add("active");
 
-    const timeoutMs = getWebLedTimeoutMs();
-    activeTimers[uid] = setTimeout(() => tile.classList.remove("active"), timeoutMs);
+    // storage-badge innerhalb dieses Tiles finden
+    const badge = tile.querySelector(".storage-badge");
 
-  } else {
+    if (badge) {
+        badge.textContent = "Box 5";
+    }
+
+    const timeoutMs = getWebLedTimeoutMs();
+    activeTimers[uid] = setTimeout(() => {
+        tile.classList.remove("active");
+    }, timeoutMs);
+} else {
     const popup = document.getElementById("unknown");
     if (popup) {
       popup.textContent = "Unbekannter Tag: " + uid;

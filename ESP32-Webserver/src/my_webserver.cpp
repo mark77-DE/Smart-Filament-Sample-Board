@@ -1007,3 +1007,13 @@ void sendHeartbeat(AsyncWebSocket &ws)
     serializeJson(doc, out);
     ws.textAll(out); // an alle Clients senden
 }
+
+void sendStorageLocation(AsyncWebSocket &ws, String location)
+{
+    JsonDocument doc;
+    doc["storageLocation"] = location;
+    String out;
+    serializeJson(doc, out);
+    ws.textAll(out);
+
+}
