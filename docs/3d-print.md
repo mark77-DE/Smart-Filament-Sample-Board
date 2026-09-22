@@ -4,7 +4,7 @@ Alle 3D-Druck- bzw. .step-Dateien liegen im Ordner [`3D-Daten`](../3D-Daten/).
 
 Die 6er Version lässt sich noch auf dem A1-Mini drucken.
 
-### Aktuell gibt es nur 6er und 7er Varianten, 4er und 5er sind in Planung.
+>Hinweis: Aktuell gibt es nur 6er und 7er Varianten, 4er und 5er sind in Planung.
 
 ## Dateiübersicht
 
