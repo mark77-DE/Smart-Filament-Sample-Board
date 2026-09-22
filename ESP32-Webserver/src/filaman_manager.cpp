@@ -2,10 +2,8 @@
 #include "filaman_manager.h"
 #include "FilamanClient.h"
 #include "config.h"
-#include "display/display.h"
-#include "display/display_anim.h"
-#include "ledctrl_filament.h"
-#include "ledctrl_nfc.h"
+#include <algorithm>
+#include "i18n/i18n.h"
 
 namespace FilamanManager {
 
@@ -19,6 +17,7 @@ static volatile bool s_resultReady = false;
 static String s_resultUid;
 static bool s_resultFound = false;
 static String s_resultLocationName;
+static std::vector<ResolvedLocation> s_resultLocations;
 
 static volatile bool s_syncBusy = false;
 static volatile bool s_syncReady = false;
@@ -60,17 +59,26 @@ static void lookupTask(void* param) {
 
   bool found = !locations.empty();
   String displayName;
+  std::vector<ResolvedLocation> resolvedList;
+
   if (found) {
     // locations is sorted by remaining weight (most stock first).
-    // Resolve the primary location's name, just count the rest.
-    String primaryName;
-    if (s_client.resolveLocationName(locations[0].locationId, primaryName)) {
-      displayName = primaryName;
-      if (locations.size() > 1) {
-        displayName += " (+" + String(locations.size() - 1) + " weitere)";
+    for (auto& loc : locations) {
+      String name;
+      if (s_client.resolveLocationName(loc.locationId, name)) {
+        resolvedList.push_back({name, loc.remainingWeightG});
       }
-    } else {
-      found = false; // name couldn't be resolved -> treat as not found
+      // Name couldn't be resolved -> that single entry is skipped rather
+      // than discarding the whole result.
+    }
+
+    found = !resolvedList.empty(); // if ALL names failed to resolve, treat as not found
+
+    if (found) {
+      displayName = resolvedList[0].name;
+      if (resolvedList.size() > 1) {
+        displayName += " (+" + String(resolvedList.size() - 1) + " " + I18N::get("txt_more") + ")";
+      }
     }
   }
 
@@ -83,6 +91,7 @@ static void lookupTask(void* param) {
   s_resultUid = uid;
   s_resultFound = found;
   s_resultLocationName = displayName;
+  s_resultLocations = std::move(resolvedList);
   s_resultReady = true;
   s_busy = false;
   portEXIT_CRITICAL(&s_mux);
@@ -133,13 +142,14 @@ bool requestLocationLookup(int filamentId, const String& uid) {
   return true;
 }
 
-bool pollResult(String& uid, bool& found, String& locationName) {
+bool pollResult(String& uid, bool& found, String& locationName, std::vector<ResolvedLocation>& locations) {
   portENTER_CRITICAL(&s_mux);
   bool ready = s_resultReady;
   if (ready) {
     uid = s_resultUid;
     found = s_resultFound;
     locationName = s_resultLocationName;
+    locations = std::move(s_resultLocations);
     s_resultReady = false;
   }
   portEXIT_CRITICAL(&s_mux);
@@ -197,14 +207,6 @@ bool requestWarmup() {
 
 static void syncTask(void* param) {
   (void)param;
-
-  DisplayAnim::stop();
-  MYDISPLAY::clear();
-  LEDCTRL_FILAMENT::standBy(true);
-  LEDCTRL_NFC::standBy(true);
-  MYDISPLAY::showThreeLinesCentered("Filaman", "sync", "running");
-  
-
   std::vector<FilamentSyncEntry> result;
   FilamentSyncSummary summary;
   bool ok = s_client.fetchAllTaggedFilaments(result, summary);
@@ -217,12 +219,7 @@ static void syncTask(void* param) {
   s_syncBusy = false;
   portEXIT_CRITICAL(&s_mux);
 
-  DisplayAnim::startIdleTextFirst(millis());
-  LEDCTRL_FILAMENT::standBy(false);
-  LEDCTRL_NFC::standBy(false);
-
   vTaskDelete(nullptr);
-  
 }
 
 bool isSyncBusy() {
@@ -233,14 +230,12 @@ bool isSyncBusy() {
 }
 
 bool requestSync() {
-
   if (!CONFIGV2.filamanConfig.enabled) {
     if (CONFIGV2.system.debugMode) {
       Serial.println("[FILAMAN] requestSync: skipped (FilaMan disabled)");
     }
     return false;
   }
-
 
   // s_client is a single shared instance used by lookup/warmup/sync alike —
   // only one of them may touch it at a time, so all three share this check.

@@ -8,6 +8,7 @@
 #include "filehandling.h"
 #include "pins.h"
 #include "filaman_manager.h"
+#include "i18n/i18n.h"
 
 
 
@@ -309,6 +310,9 @@ void applyConfigV2()
 
     // NEU: FilaMan-Client mit aktueller Config (neu) versorgen
     FilamanManager::applyConfig();
+
+    //refresh language
+    I18N::begin(CONFIGV2.system.defaultLanguage);
 
     if (CONFIGV2.system.debugMode)
     {
@@ -1420,3 +1424,100 @@ bool loadConfigAsJsonV2(JsonObject target)
     return true;
 }
 
+
+
+void resetConfigToDefaults()
+{
+    Serial.println("[FACTORY RESET] Resetting configuration to defaults...");
+
+    // =========================
+    // System
+    // =========================
+    CONFIGV2.system.darkmode = false;
+    CONFIGV2.system.debugMode = true;
+    CONFIGV2.system.webLEDTimeout = 3000;
+    CONFIGV2.system.animationAfterBoot = true;
+    CONFIGV2.system.hostname = "filament-board-dev";
+    CONFIGV2.system.defaultLanguage = "en";
+    CONFIGV2.system.updateCheckInterval = 2;
+    CONFIGV2.system.timezone = "UTC0";
+
+    // =========================
+    // LED Hardware
+    // =========================
+    CONFIGV2.ledHardware.type = LED_TYPE_WS2812B;
+    CONFIGV2.ledHardware.order = LED_ORDER_GRB;
+
+    // =========================
+    // LED
+    // =========================
+    CONFIGV2.led.count = 8;
+    CONFIGV2.led.brightness = 50;
+    CONFIGV2.led.timeout = 2000;
+
+    CONFIGV2.led.color      = 0x00FF00;
+    CONFIGV2.led.colorError = 0xFF00FF;
+    CONFIGV2.led.colorPulse = 0x0040A0;
+
+    // =========================
+    // NFC
+    // =========================
+    CONFIGV2.nfc.count = 12;
+    CONFIGV2.nfc.brightness = 50;
+    CONFIGV2.nfc.timeout = 4000;
+
+    CONFIGV2.nfc.colorSuccess = 0xFFFFFF;
+    CONFIGV2.nfc.colorError   = 0xFF0000;
+    CONFIGV2.nfc.colorPulse   = 0x0000FF;
+
+    CONFIGV2.nfc.successBlinkEnabled = true;
+    CONFIGV2.nfc.successBlinkCount = 3;
+    CONFIGV2.nfc.successBlinkMs = 200;
+
+    // =========================
+    // Button
+    // =========================
+    CONFIGV2.button.enabled = true;
+    CONFIGV2.button.pullup = true;
+    CONFIGV2.button.debounceMs = 30;
+    CONFIGV2.button.longMs = 800;
+    CONFIGV2.button.doubleGapMs = 400;
+    CONFIGV2.button.holdRepeatMs = 250;
+
+    // =========================
+    // Buzzer
+    // =========================
+    CONFIGV2.buzzer.enabled = true;
+    CONFIGV2.buzzer.activeHigh = true;
+    CONFIGV2.buzzer.freqHz = 4000;
+    CONFIGV2.buzzer.singleMs = 80;
+    CONFIGV2.buzzer.doubleOnMs = 60;
+    CONFIGV2.buzzer.doubleGapMs = 80;
+    CONFIGV2.buzzer.errorOnMs = 50;
+    CONFIGV2.buzzer.errorGapMs = 60;
+    CONFIGV2.buzzer.errorCount = 3;
+
+    // =========================
+    // MQTT
+    // =========================
+    CONFIGV2.mqttConfig.enabled = false;
+    CONFIGV2.mqttConfig.server = "127.0.0.1";
+    CONFIGV2.mqttConfig.port = 1883;
+    CONFIGV2.mqttConfig.user = "";
+    CONFIGV2.mqttConfig.password = "";
+    CONFIGV2.mqttConfig.baseTopic = "spotmyfilament";
+    CONFIGV2.mqttConfig.clientId = "filament-board";
+    CONFIGV2.mqttConfig.haDiscovery = false;
+    CONFIGV2.mqttConfig.haDiscoveryPrefix = "homeassistant";
+
+    // =========================
+    // Filaman
+    // =========================
+    CONFIGV2.filamanConfig.enabled = false;
+    CONFIGV2.filamanConfig.server = "192.168.169.254";
+    CONFIGV2.filamanConfig.port = 8083;
+    CONFIGV2.filamanConfig.user = "admin@example.com";
+    CONFIGV2.filamanConfig.password = "admin123";
+
+    Serial.println("[FACTORY RESET] Configuration reset to defaults.");
+}

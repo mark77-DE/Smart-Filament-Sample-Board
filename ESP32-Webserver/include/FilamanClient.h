@@ -57,10 +57,7 @@ struct FilamentSyncSummary {
   int totalFilamentsScanned = 0;   // "total" from FilaMan's pagination (whole catalog, not just tagged)
   int taggedFilamentsFound = 0;    // filaments with a sampleboard_uid tag
   int totalSpoolsFound = 0;        // summed spoolCount across all tagged filaments
-  // Human-readable description (vendor/type/color/uid) for each tagged
-  // filament that had zero matching spools — usually means the wrong
-  // catalog entry got tagged (FilaMan pre-populates ~1300 filaments from an
-  // external DB, most with spool_count 0 since they were never bought).
+  int pagesFailed = 0;              // pages that failed even after doGet()'s internal retry — a partial sync
   std::vector<String> taggedWithoutSpools;
 };
 
@@ -152,48 +149,34 @@ public:
   }
 
   // Live per-scan call for an ALREADY-KNOWN filament_id (from the local,
-  // synced FilamentDB): all non-archived spools of this filament, with
-  // remaining stock. Sorted descending by remainingWeightG (most stock
-  // first) as the default "best place to grab it from" ordering.
+  // synced FilamentDB): DISTINCT locations holding this filament, with
+  // remaining stock summed across all spools at that location. Two spools
+  // of the same filament sitting in the same spot (e.g. both in "B3") show
+  // up as ONE entry with combined weight, not two — otherwise a display
+  // like "B3 (+1 weitere)" would wrongly imply a second, different place.
+  // Sorted descending by remainingWeightG (most stock first) as the default
+  // "best place to grab it from" ordering.
   std::vector<FilamentSpoolLocation> findLocationsByFilamentId(int filamentId) {
-    std::vector<FilamentSpoolLocation> out;
-    if (!_enabled) return out;
+    std::vector<FilamentSpoolLocation> raw = fetchSpoolsForFilament(filamentId);
 
-    if (_sessionCookie.length() == 0) {
-      if (!login()) return out;
+    std::vector<FilamentSpoolLocation> merged;
+    for (auto& s : raw) {
+      bool found = false;
+      for (auto& m : merged) {
+        if (m.locationId == s.locationId) {
+          m.remainingWeightG += s.remainingWeightG;
+          found = true;
+          break;
+        }
+      }
+      if (!found) merged.push_back(s);
     }
 
-    String url = "http://" + _host + ":" + String(_port) +
-                 "/api/v1/spools?filament_id=" + String(filamentId) +
-                 "&include_archived=false&page_size=100";
-
-    int code = doGet(url);
-    if (code == 401) {
-      if (!login()) return out;
-      code = doGet(url);
-    }
-    if (code != 200) return out;
-
-    JsonDocument jsonDoc; // ArduinoJson v7
-    if (deserializeJson(jsonDoc, _lastBody) != DeserializationError::Ok) return out;
-
-    for (JsonObject item : jsonDoc["items"].as<JsonArray>()) {
-      float remaining = item["remaining_weight_g"] | 0.0f;
-      // Skip spools with (essentially) nothing left — no point sending
-      // someone to an empty spool, and no point counting it as stock.
-      if (remaining <= 1.0f) continue;
-
-      int locId = item["location_id"] | -1;
-      if (locId < 0) continue;
-
-      out.push_back({locId, remaining});
-    }
-
-    std::sort(out.begin(), out.end(), [](const FilamentSpoolLocation& a, const FilamentSpoolLocation& b) {
+    std::sort(merged.begin(), merged.end(), [](const FilamentSpoolLocation& a, const FilamentSpoolLocation& b) {
       return a.remainingWeightG > b.remainingWeightG;
     });
 
-    return out;
+    return merged;
   }
 
   // Fetches every filament that has a sampleboard_uid tag, paginating through
@@ -211,7 +194,7 @@ public:
       if (!login()) return false;
     }
 
-    const int pageSize = 20;
+    const int pageSize = 20; // filament objects are large (nested manufacturer/colors/custom_fields) — keep pages small
     int page = 1;
     int total = -1;
 
@@ -224,10 +207,36 @@ public:
         if (!login()) return false;
         code = doGet(url);
       }
-      if (code != 200) return false;
+
+      if (code != 200) {
+        if (page == 1) {
+          // Page 1 gives us `total`, without which we don't know how many
+          // pages to expect at all — a real, unrecoverable failure.
+          if (CONFIGV2.system.debugMode) {
+            Serial.println("[FILAMAN] sync: page 1 failed, aborting (can't determine total)");
+          }
+          return false;
+        }
+        // Any later page: skip it and keep going rather than throwing away
+        // everything already collected. It'll be picked up on the next sync.
+        if (CONFIGV2.system.debugMode) {
+          Serial.printf("[FILAMAN] sync: page %d failed (code=%d) even after retry, skipping\n", page, code);
+        }
+        summary.pagesFailed++;
+        page++;
+        continue;
+      }
 
       JsonDocument jsonDoc; // ArduinoJson v7
-      if (deserializeJson(jsonDoc, _lastBody) != DeserializationError::Ok) return false;
+      if (deserializeJson(jsonDoc, _lastBody) != DeserializationError::Ok) {
+        if (page == 1) return false;
+        if (CONFIGV2.system.debugMode) {
+          Serial.printf("[FILAMAN] sync: page %d JSON parse failed, skipping\n", page);
+        }
+        summary.pagesFailed++;
+        page++;
+        continue;
+      }
 
       total = jsonDoc["total"] | 0;
       summary.totalFilamentsScanned = total;
@@ -276,6 +285,10 @@ public:
     Serial.println(F("[FILAMAN] --- Sync Summary ---"));
     Serial.printf("[FILAMAN] %d Filamente gescannt, %d mit Sample-UID getaggt, %d Spulen insgesamt gefunden\n",
                    summary.totalFilamentsScanned, summary.taggedFilamentsFound, summary.totalSpoolsFound);
+    if (summary.pagesFailed > 0) {
+      Serial.printf("[FILAMAN] ACHTUNG: %d Seite(n) trotz Retry fehlgeschlagen -> Sync unvollstaendig, ggf. erneut ausfuehren\n",
+                     summary.pagesFailed);
+    }
     if (!summary.taggedWithoutSpools.empty()) {
       Serial.printf("[FILAMAN] %d getaggte(s) Filament(e) OHNE passende Spule (evtl. falscher Katalogeintrag getaggt?):\n",
                      (int)summary.taggedWithoutSpools.size());
@@ -314,11 +327,53 @@ public:
   }
 
 private:
+  // Raw, one-entry-per-spool fetch (NOT merged by location) — used by
+  // findLocationsByFilamentId() (which merges by location) and
+  // aggregateSpoolStock() (which needs the true spool count) alike, so the
+  // request itself only lives in one place.
+  std::vector<FilamentSpoolLocation> fetchSpoolsForFilament(int filamentId) {
+    std::vector<FilamentSpoolLocation> out;
+    if (!_enabled) return out;
+
+    if (_sessionCookie.length() == 0) {
+      if (!login()) return out;
+    }
+
+    String url = "http://" + _host + ":" + String(_port) +
+                 "/api/v1/spools?filament_id=" + String(filamentId) +
+                 "&include_archived=false&page_size=100";
+
+    int code = doGet(url);
+    if (code == 401) {
+      if (!login()) return out;
+      code = doGet(url);
+    }
+    if (code != 200) return out;
+
+    JsonDocument jsonDoc; // ArduinoJson v7
+    if (deserializeJson(jsonDoc, _lastBody) != DeserializationError::Ok) return out;
+
+    for (JsonObject item : jsonDoc["items"].as<JsonArray>()) {
+      float remaining = item["remaining_weight_g"] | 0.0f;
+      // Skip spools with (essentially) nothing left — no point sending
+      // someone to an empty spool, and no point counting it as stock.
+      if (remaining <= 1.0f) continue;
+
+      int locId = item["location_id"] | -1;
+      if (locId < 0) continue;
+
+      out.push_back({locId, remaining});
+    }
+
+    return out;
+  }
+
   // Sums spool count and remaining weight across all (non-empty, non-archived)
-  // spools of a filament — reuses findLocationsByFilamentId()'s data, no
-  // separate request needed.
+  // spools of a filament. Uses the RAW per-spool list (not merged by
+  // location) since "2 Spulen, 2000g" should count actual spools, even if
+  // several happen to sit at the same location.
   void aggregateSpoolStock(int filamentId, int& outCount, float& outTotalWeight) {
-    std::vector<FilamentSpoolLocation> spools = findLocationsByFilamentId(filamentId);
+    std::vector<FilamentSpoolLocation> spools = fetchSpoolsForFilament(filamentId);
     outCount = (int)spools.size();
     outTotalWeight = 0.0f;
     for (auto& s : spools) outTotalWeight += s.remainingWeightG;

@@ -1326,3 +1326,11 @@ body.daymode #rssiIcon .bar.green { fill: #00dd00; }
     color: #fff;
     text-shadow: 0 0 2px #000;
 }
+
+
+#filamanInfo {
+    padding: 30px 20px 20px;
+    text-align: center;
+    font-weight: bold;
+    
+}

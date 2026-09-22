@@ -947,8 +947,14 @@ void initWebServer(AsyncWebServer &server, AsyncWebSocket &ws)
                   req->send(started ? 200 : 409, "application/json", out); // 409 = schon busy/disabled
               });
 
-    server.begin();
-}
+    server.on("/api/factoryReset", HTTP_POST, [](AsyncWebServerRequest *request)
+              {
+                request->send(200, "application/json", "{\"success\":true}");
+
+                factoryResetRequested = true; });
+
+                server.begin();
+            }
 
 void sendHeartbeat(AsyncWebSocket &ws)
 {
@@ -1015,5 +1021,4 @@ void sendStorageLocation(AsyncWebSocket &ws, String location)
     String out;
     serializeJson(doc, out);
     ws.textAll(out);
-
 }

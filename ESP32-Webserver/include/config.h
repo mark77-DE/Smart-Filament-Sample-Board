@@ -179,6 +179,12 @@ void applyConfigV2();
  */
 bool saveConfigV2();
 
+/**
+ * @brief reset config to default
+ * @return true on success, otherwise false
+ */
+void resetConfigToDefaults();
+
 
 
 // ============================================================================

@@ -28,6 +28,9 @@ const wsStatusElement = document.getElementById("wsStatus");
 
 const selectLanguageSelect = document.getElementById('langSelect');
 
+const filterStorageDiv = document.getElementById("filterStorageDiv");
+
+
 let countFilaments = 1;
 
 //Filter vorbereiten
@@ -140,8 +143,16 @@ function connectWS() {
           console.log("Heartbeat:", msg);
         }
 
-      return;
-    }
+        return;
+      } else if (msg.action === "filamanLocation") {
+
+        if (CONFIGV2.system.debugMode) {
+          console.log("Location:", msg);
+        }
+
+        updateSampleLocation(msg.uid, msg.found, msg.location, msg.locations);
+        return; // <-- das fehlte: verhindert den Fall-Through zu highlightUID()
+      }
 
       // UID
       if (msg.uid) {
@@ -278,7 +289,7 @@ function sendHighlight(uid) {
 
   
   if(CONFIGV2.system.debugMode) {
-    console.log("Highlight UID:", uid);
+    console.log("Request highlight UID:", uid);
   }
 
   // If no coalescing is active, send immediately
@@ -304,7 +315,6 @@ function highlightUID(uid, opts = {}, storage) {
   const { bypassDebounce = false } = opts;
   const now = Date.now();
 
-  // Debounce NFC/WS events only, NOT clicks
   if (!bypassDebounce) {
     if (lastScanTimes[uid] && now - lastScanTimes[uid] < DEBOUNCE_MS) return;
     lastScanTimes[uid] = now;
@@ -314,34 +324,26 @@ function highlightUID(uid, opts = {}, storage) {
   if (!grid) return;
 
   const tiles = grid.querySelectorAll(".tile");
-
-  // Alle vorherigen Highlights entfernen
   tiles.forEach(t => t.classList.remove("active"));
 
-  // Alle bisherigen Timer abbrechen
   for (const key in activeTimers) {
     clearTimeout(activeTimers[key]);
     delete activeTimers[key];
   }
 
-  // Passende Kachel suchen
   const tile = Array.from(tiles).find(t => t.dataset.uid === uid);
 
-if (tile) {
+  if (tile) {
     tile.classList.add("active");
-
-    // storage-badge innerhalb dieses Tiles finden
-    const badge = tile.querySelector(".storage-badge");
-
-    if (badge) {
-        badge.textContent = "Box 5";
-    }
+    // Storage-Badge wird NICHT mehr hier gesetzt — das übernimmt
+    // updateSampleLocation() über die separate filamanLocation-Nachricht,
+    // damit lokale und FilaMan-Anzeige sauber getrennt bleiben.
 
     const timeoutMs = getWebLedTimeoutMs();
     activeTimers[uid] = setTimeout(() => {
         tile.classList.remove("active");
     }, timeoutMs);
-} else {
+  } else {
     const popup = document.getElementById("unknown");
     if (popup) {
       popup.textContent = "Unbekannter Tag: " + uid;
@@ -413,12 +415,32 @@ function renderFilamentGrid(filaments) {
     tile.className = "tile";
     tile.dataset.uid = f.uid;
 
-    tile.innerHTML = `
+    // FilaMan-Modus: kein statischer Lagerort mehr sinnvoll (wird nie
+    // synchronisiert) — nur ein Platzhalter, der per Klick live aufgelöst wird.
+    // Lokale/nie synchronisierte Einträge (filamentId < 0) zeigen weiterhin
+    // ganz normal ihren statischen `storage`-Wert.
+    const filamanActive = CONFIGV2?.filamanConfig?.enabled && (f.filamentId ?? -1) >= 0;
+    const initialStorage = filamanActive
+      ? t("txt_click_to_locate")   // z.B. "📍 Klick für Lagerort" — Key noch in eurer i18n-Datei ergänzen
+      : (f.storage || "");
+
+
+    if(CONFIGV2.filamanConfig.enabled) {
+      tile.innerHTML = `
       <div class="vendor">${f.vendor}</div>
       <div class="color">${f.color}</div>
       <div class="type">${f.type}</div>
-      <div class="storage-badge">${f.storage}</div>
+      <div class="storage-badge"><span data-i18n="filamanStorage"> </span></div>
     `;
+    } else {
+      tile.innerHTML = `
+      <div class="vendor">${f.vendor}</div>
+      <div class="color">${f.color}</div>
+      <div class="type">${f.type}</div>
+      <div class="storage-badge">${initialStorage}</div>
+    `;
+    } 
+    
 
     tile.onclick  = () => {
       sendHighlight(f.uid);
@@ -570,10 +592,6 @@ function highlightFilteredLEDs() {
   const uids = filtered.map(f => f.uid);
   sendMultiHighlight(uids);
 }
-
-
-
-
 
 
 document.getElementById("filterVendor").onchange = e => {
@@ -758,6 +776,34 @@ document.querySelectorAll(".sortable").forEach(label => {
 
 
 
+// Aktualisiert NUR das Storage-Badge der passenden Kachel anhand des
+// Live-Ergebnisses von FilaMan. Wird ausschließlich über die
+// "filamanLocation"-WS-Nachricht getriggert, nie über highlightUID().
+function updateSampleLocation(uid, found, location, locations) {
+  const grid = document.getElementById("filamentGrid");
+  if (!grid) return;
+
+  const tile = grid.querySelector(`.tile[data-uid="${uid}"]`);
+  if (!tile) return;
+
+  const badge = tile.querySelector(".storage-badge");
+  if (!badge) return;
+
+  if (found) {
+    badge.textContent = location;
+    // Bei mehreren Fundorten: vollständige Liste als Tooltip
+    if (locations && locations.length > 1) {
+      badge.title = locations.map(l => `${l.name}: ${l.weightG}g`).join("\n");
+    } else {
+      badge.removeAttribute("title");
+    }
+  } else {
+    badge.textContent = t("txt_location_unavailable"); // z.B. "Lagerort nicht verfügbar"
+  }
+}
+
+
+
 async function init() {
     await loadFilamentTiles();
     // Aufruf nach Laden des Webinterfaces
@@ -770,11 +816,17 @@ async function init() {
     getVersion();
 
     
-    loadHelpAndLang(CONFIGV2.system.defaultLanguage); // Standard-Sprache
+    await loadHelpAndLang(CONFIGV2.system.defaultLanguage); // Standard-Sprache
     selectLanguageSelect.value = CONFIGV2.system.defaultLanguage;
     setupLangSwitcher('langSelect');
 
     document.getElementById("detailCloseBtn").addEventListener("click", closeDetails);
+
+    if(CONFIGV2.filamanConfig.enabled) {
+      filterStorageDiv.style.display = "none";
+    } else {
+      filterStorageDiv.style.display = "flex";
+    }
     
     
 

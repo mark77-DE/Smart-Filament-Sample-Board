@@ -198,7 +198,11 @@
     "websocket_connected": "WebSocket: verbunden",
     "websocket_disconnected": "WebSocket: getrennt",
     "txt_searching": "suche",
-    "dummy": "dummy"
+    "filamanInfo": "Filaman aktiviert. LEDs und UIDs werden in Filaman, bei den Filamenten verwaltet.",
+    "filamanStorage": "klick",
+    "txt_more": "weitere",
+    "txt_dangerzone_warning": "ACHTUNG! Alle Daten (Filamente, Konfiguration, WLAN Zugangsadaten) werden gelöscht, danach startet der ESP neu und muss wieder mit dem WLAN verbunden werden.",
+    "btn_danger": "LÖSCHEN"
 
   }
 

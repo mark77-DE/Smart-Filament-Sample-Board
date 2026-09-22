@@ -1,14 +1,15 @@
 {
-    "version": "2.1",
+    "version": "2.3",
     "system": {
         "darkmode": false,
         "debugMode": true,
         "webLEDTimeout": 3000,
         "animationAfterBoot": true,
         "hostname": "filament-board-dev",
-        "defaultLanguage": "en",
-        "updateCheckInterval": 2
-        },
+        "defaultLanguage": "de",
+        "updateCheckInterval": 120,
+        "timezone": "CET-1CEST,M3.5.0,M10.5.0/3"
+    },
     "ledHardware": {
         "type": "WS2812B",
         "order": "GRB"
@@ -57,10 +58,17 @@
         "port": 1883,
         "user": "",
         "password": "",
-        "baseTopic": "spotmyfilament-dev",
-        "clientId": "filament-board-dev",
+        "baseTopic": "spotmyfilament",
+        "clientId": "filament-board",
         "haDiscovery": false,
         "haDiscoveryPrefix": "homeassistant"
+    },
+    "filamanConfig": {
+        "enabled": true,
+        "server": "192.168.169.254",
+        "port": 8083,
+        "user": "admin@example.com",
+        "password": "admin123"
     }
 }
 

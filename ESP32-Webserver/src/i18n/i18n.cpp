@@ -9,7 +9,11 @@ String I18N::_currentLang = "de";
 
 void I18N::begin(const String &lang)
 {
+    if (_currentLang == lang)
+        return;
+
     _currentLang = lang;
+
     if (lang == "de")
     {
         loadLanguage("/lang_de.json");

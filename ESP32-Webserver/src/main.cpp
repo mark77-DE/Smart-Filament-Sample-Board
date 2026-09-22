@@ -37,6 +37,8 @@
 
 #include <esp_heap_caps.h>
 
+#include <vector>
+
 constexpr uint32_t SPLASH_CHAR_MS = 35;   // timing for typewriter effect at boot (ms per char)
 constexpr uint32_t SPLASH_LINE_MS = 200;  // extra delay after each line at boot (ms)
 constexpr uint32_t SPLASH_HOLD_MS = 2000; // how long the full splash is shown at boot (after typewriter effect, before animation starts)
@@ -52,7 +54,7 @@ bool rebootReason = false;
 static String g_lastHandledUid;
 static UidSource g_lastHandledSource = UidSource::NFC;
 
-
+volatile bool factoryResetRequested = false;
 
 static void printOtaInfo()
 {
@@ -379,6 +381,43 @@ void printChipInfo()
   Serial.println();
 }
 
+void resetWiFiSettings()
+{
+    WiFiManager wifiManager;
+
+    Serial.println("[FACTORY RESET] Resetting WiFi settings...");
+
+    wifiManager.resetSettings();
+}
+
+
+
+
+
+void factoryReset()
+{
+    Serial.println("[FACTORY RESET] Starting...");
+
+    // Delete WiFiManager credentials
+    resetWiFiSettings();
+
+    // Reset filaments,jso to default
+    resetFilamentsToDefaults();
+
+    // Reset application configuration to defaults
+    resetConfigToDefaults();
+
+    // Save default configuration
+    saveConfigV2();
+
+    Serial.println("[FACTORY RESET] Restarting...");
+
+    delay(500);
+    ESP.restart();
+}
+
+
+
 // ----------------------------- Setup -----------------------------
 // -----------------------------------------------------------------
 void setup()
@@ -644,48 +683,69 @@ void loop()
   // ---------------------------------------------------------------------------
   // 1c) FilaMan: fetch the result of a background lookup (if any)
   // ---------------------------------------------------------------------------
+    // ---------------------------------------------------------------------------
+  // 1c) FilaMan: fetch the result of a background lookup (if any)
+  // ---------------------------------------------------------------------------
   {
-  String resUid, resLocation;
-  bool resFound;
-  if (FilamanManager::pollResult(resUid, resFound, resLocation))
-  {
-    // Relevant, wenn's noch der zuletzt behandelte Tag ist — bei NFC-Quelle
-    // zusätzlich nur, solange das Tag noch physisch aufliegt (verhindert
-    // veraltete Anzeige nach Entfernen); bei WebIF-Quelle gibt's keine
-    // physische Präsenz, die Prüfung entfällt dort.
-    bool stillRelevant = (resUid == g_lastHandledUid) &&
-                          (g_lastHandledSource != UidSource::NFC || resUid == NFC::currentHoldUid());
-
-    if (stillRelevant)
+    String resUid, resLocation;
+    bool resFound;
+    std::vector<FilamanManager::ResolvedLocation> resLocations;
+    if (FilamanManager::pollResult(resUid, resFound, resLocation, resLocations))
     {
+      // Relevant, wenn's noch der zuletzt behandelte Tag ist — bei NFC-Quelle
+      // zusätzlich nur, solange das Tag noch physisch aufliegt (verhindert
+      // veraltete Anzeige nach Entfernen); bei WebIF-Quelle gibt's keine
+      // physische Präsenz, die Prüfung entfällt dort.
+      bool stillRelevant = (resUid == g_lastHandledUid) &&
+                            (g_lastHandledSource != UidSource::NFC || resUid == NFC::currentHoldUid());
+
+      if (stillRelevant)
+      {
+        if (resFound)
+        {
+          FilamentEntry entry;
+          if (FilamentDB::findByUID(resUid, entry))
+          {
+            MYDISPLAY::showFourLinesCentered(entry.vendor, entry.type, entry.color, resLocation);
+          }
+          if (buzzer_busy() == false)
+            buzzer_single_beep();
+          LEDCTRL_NFC::showSuccess();
+        }
+        // resFound == false -> Live-Lookup fehlgeschlagen oder kein Bestand
+        // gefunden. Bewusst KEINE Fehleranzeige: die Identität ist ja bekannt,
+        // der lokal bekannte (ggf. leicht veraltete) Lagerort bleibt stehen.
+      }
+
+      // Unabhängig vom Hold-Status IMMER an alle WebIF-Clients broadcasten —
+      // ein per Dashboard-Klick ausgelöster Lookup (UidSource::WEBIF) hat
+      // ja keinen "gehaltenen" NFC-Tag, soll aber trotzdem seine Antwort bekommen.
+      JsonDocument locDoc;
+      locDoc["action"] = "filamanLocation";
+      locDoc["uid"] = resUid;
+      locDoc["found"] = resFound;
       if (resFound)
       {
-        FilamentEntry entry;
-        if (FilamentDB::findByUID(resUid, entry))
+        locDoc["location"] = resLocation;
+        JsonArray locArr = locDoc["locations"].to<JsonArray>();
+        for (auto& loc : resLocations)
         {
-          MYDISPLAY::showFourLinesCentered(entry.vendor, entry.type, entry.color, resLocation);
-          
+          JsonObject o = locArr.add<JsonObject>();
+          o["name"] = loc.name;
+          o["weightG"] = loc.remainingWeightG;
         }
-        if (buzzer_busy() == false)
-          buzzer_single_beep();
-        LEDCTRL_NFC::showSuccess();
+      }
+      String locMsg;
+      serializeJson(locDoc, locMsg);
+      ws.textAll(locMsg);
+
+      if (CONFIGV2.system.debugMode)
+      {
+        Serial.printf("[FILAMAN] pollResult: uid=%s, found=%s, location=%s\n",
+                      resUid.c_str(), resFound ? "true" : "false", resLocation.c_str());
       }
     }
-
-    // Unabhängig davon immer an alle WebIF-Clients broadcasten
-    JsonDocument locDoc;
-    locDoc["action"] = "filamanLocation";
-    locDoc["uid"] = resUid;
-    locDoc["found"] = resFound;
-    if (resFound)
-    {
-      locDoc["location"] = resLocation;
-    }
-    String locMsg;
-    serializeJson(locDoc, locMsg);
-    ws.textAll(locMsg);
   }
-}
 
   // ---------------------------------------------------------------------------
   // 2) Reboot (falls angefordert) + Countdown-UI
@@ -758,15 +818,12 @@ void loop()
   MYDISPLAY::renderSelfUpdateStatus(getSelfUpdateStatus());
 
   // ---------------------------------------------------------------------------
-  // 8) Time Loop -> timemanager.cpp
+  // 9) Time Loop -> timemanager.cpp
   // ---------------------------------------------------------------------------
   TimeManager::loop();
 
   // ---------------------------------------------------------------------------
-  // 8) refresh filaman locations cache / sync Filaman database locally
-  // ---------------------------------------------------------------------------
-    // ---------------------------------------------------------------------------
-  // 8) refresh filaman locations cache / sync Filaman database locally
+  // 10) refresh filaman locations cache / sync Filaman database locally
   // ---------------------------------------------------------------------------
   static unsigned long lastFilamanWarmup = 0;
   const unsigned long FILAMAN_WARMUP_INTERVAL_MS = 30UL * 60UL * 1000UL;
@@ -792,6 +849,16 @@ void loop()
       }
     }
   }
+
+   // ---------------------------------------------------------------------------
+  // 10)  RESET DEVICE AND DATA
+  // ---------------------------------------------------------------------------
+
+  if (factoryResetRequested)
+{
+    factoryReset();
+    return;
+}
 
   // ---------------------------------------------------------------------------
   // LAST) (Optional) yield() und chrash check

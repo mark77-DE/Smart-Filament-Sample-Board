@@ -12,6 +12,14 @@
 
 namespace FilamanManager {
 
+  // One resolved location entry for the "found at multiple places" case —
+  // name already resolved (not just the raw location_id), so callers don't
+  // need their own lookup for a WebIF/dashboard display.
+  struct ResolvedLocation {
+    String name;
+    float remainingWeightG;
+  };
+
   // Call once after CONFIGV2 is loaded/changed (e.g. from applyConfigV2()),
   // so the client picks up the current filamanConfig without a reboot.
   void applyConfig();
@@ -19,18 +27,18 @@ namespace FilamanManager {
   // Starts a background live location lookup for a filament that's already
   // known locally (filamentId comes from FilamentDB, populated during sync).
   // `uid` is only carried through so the caller can later check the result
-  // still belongs to the tag currently being displayed (NFC::currentHoldUid()).
+  // still belongs to the tag currently being displayed.
   // Returns immediately (non-blocking). Returns false without doing anything
   // if FilaMan is disabled, filamentId is invalid, or a lookup/warmup/sync is
   // already in flight (kept deliberately simple: one thing at a time).
   bool requestLocationLookup(int filamentId, const String& uid);
 
   // Call once per loop() iteration. Returns true exactly once when a result
-  // becomes available. `uid` tells you which tag this result belongs to —
-  // always compare it against whatever tag is currently being displayed
-  // before acting on it, since the tag may have changed/been removed while
-  // the lookup was still running in the background.
-  bool pollResult(String& uid, bool& found, String& locationName);
+  // becomes available. `uid` tells you which tag this result belongs to.
+  // `locationName` is the ready-to-display summary (e.g. "B3 (+1 weitere)");
+  // `locations` is the full resolved list behind it (name + remaining
+  // weight per spot), for callers that want more detail (e.g. the WebIF).
+  bool pollResult(String& uid, bool& found, String& locationName, std::vector<ResolvedLocation>& locations);
 
   // Non-blocking: logs in and pre-fetches the location cache in the background.
   // Call once after WiFi connects, and optionally on a periodic timer
@@ -55,20 +63,12 @@ namespace FilamanManager {
   // per-filament spool count/weight); merging them into FilamentDB is left
   // to the caller (single-threaded in loop(), to avoid touching FilamentDB
   // from a background task). `summary` gives the headline numbers (scanned/
-  // tagged/spools found/tagged-without-spools) for a status line or log,
-  // without having to derive them from `entries` yourself.
+  // tagged/spools found/tagged-without-spools/pages failed) for a status
+  // line or log, without having to derive them from `entries` yourself.
   bool pollSyncResult(std::vector<FilamentSyncEntry>& entries, bool& success, FilamentSyncSummary& summary);
 
   // True while a lookup, warmup, or sync is currently running (e.g. to show
   // a "busy" state).
   bool isBusy();
-
-  // filaman_manager.h – Ergänzung
-  // Wie pollResult(), aber nicht-konsumierend: liefert das jeweils neueste
-  // Ergebnis, solange sich lastSeenVersion von der aktuellen Version
-  // unterscheidet. Erlaubt mehreren unabhängigen Konsumenten (NFC-Scan-Loop
-  // UND WebIF-Anfrage), denselben Lookup zu beobachten, ohne sich gegenseitig
-  // das Ergebnis wegzuschnappen.
-  bool peekResult(unsigned long& lastSeenVersion, String& uid, bool& found, String& locationName);
 
 } // namespace FilamanManager

@@ -198,7 +198,11 @@
     "websocket_connected": "WebSocket: connected",
     "websocket_disconnected": "WebSocket: disconnected",
     "txt_searching": "searching",
-    "dummy": "dummy"
+    "filamanInfo": "Filaman active. LEDs and UIDs are handled by filaman filaments.",
+    "filamanStorage": "click",
+    "txt_more": "more",
+    "txt_dangerzone_warning": "ATTENTION! All settings (filaments, configuration, WiFi credentials) will be deleted. After rebooting, ESP needs to be joined to local WiFi again.",
+    "btn_danger": "DELETE"
 
 
 

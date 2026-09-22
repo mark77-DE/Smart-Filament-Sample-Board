@@ -41,3 +41,5 @@ extern volatile bool g_reloadFilamentsPending;
 
 
 void activateLed(int index);
+
+extern volatile bool factoryResetRequested;

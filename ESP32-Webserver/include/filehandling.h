@@ -94,6 +94,12 @@ inline bool migrateFilamentEntry(JsonObject entry, const String& configVersion)
 }
 
 /**
+ * @brief Resets the filament database to the factory default.
+ * @return true on success, otherwise false
+ */
+bool resetFilamentsToDefaults();
+
+/**
  * @brief Migrates all entries in a filament array
  * @return true when at least one entry was changed
  */

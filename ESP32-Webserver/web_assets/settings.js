@@ -7,6 +7,7 @@ const addForm = document.getElementById("addForm");
 const wsStatus = document.getElementById("wsStatus");
 const statusTxt = document.getElementById('statusTxt');
 const editToggle = document.getElementById("editToggle");
+const divEdit = document.getElementById("toggle");
 const debugToggle = document.getElementById("debugToggle");
 const selectLanguageSelect = document.getElementById("langSelect");
 const daynightToggle = document.getElementById("daynightToggle");
@@ -104,7 +105,8 @@ const filamanServerInput = document.getElementById("filamanServer");
 const filamanPortInput = document.getElementById("filamanPort");
 const filamanUserInput = document.getElementById("filamanUser");
 const filamanPasswordInput = document.getElementById("filamanPassword");
-
+const filamanSyncBtn = document.getElementById("filamanSyncBtn");
+const filamanInfo = document.getElementById("filamanInfo");
 
 
 //update / import export
@@ -835,6 +837,32 @@ async function renderTable() {
     if (filamanPortInput) filamanPortInput.value = filaman.port ?? 8083;
     if (filamanUserInput) filamanUserInput.value = filaman.user ?? "admin@example.com";
     if (filamanPasswordInput) filamanPasswordInput.value = filaman.password ?? "admin123";
+
+    const syncFilamanBtn = () => {
+        const en = !!filamanEnabledDiv.checked;
+
+        if(en) {
+            filamanSyncBtn.style.display = "block";
+            filamanInfo.style.display = "block";
+            divEdit.style.display = "none";
+            addForm.style.display = "none";
+            dbDiv.style.display = "none";
+
+        } else {
+            filamanSyncBtn.style.display = "none";
+            filamanInfo.style.display = "none";
+            divEdit.style.display = "block";
+            addForm.style.display = "block";
+            dbDiv.style.display = "block";
+        }
+        
+        
+    };
+    filamanEnabledDiv.onchange = syncFilamanBtn;
+    syncFilamanBtn();
+
+
+
 
     // --- Hostsettings ---
     if (hostnameInput) hostnameInput.value = sys.hostname ?? "hostname";
