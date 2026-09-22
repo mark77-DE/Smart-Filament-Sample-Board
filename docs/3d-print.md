@@ -1,5 +1,7 @@
 # 3D-Druckteile
 
+### Auf dieser Seite gibt es eine kurze Übersicht zu den 3D-Druckteilen
+
 Alle 3D-Druck- bzw. .step-Dateien liegen im Ordner [`3D-Daten`](../3D-Daten/).
 
 Die 6er Version lässt sich noch auf dem A1-Mini drucken.
