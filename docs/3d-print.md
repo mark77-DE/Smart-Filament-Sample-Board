@@ -20,7 +20,7 @@ Die 6er Version lässt sich noch auf dem A1-Mini drucken.
 
 ## Wichtige Druckeinstellungen
 
-Der Fuß benötigt eine <b>Druckpause bei Layer 12 bzw. 2,4mm Höhe.</b>
+Der Fuß benötigt eine **Druckpause bei Layer 12 bzw. 2,4mm Höhe.**
 An der Stelle wird das NFC-Tag eingelegt und am Besten mit <b>seiner Klebefolie eingeklebt</b>, damit es sich im Druck nicht verschiebt.
 
 <p align="center">
@@ -29,7 +29,7 @@ An der Stelle wird das NFC-Tag eingelegt und am Besten mit <b>seiner Klebefolie 
   <sub>Print Pause</sub>
 </p>
 
-Das Sample selbt sollte mit <b>0,16mm Layerhöhe</b> gedruckt werden, da die Farben besser zur Geltung kommen.
+Das Sample selbt sollte mit **0,16mm Layerhöhe** gedruckt werden, da die Farben besser zur Geltung kommen.
 <p align="center">
   <img src="../screenshots/sample.png" alt="sample" width="320"><br>
   <sub>Sample</sub>
