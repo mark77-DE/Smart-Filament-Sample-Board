@@ -2,18 +2,19 @@
 
 ## NFC-Tags anlegen
 
-1. Im Filaman WebIf die Seite Filamente öffnen
-2. Für jede Farbe, für die man ein Sample anlgen möchte, benötigt das Filamanent 2 Filamentspezifische Extrafelder
-<p align="left">
-  <img src="../screenshots/Filaman_extrafields_1.png" alt="NFC Tag" width="320">
-  <img src="../screenshots/Filaman_extrafields_2.png" alt="NFC Tag" width="320">
-</p>
-3. Die Keys <b>müssen zwingend</b> sampleboard_uid und sampleaboard_led sein.
-4. sampleboard_uid bekommt die UID des Sample NFC-Tags
-5. sampleboard_led bekoomt die zugeordnete LED auf deinem Board
-6. im FSB WebIf Einstellungen -> Einstellungen -> Filaman, Zugansdaten für Filaman eintragen (vorher z.B. einen Nutzer mit nur Leseberechtigung in Filaman anlegen)
-7. Im FSB WebIf Einstellunegn -> Sync Filaman ausführen. Das kann je nach DB Größe (entscheident ist die Anzahl der Filamente, nicht der Spulen) eine Zeit dauern.
+1. Im Filaman WebIf die Seite Filamente öffnen.
+2. Für jede Farbe, für die man ein Sample anlegen möchte, benötigt das Filament 2 filamentspezifische Extrafelder.
 
+<p align="left">
+  <img src="../screenshots/filaman_extrafields_1.png" alt="NFC Tag" width="320">
+  <img src="../screenshots/filaman_extrafields_2.png" alt="NFC Tag" width="320">
+</p>
+
+3. Die Keys **müssen zwingend** `sampleboard_uid` und `sampleboard_led` sein.
+4. `sampleboard_uid` bekommt die UID des Sample-NFC-Tags.
+5. `sampleboard_led` bekommt die zugeordnete LED auf deinem Board.
+6. Im FSB WebIf unter Einstellungen → Filaman die Zugangsdaten eintragen (vorher z. B. einen Nutzer mit nur Leseberechtigung in Filaman anlegen).
+7. Im FSB WebIf unter Einstellungen → Sync Filaman ausführen. Das kann je nach DB-Größe (entscheidend ist die Anzahl der Filamente, nicht der Spulen) eine Weile dauern.
 ## Sample per NFC-Tag finden
 
 NFC-Tag an den Leser halten, FSB zeigt auf dem Display, Hersteller, Typ und Farbe aus den eben synchronisierten Daten und fragt zusätzlich bei Filaman den Lagerplatz ab.
@@ -34,7 +35,6 @@ NFC-Tag an den Leser halten, FSB zeigt auf dem Display, Hersteller, Typ und Farb
 
 - LEDs und Display lassen sich per Home Assistant ein-/ausschalten. (z.B. schalten per Bewegungssensor)
 - Der ESP32 übermittelt den aktuellen Status (z. B. ausgewähltes Filament) an Home Assistant zurück. (z.B. Sprachausgabe)
-- <!-- TODO: Beispiel-Dashboard-Card / Automatisierung verlinken, falls vorhanden -->
 
 ## Sample bearbeiten / löschen
 
