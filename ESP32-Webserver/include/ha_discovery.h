@@ -15,6 +15,11 @@
 #pragma once
 #include <PubSubClient.h>
 
+/**
+ * @brief Publishes Home Assistant MQTT discovery payloads for the device.
+ * @param client MQTT client used for publishing discovery messages.
+ * @param discoveryPrefix Home Assistant discovery prefix, e.g. "homeassistant".
+ */
 void publishHADiscovery(
     PubSubClient& client,
     const String& discoveryPrefix

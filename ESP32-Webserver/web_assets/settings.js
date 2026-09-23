@@ -398,6 +398,15 @@ async function handleWSMessage(ev) {
         }
 
         return;
+        // im onmessage-Dispatch, neben "filamanLocation":
+    } else if (data.action === "filamanSyncResult") {
+
+        if (CONFIGV2.system.debugMode) {
+            console.log("Sync result:", data);
+        }
+
+        showFilamanSyncResult(data);
+        return;
     }
 
     // ----------------- UID Logik -----------------
@@ -528,13 +537,30 @@ document.getElementById("rebootBtn").addEventListener("click", async () => {
 
 // -------------------- Filaman Sync --------------------
 document.getElementById("filamanSyncBtn").addEventListener("click", async () => {
+    const statusDiv = document.getElementById("filamanSyncStatus");
+    const btn = document.getElementById("filamanSyncBtn");
+
+    btn.disabled = true; // sofort sperren, bevor überhaupt die Antwort da ist
+
     try {
         const res = await fetch("/api/filamanSync", { method: "POST" });
         const data = await res.json();
-        if (!data.started) {
-            alert("Sync nicht gestartet (läuft evtl. bereits, oder FilaMan ist deaktiviert).");
+        if (data.started) {
+            if (statusDiv) {
+                statusDiv.textContent = "⏳ Sync läuft...";
+                statusDiv.style.color = "inherit";
+                statusDiv.removeAttribute("title");
+            }
+            // Bleibt gesperrt, bis "filamanSyncResult" per WS ankommt (siehe unten)
+        } else {
+            btn.disabled = false; // gar nicht erst gestartet -> sofort wieder freigeben
+            if (statusDiv) {
+                statusDiv.textContent = "Sync nicht gestartet (läuft evtl. bereits, oder FilaMan ist deaktiviert).";
+                statusDiv.style.color = "orange";
+            }
         }
     } catch (e) {
+        btn.disabled = false;
         console.error("Sync request failed", e);
     }
 });
@@ -841,7 +867,7 @@ async function renderTable() {
     const syncFilamanBtn = () => {
         const en = !!filamanEnabledDiv.checked;
 
-        if(en) {
+        if (en) {
             filamanSyncBtn.style.display = "block";
             filamanInfo.style.display = "block";
             divEdit.style.display = "none";
@@ -855,8 +881,8 @@ async function renderTable() {
             addForm.style.display = "block";
             dbDiv.style.display = "block";
         }
-        
-        
+
+
     };
     filamanEnabledDiv.onchange = syncFilamanBtn;
     syncFilamanBtn();
@@ -1854,6 +1880,72 @@ function startSelfUpdate() {
 
 
 }
+
+
+
+
+
+function showFilamanSyncResult(msg) {
+  const statusDiv = document.getElementById("filamanSyncStatus");
+  const btn = document.getElementById("filamanSyncBtn");
+  if (btn) btn.disabled = false; // Sync ist fertig (egal ob erfolgreich) -> wieder klickbar
+
+  if (!statusDiv) return;
+
+  if (!msg.success) {
+    statusDiv.textContent = "❌ Sync fehlgeschlagen (siehe Firmware-Log)";
+    statusDiv.style.color = "red";
+    return;
+  }
+
+  let text = `✅ ${msg.taggedFilamentsFound} Filamente getaggt, ${msg.totalSpoolsFound} Spulen gefunden — ` +
+             `${msg.updated} aktualisiert, ${msg.added} neu`;
+
+  if (msg.pagesFailed > 0) {
+    text += ` ⚠️ ${msg.pagesFailed} Seite(n) übersprungen`;
+  }
+  if (msg.taggedWithoutSpools && msg.taggedWithoutSpools.length > 0) {
+    text += ` ⚠️ ${msg.taggedWithoutSpools.length} ohne Spule`;
+    statusDiv.title = msg.taggedWithoutSpools.join("\n");
+  } else {
+    statusDiv.removeAttribute("title");
+  }
+
+  statusDiv.textContent = text;
+  statusDiv.style.color = (msg.pagesFailed > 0 || (msg.taggedWithoutSpools && msg.taggedWithoutSpools.length > 0)) ? "orange" : "green";
+}
+
+
+
+document.getElementById("factoryDefaultBtn").addEventListener("click", async () => {
+
+    if (!confirm(t("txt_factory_reset_confirm"))) {
+        return;
+    }
+
+    try {
+        const response = await fetch("/api/factoryReset", {
+            method: "POST"
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            alert(t("txt_factory_reset_started"));
+
+            setTimeout(() => {
+                location.reload();
+            }, 3000);
+        } else {
+            alert(t("txt_factory_reset_failed"));
+        }
+
+    } catch (error) {
+        console.error("Factory reset error:", error);
+        alert(t("txt_factory_reset_failed"));
+    }
+});
+
 
 
 // -------------------- Init --------------------

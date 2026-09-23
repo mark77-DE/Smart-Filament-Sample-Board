@@ -1334,3 +1334,20 @@ body.daymode #rssiIcon .bar.green { fill: #00dd00; }
     font-weight: bold;
     
 }
+
+
+#dangerZone {
+    border: 5px solid red;
+    padding: 15px;
+    text-align: center;
+    color: red;
+    font-weight: bold;
+}
+
+.dangerBtn {
+    margin: 10px;
+    background-color: red;
+    color: lightgray;
+    font-weight: bold;
+    
+}

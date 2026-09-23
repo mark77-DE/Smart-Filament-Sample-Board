@@ -201,8 +201,11 @@
     "filamanInfo": "Filaman active. LEDs and UIDs are handled by filaman filaments.",
     "filamanStorage": "click",
     "txt_more": "more",
-    "txt_dangerzone_warning": "ATTENTION! All settings (filaments, configuration, WiFi credentials) will be deleted. After rebooting, ESP needs to be joined to local WiFi again.",
-    "btn_danger": "DELETE"
+    "txt_dangerzone_warning": "ATTENTION! All settings (filaments, configuration, WiFi credentials) will be deleted!<br>After rebooting, ESP needs to be joined to local WiFi again.",
+    "btn_danger": "DELETE",
+    "txt_factory_reset_confirm": "Do you really want to delet all data?",
+    "txt_factory_reset_started": "Begin factory reset",
+    "txt_factory_reset_failed": "Factory reset failed!"
 
 
 

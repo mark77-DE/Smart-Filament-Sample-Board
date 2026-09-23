@@ -58,9 +58,8 @@
         </div>
 
         <div class="sysGroup">
-            <button id="filamanSyncBtn" class="primaryBtn" >
-                Sync Filaman
-            </button>
+            <button id="filamanSyncBtn" class="primaryBtn">Sync Filaman</button>
+            <div id="filamanSyncStatus" style="margin-top: 6px; font-size: 0.9em;"></div>
         </div>
 
         <div id="updateStatus"></div>
@@ -455,7 +454,8 @@
 
                             <label for="mqttServerIP" title="">Server:</label>
                             <div class="textField">
-                                <input type="text" id="mqttBroker" name="mqttBroker" value="192.168.0.1" title="" placeholder="">
+                                <input type="text" id="mqttBroker" name="mqttBroker" value="192.168.0.1" title=""
+                                    placeholder="">
                             </div>
 
                             <label for="mqttServerPort" title="">Port:</label>
@@ -498,17 +498,20 @@
 
                             <label for="filamanServerIP" title="">Server:</label>
                             <div class="textField">
-                                <input type="text" id="filamanServer" name="filamanServer" value="192.168.0.1" title="" placeholder="">
+                                <input type="text" id="filamanServer" name="filamanServer" value="192.168.0.1" title=""
+                                    placeholder="">
                             </div>
 
                             <label for="filamanServerPort" title="">Port:</label>
                             <input type="number" id="filamanPort" name="filamanPort" min="1" max="65535" value="8083">
 
                             <label for="filamanUser" title="" data-i18n="txt_user">User:</label>
-                            <input type="text" id="filamanUser" name="filamanUser" value="admin@example.com" placeholder="">
+                            <input type="text" id="filamanUser" name="filamanUser" value="admin@example.com"
+                                placeholder="">
 
                             <label for="filamanPassword" title="" data-i18n="txt_password">Password:</label>
-                            <input type="password" id="filamanPassword" name="filamanPassword" value="admin123" placeholder="">
+                            <input type="password" id="filamanPassword" name="filamanPassword" value="admin123"
+                                placeholder="">
 
 
                         </div>
@@ -557,7 +560,8 @@
                                 <button id="exportAllBtn" class="primaryBtn">
                                     Export JSON
                                 </button>
-                                <div id="exportWarning" data-i18n="txt_export_warning">WARNING: Passwords will be clear text!</div>
+                                <div id="exportWarning" data-i18n="txt_export_warning">WARNING: Passwords will be clear
+                                    text!</div>
                             </div>
 
 
@@ -594,10 +598,11 @@
                                     importing settings.</div>
                             </div>
 
-
-                            <div id="dangerZone">
-                                <div class="warning" data-i18n="txt_dangerzone_warning"></div>
-                                <button id="factoryDefaultBtn" class="dangerBtn"  data-i18n="btn_danger"></button>
+                            <div class="ieBlock">
+                                <div id="dangerZone">
+                                    <div class="warning" data-i18n="txt_dangerzone_warning"></div>
+                                    <button id="factoryDefaultBtn" class="dangerBtn" data-i18n="btn_danger"></button>
+                                </div>
                             </div>
 
                         </div>

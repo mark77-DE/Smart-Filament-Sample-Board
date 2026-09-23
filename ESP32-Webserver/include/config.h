@@ -18,15 +18,15 @@
  */
 
 struct systemConfig {
-  String        version = "error";
-  bool          darkmode;    ///< Dark mode enabled
-  bool          debugMode;   ///< Debug mode enabled
-  uint32_t      webLEDTimeout;   // Dashboard default (ms)
-  String        hostname;    ///< Wi-Fi hostname
-  bool          animationAfterBoot; ///< Startup animation after boot enabled
-  String        defaultLanguage; ///< Default language (e.g. "en" or "de")
-  uint32_t      updateCheckInterval; ///< Seconds until reboot after long press
-  String        timezone;   // POSIX-TZ-String, example see TIMEZONE in platformio.ini
+  String        version               = "error";      
+  bool          darkmode              = false;                      ///< Dark mode enabled
+  bool          debugMode             = true;                       ///< Debug mode enabled
+  uint32_t      webLEDTimeout         = 3000;                       ///< Dashboard default (ms)
+  String        hostname              = "filament-sample-board";    ///< Wi-Fi hostname
+  bool          animationAfterBoot    = true;                       ///< Startup animation after boot enabled
+  String        defaultLanguage       = "en";                       ///< Default language (e.g. "en" or "de")
+  uint32_t      updateCheckInterval   = 240;                        ///< Seconds until reboot after long press
+  String        timezone              = "UTC";                      // POSIX-TZ-String, example see TIMEZONE in platformio.ini
 };
 
 
@@ -38,8 +38,8 @@ struct systemConfig {
  * Defaults come from platformio.ini.
  */
 struct LedHardwareConfigV2 {
-  LedType  type  = static_cast<LedType>(LED_TYPE);
-  LedOrder order = static_cast<LedOrder>(LED_ORDER);
+  LedType  type  = static_cast<LedType>(LED_TYPE);                ///< defaults to platformio.ini
+  LedOrder order = static_cast<LedOrder>(LED_ORDER);              ///< defaults to platformio.ini
 };
 
 
@@ -47,29 +47,29 @@ struct LedHardwareConfigV2 {
  * @brief LED configuration (filament strip)
  */
 struct LedConfigV2 {
-  int      count;       ///< Number of LEDs
-  int      pin;         ///< GPIO pin
-  int      brightness;  ///< Brightness [0..255]
-  int      timeout;     ///< Timeout in ms
-  uint32_t color;       ///< Default color 0xRRGGBB
-  uint32_t colorError;  ///< Error color 0xRRGGBB
-  uint32_t colorPulse;  ///< Idle pulse color 0xRRGGBB
+  int      count        = 8;          ///< Number of LEDs
+  int      pin          = -1;         ///< GPIO pin
+  int      brightness   = 10;         ///< Brightness [0..255]
+  int      timeout      = 2000;       ///< Timeout in ms
+  uint32_t color        = 0x00FF00;   ///< Default color 0xRRGGBB
+  uint32_t colorError   = 0xFF00FF;   ///< Error color 0xRRGGBB
+  uint32_t colorPulse   = 0x0040A0;   ///< Idle pulse color 0xRRGGBB
 };
 
 /**
  * @brief NFC LED configuration
  */
 struct NfcLedConfigV2 {
-  int      count;                 ///< Number of LEDs
-  int      pin;                   ///< GPIO pin
-  int      brightness;            ///< Brightness [0..255]
-  int      timeout;               ///< Timeout in ms
-  uint32_t colorSuccess;          ///< Success color 0xRRGGBB
-  uint32_t colorError;            ///< Error color 0xRRGGBB
-  uint32_t colorPulse;            ///< Idle pulse color 0xRRGGBB
-  bool     successBlinkEnabled;   ///< True = success blinking enabled
-  int      successBlinkCount;     ///< Number of blink cycles
-  int      successBlinkMs;        ///< Blink interval in ms
+  int      count                  = 8;          ///< Number of LEDs
+  int      pin                    = -1;         ///< GPIO pin
+  int      brightness             = 10;         ///< Brightness [0..255]
+  int      timeout                = 4000;       ///< Timeout in ms
+  uint32_t colorSuccess           = 0x00FF00;   ///< Success color 0xRRGGBB
+  uint32_t colorError             = 0xFF0000;   ///< Error color 0xRRGGBB
+  uint32_t colorPulse             = 0x0000FF;   ///< Idle pulse color 0xRRGGBB
+  bool     successBlinkEnabled    = true;       ///< True = success blinking enabled
+  int      successBlinkCount      = 3;          ///< Number of blink cycles
+  int      successBlinkMs         = 200;        ///< Blink interval in ms
 };
 
 /**
@@ -89,7 +89,7 @@ struct ButtonConfigV2 {
  * @brief Buzzer configuration
  */
 struct BuzzerConfigV2 {
-  bool enabled       = true; ///< Buzzer enabled?
+  bool enabled       = true;  ///< Buzzer enabled?
   int  pin           = -1;    ///< Buzzer GPIO (-1 = off)
   bool activeHigh    = true;  ///< Active level HIGH?
   bool passive       = false; ///< false = active buzzer, true = passive (PWM)
@@ -107,15 +107,15 @@ struct BuzzerConfigV2 {
  */
 
 struct MqttConfigV2 {
-  bool enabled;
-  String server;
-  uint16_t port;
-  String user;
-  String password;
-  String baseTopic;
-  String clientId;
-  bool haDiscovery;          ///< Home Assistant discovery active
-  String haDiscoveryPrefix;  ///< Prefix for HA Discovery (e.g. "homeassistant")
+  bool enabled                = false;
+  String server               = "192.168.168.150";
+  uint16_t port               = 1883;
+  String user                 = "";    
+  String password             = "";
+  String baseTopic            = "spotmyfilament";
+  String clientId             = "filament-board";
+  bool haDiscovery            = false   ;          ///< Home Assistant discovery active
+  String haDiscoveryPrefix    = "homeassistant";  ///< Prefix for HA Discovery (e.g. "homeassistant")
 };
 
 
@@ -126,11 +126,11 @@ struct MqttConfigV2 {
 struct FilamanConfig 
 {
   /* data */
-  bool      enabled;
-  String    server;   //IP-address of filaman server
-  uint32_t  port; //port of filman api/server
-  String    user;   //Filaman login user (usually email address)
-  String    password;  //Filaman password
+  bool      enabled         = false;
+  String    server          = "192.168.169.151";    //IP-address of filaman server
+  uint32_t  port            = 8083;                 //port of filman api/server
+  String    user            = "admin@exapmle.com";  //Filaman login user (usually email address)
+  String    password        = "admin123";           //Filaman password
 };
 
 
@@ -236,8 +236,12 @@ uint32_t colorFromArrayV2(JsonArrayConst arr);
 
 
 
-// Migration routine
-// in config.h (IMPORTANT: in the header, not in the .cpp!)
+/**
+ * @brief Migrates a JSON config object from an older schema version to the current format.
+ * @tparam TCfg JSON object or document type that supports bracket access.
+ * @param cfg Configuration document to normalize in place.
+ * @return true if the config was changed during migration, otherwise false.
+ */
 template<typename TCfg>
 bool migrateConfigV2(TCfg& cfg)
 {

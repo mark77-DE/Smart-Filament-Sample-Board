@@ -10,20 +10,21 @@
 // ============================================================================
 
 /**
- * @brief Initializes the button and buzzer according to the configuration.
- *        Mehrfachaufruf ist erlaubt (re-init).
+ * @brief Initializes the GPIO button and buzzer subsystem.
+ * @details Re-applies the active configuration and resets internal debouncing state.
+ * @note Safe to call repeatedly after a config reload.
  */
 void gpiohw_init();
 
 /**
- * @brief Cyclic updater (non-blocking). Call in every loop().
- *        It internally calls gpiohw_tick(millis()).
+ * @brief Updates the debounced button state and buzzer sequencer.
+ * @note Call this once per loop iteration.
  */
 void gpiohw_update();
 
 /**
- * @brief Cyclic updater with an external timestamp.
- * @param now Current time in milliseconds (millis()).
+ * @brief Updates the GPIO state using an externally supplied timestamp.
+ * @param now Current time in milliseconds.
  */
 void gpiohw_tick(unsigned long now);
 
@@ -31,28 +32,55 @@ void gpiohw_tick(unsigned long now);
 // Buzzer-API (Sequenzen laufen non-blocking, werden im Tick abgearbeitet)
 // ---------------------------------------------------------------------------
 
-/** @brief A short beep. */
+/**
+ * @brief Emits a single short beep.
+ */
 void buzzer_single_beep();
-/** @brief Two short beeps with a short pause. */
+
+/**
+ * @brief Emits a double-beep pattern.
+ */
 void buzzer_double_beep();
-/** @brief Error sequence: multiple short beeps (configurable). */
+
+/**
+ * @brief Emits the configured error beep sequence.
+ */
 void buzzer_error_beep();
-/** @brief Sequenz sofort abbrechen (Buzzer aus). */
+
+/**
+ * @brief Interrupt beep sequence -> buzzer off.
+ */
 void buzzer_stop();
-/** @brief true while a sequence is running. */
+
+/**
+ * @brief true if buzzer busy, otherwise false.
+ * @return return true if buzzer busy, otherwise false;
+ */
 bool buzzer_busy();
 
 // ---------------------------------------------------------------------------
 // Button events (auto-reset getters, like in the previous implementation)
 // ---------------------------------------------------------------------------
 
-/** @brief true once per short button press (no double, no long). */
+/**
+ * @brief Returns true once for a short press event.
+ * @return true when a valid short press was detected, otherwise false.
+ */
 bool button_short_press();
-/** @brief true once when the long-press threshold is reached. */
+/**
+ * @brief Returns true once for a long press event.
+ * @return true when a valid long press was detected, otherwise false.
+ */
 bool button_long_press();
-/** @brief true once when a double-click is detected. */
+/**
+ * @brief Returns true once for a double press event.
+ * @return true when a valid double press was detected, otherwise false.
+ */
 bool button_double_press();
-/** @brief true on each hold interval after a long press. */
+/**
+ * @brief Returns true once when button is in hold for more than CONFIGV2.button.holdRepeatMs.
+ * @return true when button is hold for more than CONFIGV2.button.holdRepeatMs, otherwise false.
+ */
 bool button_hold();
 
 // Fired immediately on release (if no long press was detected).

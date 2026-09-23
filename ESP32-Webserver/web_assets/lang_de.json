@@ -201,8 +201,11 @@
     "filamanInfo": "Filaman aktiviert. LEDs und UIDs werden in Filaman, bei den Filamenten verwaltet.",
     "filamanStorage": "klick",
     "txt_more": "weitere",
-    "txt_dangerzone_warning": "ACHTUNG! Alle Daten (Filamente, Konfiguration, WLAN Zugangsadaten) werden gelöscht, danach startet der ESP neu und muss wieder mit dem WLAN verbunden werden.",
-    "btn_danger": "LÖSCHEN"
+    "txt_dangerzone_warning": "ACHTUNG! Alle Daten (Filamente, Konfiguration, WLAN Zugangsadaten) werden gelöscht!<br>Danach startet der ESP neu und muss wieder mit dem WLAN verbunden werden.",
+    "btn_danger": "LÖSCHEN",
+    "txt_factory_reset_confirm": "Sollen wirklich alle Daten gelöscht werden?",
+    "txt_factory_reset_started": "Starte zurücksetzen auf Werkseinstellungen",
+    "txt_factory_reset_failed": "Zurücksetzen fehlgeschlagen!"
 
   }
 

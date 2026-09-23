@@ -5,7 +5,7 @@
         "debugMode": true,
         "webLEDTimeout": 3000,
         "animationAfterBoot": true,
-        "hostname": "filament-board-dev",
+        "hostname": "filament-sample-board",
         "defaultLanguage": "de",
         "updateCheckInterval": 120,
         "timezone": "CET-1CEST,M3.5.0,M10.5.0/3"

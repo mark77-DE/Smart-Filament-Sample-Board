@@ -10,12 +10,14 @@
 #include <vector>
 #include "FilamanClient.h" // for FilamentSyncEntry
 
-namespace FilamanManager {
+namespace FilamanManager
+{
 
   // One resolved location entry for the "found at multiple places" case —
   // name already resolved (not just the raw location_id), so callers don't
   // need their own lookup for a WebIF/dashboard display.
-  struct ResolvedLocation {
+  struct ResolvedLocation
+  {
     String name;
     float remainingWeightG;
   };
@@ -31,14 +33,20 @@ namespace FilamanManager {
   // Returns immediately (non-blocking). Returns false without doing anything
   // if FilaMan is disabled, filamentId is invalid, or a lookup/warmup/sync is
   // already in flight (kept deliberately simple: one thing at a time).
-  bool requestLocationLookup(int filamentId, const String& uid);
+  /**
+   * @brief Starts a background lookup for a filament location.
+   * @param filamentId FilaMan filament ID for the known spool.
+   * @param uid UID associated with the current scan.
+   * @return true if the lookup request was accepted, otherwise false.
+   */
+  bool requestLocationLookup(int filamentId, const String &uid);
 
   // Call once per loop() iteration. Returns true exactly once when a result
   // becomes available. `uid` tells you which tag this result belongs to.
   // `locationName` is the ready-to-display summary (e.g. "B3 (+1 weitere)");
   // `locations` is the full resolved list behind it (name + remaining
   // weight per spot), for callers that want more detail (e.g. the WebIF).
-  bool pollResult(String& uid, bool& found, String& locationName, std::vector<ResolvedLocation>& locations);
+  bool pollResult(String &uid, bool &found, String &locationName, std::vector<ResolvedLocation> &locations);
 
   // Non-blocking: logs in and pre-fetches the location cache in the background.
   // Call once after WiFi connects, and optionally on a periodic timer
@@ -65,7 +73,7 @@ namespace FilamanManager {
   // from a background task). `summary` gives the headline numbers (scanned/
   // tagged/spools found/tagged-without-spools/pages failed) for a status
   // line or log, without having to derive them from `entries` yourself.
-  bool pollSyncResult(std::vector<FilamentSyncEntry>& entries, bool& success, FilamentSyncSummary& summary);
+  bool pollSyncResult(std::vector<FilamentSyncEntry> &entries, bool &success, FilamentSyncSummary &summary);
 
   // True while a lookup, warmup, or sync is currently running (e.g. to show
   // a "busy" state).

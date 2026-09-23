@@ -64,12 +64,12 @@ static void printOtaInfo()
   if (CONFIGV2.system.debugMode)
   {
     Serial.println();
-    Serial.printf("OTA boot: name=%s addr=0x%06X subtype=0x%02X\n",
+    Serial.printf("[OTA] boot: name=%s addr=0x%06X subtype=0x%02X\n",
                   boot ? boot->label : "null",
                   boot ? (unsigned)boot->address : 0,
                   boot ? (unsigned)boot->subtype : 0);
 
-    Serial.printf("OTA run : name=%s addr=0x%06X subtype=0x%02X\n",
+    Serial.printf("[OTA] run : name=%s addr=0x%06X subtype=0x%02X\n",
                   run ? run->label : "null",
                   run ? (unsigned)run->address : 0,
                   run ? (unsigned)run->subtype : 0);
@@ -834,21 +834,50 @@ void loop()
   }
 
   {
-    std::vector<FilamentSyncEntry> syncEntries;
-    FilamentSyncSummary syncSummary;
-    bool syncOk;
-    if (FilamanManager::pollSyncResult(syncEntries, syncOk, syncSummary))
+  std::vector<FilamentSyncEntry> syncEntries;
+  FilamentSyncSummary syncSummary;
+  bool syncOk;
+  if (FilamanManager::pollSyncResult(syncEntries, syncOk, syncSummary))
+  {
+    FilamanSyncApplyResult applyResult;
+    if (syncOk)
     {
-      if (syncOk)
+      applyResult = applyFilamanSyncToLocalDb(syncEntries);
+    }
+    else if (CONFIGV2.system.debugMode)
+    {
+      Serial.println("[FILAMAN] sync failed");
+    }
+
+    // An alle WebIF-Clients broadcasten, damit der Nutzer, der den Sync
+    // ausgelöst hat (und jeder, der das Dashboard gerade offen hat), das
+    // Ergebnis sieht — nicht nur die serielle Konsole.
+    JsonDocument syncDoc;
+    syncDoc["action"] = "filamanSyncResult";
+    syncDoc["success"] = syncOk;
+    if (syncOk)
+    {
+      syncDoc["totalFilamentsScanned"] = syncSummary.totalFilamentsScanned;
+      syncDoc["taggedFilamentsFound"] = syncSummary.taggedFilamentsFound;
+      syncDoc["totalSpoolsFound"] = syncSummary.totalSpoolsFound;
+      syncDoc["pagesFailed"] = syncSummary.pagesFailed;
+      syncDoc["updated"] = applyResult.updated;
+      syncDoc["added"] = applyResult.added;
+      syncDoc["skipped"] = applyResult.skipped;
+      if (!syncSummary.taggedWithoutSpools.empty())
       {
-        applyFilamanSyncToLocalDb(syncEntries);
-      }
-      else if (CONFIGV2.system.debugMode)
-      {
-        Serial.println("[FILAMAN] sync failed");
+        JsonArray arr = syncDoc["taggedWithoutSpools"].to<JsonArray>();
+        for (auto& desc : syncSummary.taggedWithoutSpools)
+        {
+          arr.add(desc);
+        }
       }
     }
+    String syncMsg;
+    serializeJson(syncDoc, syncMsg);
+    ws.textAll(syncMsg);
   }
+}
 
    // ---------------------------------------------------------------------------
   // 10)  RESET DEVICE AND DATA

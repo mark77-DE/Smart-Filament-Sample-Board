@@ -26,14 +26,30 @@ extern bool DEBUG_MODE;
 
 extern String LATEST_FIRMWARE_VERSION;
 
+/**
+ * @brief Origin of the scanned UID.
+ */
 enum class UidSource {
     NFC,
     WEBIF
 };
 
-// NEW: Web interface idle timer (OLED return)
+/**
+ * @brief Arms a web-interface idle timer.
+ * @param ms Timeout in milliseconds before the UI is considered idle.
+ */
 void webifArmIdleTimeout(uint32_t ms);
+
+/**
+ * @brief Cancels the currently armed web-interface idle timeout.
+ */
 void webifCancelIdleTimeout();
+
+/**
+ * @brief Checks whether the web interface has been idle longer than the timeout.
+ * @param now Current millisecond timestamp.
+ * @return true if the idle timeout has elapsed, otherwise false.
+ */
 bool webifIdleDue(uint32_t now);
 
 extern volatile bool g_applyConfigPending;

@@ -9,6 +9,15 @@
 #include "config.h"
 #include "globals.h"        // g_reloadFilamentsPending
 
+// Result of merging one sync run into the local FilamentDB — lets the caller
+// (e.g. a WebSocket broadcast to the WebIF) report what actually happened,
+// not just that a sync ran.
+struct FilamanSyncApplyResult {
+  int updated = 0;
+  int added = 0;
+  int skipped = 0; // local DB was at its 150-entry cap
+};
+
 // Merges FilaMan sync results into the local FilamentDB:
 // - known UIDs are updated (vendor/type/color/ledIndex/info1/info2)
 // - `storage` is deliberately left untouched — it's looked up live via
@@ -17,9 +26,9 @@
 // - unknown UIDs are added as new entries
 // - entries NOT present in the sync (e.g. purely local/manual ones) are left
 //   alone — this is additive/merge, never a full replace
-inline void applyFilamanSyncToLocalDb(const std::vector<FilamentSyncEntry>& syncEntries)
+inline FilamanSyncApplyResult applyFilamanSyncToLocalDb(const std::vector<FilamentSyncEntry>& syncEntries)
 {
-  int updated = 0, added = 0, skipped = 0;
+  FilamanSyncApplyResult result;
 
   for (const auto &s : syncEntries)
   {
@@ -43,17 +52,17 @@ inline void applyFilamanSyncToLocalDb(const std::vector<FilamentSyncEntry>& sync
     if (exists)
     {
       FilamentDB::update(entry);
-      updated++;
+      result.updated++;
     }
     else
     {
       if (FilamentDB::add(entry))
       {
-        added++;
+        result.added++;
       }
       else
       {
-        skipped++; // local DB is at its 150-entry cap
+        result.skipped++; // local DB is at its 150-entry cap
       }
     }
   }
@@ -64,6 +73,8 @@ inline void applyFilamanSyncToLocalDb(const std::vector<FilamentSyncEntry>& sync
   if (CONFIGV2.system.debugMode)
   {
     Serial.printf("[FILAMAN] sync applied: %d updated, %d added, %d skipped (DB full), total now %d\n",
-                   updated, added, skipped, FilamentDB::getAllCount());
+                   result.updated, result.added, result.skipped, FilamentDB::getAllCount());
   }
+
+  return result;
 }

@@ -176,7 +176,7 @@ void gpiohw_init() {
   #endif
 
   // --- Set up button ---
-  s_btnEnabled   = CONFIGV2.button.enabled || true; // Default: active
+  s_btnEnabled   = CONFIGV2.button.enabled;
   s_btnActiveLow = CFG_BTN_PULLUP;
 
   if (s_btnEnabled) {
@@ -207,7 +207,7 @@ void gpiohw_init() {
   }
 
   // --- Set up buzzer ---
-  s_buzEnabled = CONFIGV2.buzzer.enabled || true; // Default: active
+  s_buzEnabled = CONFIGV2.buzzer.enabled; 
   if (s_buzEnabled) {
     // Safety OFF after (re-)init (prevents "spinning" after import)
     s_buzLen = 0;
