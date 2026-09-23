@@ -1,29 +1,9 @@
 # Bedienung
 
-## NFC-Tags anlegen
-
-<!-- TODO: konkreten Ablauf beschreiben, z. B.
-1. Neuen NFC-Tag an den Reader halten
-2. Im WebIF unter "Neues Sample" die Tag-ID erfassen
-3. Filament-Details eintragen (Hersteller, Material, Farbe, Lagerplatz)
--->
-1. Im WebIf die Seite Settings öffnen
-2. NFC-Tag an den Reader halten, der Tag wid automatisch eingetragen
-<p align="left">
-  <img src="../screenshots/settings_main_add-tag.png" alt="NFC Tag" width="320">
-</p>
-3. die restlichen Informationen zum Sample eintragen, <b>UID, name, color, material und LED sind Pflichtfelder</b>, der Rest ist optional<br>
-4. Es können nur LEDs ausgewählt werden, die noch nicht vergeben sind. Wird eine LED ausgewählt, leuchtet diese entsprechend auf dem Board kurz auf zur Orientierung.<br>
-<p align="left">
-  <img src="../pictures/led_highlight.jpg" alt="LED highlight" width="320">
-</p>
-
-## Sample per NFC-Tag finden
-
-1. NFC-Tag an den Reader halten.
-2. Der ESP32 fragt die Datenbank ab und zeigt die Filament-Infos auf dem Display an.
-3. Die LED am zugehörigen Sample-Lagerplatz leuchtet auf.
-4. Die entsprechende Kachel im WebIF leuchtet auch auf.
+Diese Seite beschreibt die Bedienschritte, die unabhängig davon gelten, ob
+das Board mit der **lokalen DB** oder mit **FilaMan** arbeitet. Details zum
+Anlegen und Finden von Samples in den beiden Modi stehen in
+[`usage-local.md`](usage-local.md) bzw. [`usage-filaman.md`](usage-filaman.md).
 
 ## Sample über das WebIF finden
 
@@ -39,12 +19,7 @@
 
 - LEDs und Display lassen sich per Home Assistant ein-/ausschalten. (z.B. schalten per Bewegungssensor)
 - Der ESP32 übermittelt den aktuellen Status (z. B. ausgewähltes Filament) an Home Assistant zurück. (z.B. Sprachausgabe)
-- <!-- TODO: Beispiel-Dashboard-Card / Automatisierung verlinken, falls vorhanden -->
-
-## Sample bearbeiten / löschen
-
-<!-- TODO: Ablauf im WebIF beschreiben -->
-Um ein Sample zu bearbeiten oder zu löschen, muss der Schalter "bearbeiten" aktiv sein
+<!-- TODO: Beispiel-Dashboard-Card / Automatisierung verlinken, falls vorhanden -->
 
 ## Sonstiges
 

@@ -66,7 +66,7 @@ Für den weit verbreiteten Standard typ, dem ESP32 Devkit V1 gillt folgendes pin
 | GPIO 32 | TFT DC | ST7789 Display |
 | GPIO 33 | Buzzer | optional |
 
-### ESP32 ST7789 Variante
+### ESP32-S3 ST7789 Variante
 | ESP32 Pin | Verbunden mit | Funktion |
 |---|---|---|
 | GPIO 4 | LEDs | Samples |
