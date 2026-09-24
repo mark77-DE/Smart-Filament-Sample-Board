@@ -11,6 +11,7 @@
 #include "mqtt_manager.h"
 #include "pins.h"
 #include "led_config.h"
+#include "debug_utils.h"
 
 
 
@@ -704,10 +705,7 @@ void LEDCTRL_FILAMENT::standBy(bool state)
 
     allOff();
 
-    if (CONFIGV2.system.debugMode)
-    {
-      Serial.println("Standby ON: LEDs OFF, update blocked");
-    }
+    DEBUG_LOG("led", "stop led animation.");
   }
   else
   {
@@ -716,10 +714,8 @@ void LEDCTRL_FILAMENT::standBy(bool state)
     _lastPulseUpdate = millis();
     _idleBlockUntil = millis() + 2;
 
-    if (CONFIGV2.system.debugMode)
-    {
-      Serial.println("Standby OFF: normal operation resumed");
-    }
+    
+    DEBUG_LOG("led", "resume led animation.");
   }
 
   // MQTT-Status senden

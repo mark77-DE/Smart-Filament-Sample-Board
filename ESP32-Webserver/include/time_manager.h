@@ -33,4 +33,12 @@ String getTimestampISO();
  */
 time_t getEpoch();
 
+
+/**
+ * @brief Returns a short timestamp string for debug output:
+ *        local time ("HH:MM:SS") if synced, otherwise uptime in ms ("1234ms").
+ * @return Formatted timestamp string.
+ */
+String getDebugTimestamp();
+
 }

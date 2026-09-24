@@ -39,6 +39,8 @@
 
 #include <vector>
 
+#include "debug_utils.h"
+
 constexpr uint32_t SPLASH_CHAR_MS = 35;   // timing for typewriter effect at boot (ms per char)
 constexpr uint32_t SPLASH_LINE_MS = 200;  // extra delay after each line at boot (ms)
 constexpr uint32_t SPLASH_HOLD_MS = 2000; // how long the full splash is shown at boot (after typewriter effect, before animation starts)
@@ -61,30 +63,26 @@ static void printOtaInfo()
   const esp_partition_t *boot = esp_ota_get_boot_partition();
   const esp_partition_t *run = esp_ota_get_running_partition();
 
-  if (CONFIGV2.system.debugMode)
-  {
-    Serial.println();
-    Serial.printf("[OTA] boot: name=%s addr=0x%06X subtype=0x%02X\n",
-                  boot ? boot->label : "null",
-                  boot ? (unsigned)boot->address : 0,
-                  boot ? (unsigned)boot->subtype : 0);
+  DEBUG_BLOCK(Serial.println());
 
-    Serial.printf("[OTA] run : name=%s addr=0x%06X subtype=0x%02X\n",
-                  run ? run->label : "null",
-                  run ? (unsigned)run->address : 0,
-                  run ? (unsigned)run->subtype : 0);
-  }
+  DEBUG_LOGF("OTA", "boot: name=%s addr=0x%06X subtype=0x%02X",
+             boot ? boot->label : "null",
+             boot ? (unsigned)boot->address : 0,
+             boot ? (unsigned)boot->subtype : 0);
+
+  DEBUG_LOGF("OTA", "run : name=%s addr=0x%06X subtype=0x%02X",
+             run ? run->label : "null",
+             run ? (unsigned)run->address : 0,
+             run ? (unsigned)run->subtype : 0);
 
   if (run)
   {
     esp_ota_img_states_t st{};
     if (esp_ota_get_state_partition(run, &st) == ESP_OK)
     {
-      if (CONFIGV2.system.debugMode)
-      {
-        Serial.printf("OTA state: %d (PENDING_VERIFY=%d)\n",
-                      (int)st, (int)ESP_OTA_IMG_PENDING_VERIFY);
-      }
+      DEBUG_LOGF("OTA", "state: %d (PENDING_VERIFY=%d)",
+           (int)st, (int)ESP_OTA_IMG_PENDING_VERIFY);
+      
     }
   }
 }
@@ -210,20 +208,16 @@ void renderRebootCountdown(unsigned long nowMs)
     {
       LEDCTRL_NFC::showSuccess();       // NFC ring immediately green (solid)
       LEDCTRL_FILAMENT::successBlink(); // Filament: blinks -> green (
-      if (CONFIGV2.system.debugMode)
-      {
-        Serial.println("Reboot countdown: SUCCESS");
-      }
+      DEBUG_LOG("System", "Reboot countdown: SUCCESS");
+      
     }
     else
     {
       // On countdown start, always switch to error once (single-time)
       LEDCTRL_NFC::showError();       // NFC-Ring sofort rot (solid)
       LEDCTRL_FILAMENT::errorBlink(); // Filament: blinks -> red (as intended)
-      if (CONFIGV2.system.debugMode)
-      {
-        Serial.println("Reboot countdown: ERROR or user reboot");
-      }
+      DEBUG_LOG("System", "Reboot countdown: ERROR or user reboot");
+      
     }
   }
 
@@ -249,11 +243,7 @@ void renderRebootCountdown(unsigned long nowMs)
 void activateLed(int index)
 {
 
-  if (CONFIGV2.system.debugMode)
-  {
-    Serial.print("activateLed: index=");
-    Serial.println(index);
-  }
+  DEBUG_LOGF("led", "activateLed: index=%i", index);
 
   if (targetLed != -1 && targetLed != index)
   {
@@ -284,13 +274,8 @@ void handleUID(const String &uid, UidSource source)
   JsonDocument doc;
   doc["uid"] = uid;
 
-  if (CONFIGV2.system.debugMode)
-  {
-    Serial.print("handleUID: UID=");
-    Serial.print(uid);
-    Serial.print(" Source=");
-    Serial.println((source == UidSource::NFC) ? "NFC" : "WebIF");
-  }
+  
+  DEBUG_LOGF("uid", "handleUID: UID=%s, Source=%s", uid.c_str(), (source == UidSource::NFC) ? "NFC" : "WebIF");
 
   const bool isNfc = (source == UidSource::NFC);
 
@@ -383,40 +368,34 @@ void printChipInfo()
 
 void resetWiFiSettings()
 {
-    WiFiManager wifiManager;
+  WiFiManager wifiManager;
 
-    Serial.println("[FACTORY RESET] Resetting WiFi settings...");
+  Serial.println("[FACTORY RESET] Resetting WiFi settings...");
 
-    wifiManager.resetSettings();
+  wifiManager.resetSettings();
 }
-
-
-
-
 
 void factoryReset()
 {
-    Serial.println("[FACTORY RESET] Starting...");
+  Serial.println("[FACTORY RESET] Starting...");
 
-    // Delete WiFiManager credentials
-    resetWiFiSettings();
+  // Delete WiFiManager credentials
+  resetWiFiSettings();
 
-    // Reset filaments,jso to default
-    resetFilamentsToDefaults();
+  // Reset filaments,jso to default
+  resetFilamentsToDefaults();
 
-    // Reset application configuration to defaults
-    resetConfigToDefaults();
+  // Reset application configuration to defaults
+  resetConfigToDefaults();
 
-    // Save default configuration
-    saveConfigV2();
+  // Save default configuration
+  saveConfigV2();
 
-    Serial.println("[FACTORY RESET] Restarting...");
+  Serial.println("[FACTORY RESET] Restarting...");
 
-    delay(500);
-    ESP.restart();
+  delay(500);
+  ESP.restart();
 }
-
-
 
 // ----------------------------- Setup -----------------------------
 // -----------------------------------------------------------------
@@ -445,10 +424,7 @@ void setup()
 
   g_sysInfo = getSysInfo();
 
-  if (CONFIGV2.system.debugMode)
-  {
-    printChipInfo();
-  }
+  DEBUG_BLOCK(printChipInfo());
 
   loadConfigV2();
 
@@ -523,10 +499,7 @@ void setup()
   }
   else
   {
-    if (CONFIGV2.system.debugMode)
-    {
-      Serial.println("[MQTT] disabled in config, skipping initialization.");
-    }
+    DEBUG_LOG("MQTT", "disabled in config, skipping initialization.");
   }
 
   // Upadte Check
@@ -543,8 +516,6 @@ void setup()
     ws.cleanupClients();
     yield();
   }
-
-  
 
   // After the firmware boot screen (10 s), WLAN + web server are already active
   displayClear();
@@ -578,18 +549,18 @@ void setup()
   WiFi.setSleep(false);
 
   // Only once, no duplicate call:
-if (WiFi.status() == WL_CONNECTED)
-{
-  FilamanManager::requestWarmup();  // Session + location cache first
+  if (WiFi.status() == WL_CONNECTED)
+  {
+    FilamanManager::requestWarmup(); // Session + location cache first
 
-  // Automatic boot sync only if this is really desired (see the follow-up question) —
-  // otherwise omit it here and trigger only via button/WebIF.
-  // FilamanManager::requestSync();
-}
-else if (CONFIGV2.system.debugMode)
-{
-  Serial.println("[FILAMAN] boot: WiFi not yet connected, skipping warmup/sync");
-}
+    // Automatic boot sync only if this is really desired (see the follow-up question) —
+    // otherwise omit it here and trigger only via button/WebIF.
+    // FilamanManager::requestSync();
+  }
+  else if (CONFIGV2.system.debugMode)
+  {
+    Serial.println("[FILAMAN] boot: WiFi not yet connected, skipping warmup/sync");
+  }
 
   Serial.println();
   Serial.println();
@@ -598,8 +569,6 @@ else if (CONFIGV2.system.debugMode)
   Serial.println("*****************************************");
   Serial.println();
   Serial.println();
-
-
 }
 
 void loop()
@@ -636,8 +605,6 @@ void loop()
     DisplayAnim::startIdleTextFirst(now);
     renderRebootCountdown(now);
   }
-
-  
 
   // 0d (config)
   if (g_applyConfigPending)
@@ -683,7 +650,7 @@ void loop()
   // ---------------------------------------------------------------------------
   // 1c) FilaMan: fetch the result of a background lookup (if any)
   // ---------------------------------------------------------------------------
-    // ---------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------
   // 1c) FilaMan: fetch the result of a background lookup (if any)
   // ---------------------------------------------------------------------------
   {
@@ -697,7 +664,7 @@ void loop()
       // veraltete Anzeige nach Entfernen); bei WebIF-Quelle gibt's keine
       // physische Präsenz, die Prüfung entfällt dort.
       bool stillRelevant = (resUid == g_lastHandledUid) &&
-                            (g_lastHandledSource != UidSource::NFC || resUid == NFC::currentHoldUid());
+                           (g_lastHandledSource != UidSource::NFC || resUid == NFC::currentHoldUid());
 
       if (stillRelevant)
       {
@@ -728,7 +695,7 @@ void loop()
       {
         locDoc["location"] = resLocation;
         JsonArray locArr = locDoc["locations"].to<JsonArray>();
-        for (auto& loc : resLocations)
+        for (auto &loc : resLocations)
         {
           JsonObject o = locArr.add<JsonObject>();
           o["name"] = loc.name;
@@ -739,11 +706,8 @@ void loop()
       serializeJson(locDoc, locMsg);
       ws.textAll(locMsg);
 
-      if (CONFIGV2.system.debugMode)
-      {
-        Serial.printf("[FILAMAN] pollResult: uid=%s, found=%s, location=%s\n",
-                      resUid.c_str(), resFound ? "true" : "false", resLocation.c_str());
-      }
+      DEBUG_LOGF("FILAMAN", "pollResult: uid=%s, found=%s, location=%s",
+                 resUid.c_str(), resFound ? "true" : "false", resLocation.c_str());
     }
   }
 
@@ -834,60 +798,62 @@ void loop()
   }
 
   {
-  std::vector<FilamentSyncEntry> syncEntries;
-  FilamentSyncSummary syncSummary;
-  bool syncOk;
-  if (FilamanManager::pollSyncResult(syncEntries, syncOk, syncSummary))
-  {
-    FilamanSyncApplyResult applyResult;
-    if (syncOk)
+    std::vector<FilamentSyncEntry> syncEntries;
+    FilamentSyncSummary syncSummary;
+    bool syncOk;
+    if (FilamanManager::pollSyncResult(syncEntries, syncOk, syncSummary))
     {
-      applyResult = applyFilamanSyncToLocalDb(syncEntries);
-    }
-    else if (CONFIGV2.system.debugMode)
-    {
-      Serial.println("[FILAMAN] sync failed");
-    }
-
-    // An alle WebIF-Clients broadcasten, damit der Nutzer, der den Sync
-    // ausgelöst hat (und jeder, der das Dashboard gerade offen hat), das
-    // Ergebnis sieht — nicht nur die serielle Konsole.
-    JsonDocument syncDoc;
-    syncDoc["action"] = "filamanSyncResult";
-    syncDoc["success"] = syncOk;
-    if (syncOk)
-    {
-      syncDoc["totalFilamentsScanned"] = syncSummary.totalFilamentsScanned;
-      syncDoc["taggedFilamentsFound"] = syncSummary.taggedFilamentsFound;
-      syncDoc["totalSpoolsFound"] = syncSummary.totalSpoolsFound;
-      syncDoc["pagesFailed"] = syncSummary.pagesFailed;
-      syncDoc["updated"] = applyResult.updated;
-      syncDoc["added"] = applyResult.added;
-      syncDoc["skipped"] = applyResult.skipped;
-      if (!syncSummary.taggedWithoutSpools.empty())
+      FilamanSyncApplyResult applyResult;
+      if (syncOk)
       {
-        JsonArray arr = syncDoc["taggedWithoutSpools"].to<JsonArray>();
-        for (auto& desc : syncSummary.taggedWithoutSpools)
+        applyResult = applyFilamanSyncToLocalDb(syncEntries);
+      }
+      else if (CONFIGV2.system.debugMode)
+      {
+        Serial.println("[FILAMAN] sync failed");
+      }
+
+      // An alle WebIF-Clients broadcasten, damit der Nutzer, der den Sync
+      // ausgelöst hat (und jeder, der das Dashboard gerade offen hat), das
+      // Ergebnis sieht — nicht nur die serielle Konsole.
+      JsonDocument syncDoc;
+      syncDoc["action"] = "filamanSyncResult";
+      syncDoc["success"] = syncOk;
+
+      if (syncOk)
+      {
+        syncDoc["totalFilamentsScanned"] = syncSummary.totalFilamentsScanned;
+        syncDoc["taggedFilamentsFound"] = syncSummary.taggedFilamentsFound;
+        syncDoc["totalSpoolsFound"] = syncSummary.totalSpoolsFound;
+        syncDoc["pagesFailed"] = syncSummary.pagesFailed;
+        syncDoc["updated"] = applyResult.updated;
+        syncDoc["added"] = applyResult.added;
+        syncDoc["skipped"] = applyResult.skipped;
+
+        if (!syncSummary.taggedWithoutSpools.empty())
         {
-          arr.add(desc);
+          JsonArray arr = syncDoc["taggedWithoutSpools"].to<JsonArray>();
+          for (auto &desc : syncSummary.taggedWithoutSpools)
+          {
+            arr.add(desc);
+          }
         }
       }
+      String syncMsg;
+      serializeJson(syncDoc, syncMsg);
+      ws.textAll(syncMsg);
     }
-    String syncMsg;
-    serializeJson(syncDoc, syncMsg);
-    ws.textAll(syncMsg);
   }
-}
 
-   // ---------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------
   // 10)  RESET DEVICE AND DATA
   // ---------------------------------------------------------------------------
 
   if (factoryResetRequested)
-{
+  {
     factoryReset();
     return;
-}
+  }
 
   // ---------------------------------------------------------------------------
   // LAST) (Optional) yield() und chrash check

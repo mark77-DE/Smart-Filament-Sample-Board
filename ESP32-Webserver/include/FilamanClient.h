@@ -194,7 +194,7 @@ public:
       if (!login()) return false;
     }
 
-    const int pageSize = 20; // filament objects are large (nested manufacturer/colors/custom_fields) — keep pages small
+    const int pageSize = 15; // filament objects are large (nested manufacturer/colors/custom_fields) — keep pages small
     int page = 1;
     int total = -1;
 
@@ -442,6 +442,7 @@ private:
     int code = http.GET();
     _lastBody = (code > 0) ? http.getString() : "";
     http.end();
+    
     if (CONFIGV2.system.debugMode) {
       Serial.printf("[FILAMAN] GET %s -> code=%d, bodyLen=%d, free heap=%u bytes\n",
                      url.c_str(), code, _lastBody.length(), ESP.getFreeHeap());

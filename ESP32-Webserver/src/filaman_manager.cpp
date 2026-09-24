@@ -4,6 +4,9 @@
 #include "config.h"
 #include <algorithm>
 #include "i18n/i18n.h"
+#include "ledctrl_filament.h"
+#include "ledctrl_nfc.h"
+#include "display/display_anim.h"
 
 namespace FilamanManager {
 
@@ -207,12 +210,26 @@ bool requestWarmup() {
 
 static void syncTask(void* param) {
   (void)param;
+
+  // Pause display/LED activity during FilaMan network operation
+  DisplayAnim::stop();
+  MYDISPLAY::clear();
+  LEDCTRL_FILAMENT::standBy(true);
+  LEDCTRL_NFC::standBy(true);
+  MYDISPLAY::showCentered("FilaMan sync");
+
   std::vector<FilamentSyncEntry> result;
   FilamentSyncSummary summary;
+
   bool ok = s_client.fetchAllTaggedFilaments(result, summary);
 
+  // Resume display/LED activity after FilaMan network operation
+  LEDCTRL_FILAMENT::standBy(false);
+  LEDCTRL_NFC::standBy(false);
+  DisplayAnim::startIdle(millis());
+
   portENTER_CRITICAL(&s_mux);
-  s_syncResult = std::move(result); // move, not copy — cheap even under a spinlock
+  s_syncResult = std::move(result);
   s_syncSummary = std::move(summary);
   s_syncSuccess = ok;
   s_syncReady = true;
@@ -224,7 +241,7 @@ static void syncTask(void* param) {
 
 bool isSyncBusy() {
   portENTER_CRITICAL(&s_mux);
-  bool busy = s_syncBusy;
+  bool busy = s_syncBusy || s_syncReady;
   portEXIT_CRITICAL(&s_mux);
   return busy;
 }
