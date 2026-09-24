@@ -1,6 +1,9 @@
 #pragma once
 #include <Arduino.h>
 
+/**
+ * @brief Runtime state for the current firmware update check.
+ */
 struct UpdateInfo
 {
     String currentVersion;
@@ -17,18 +20,50 @@ struct SelfUpdateStatus {
     String message;     //  status message (e.g., "Starting update", "Downloading...", "Update successful", "Update failed", etc.)
 };
 
+/**
+ * @brief Initializes the update-check subsystem and configures the interval state.
+ */
 void updateInit();
+
+/**
+ * @brief Runs the periodic update check logic.
+ * @note Call regularly from the main loop.
+ */
 void updateLoop();
+
+/**
+ * @brief Returns the current update metadata.
+ * @return Reference to the live update state.
+ */
 UpdateInfo &getUpdateInfo();
+
+/**
+ * @brief Reports whether the update state has changed since the last reset.
+ * @return true if a new update status was detected, otherwise false.
+ */
 bool updateHasChanged();
+
+/**
+ * @brief Clears the update-changed flag after processing.
+ */
 void clearUpdateChanged();
 
-// start self update (OTA) process)
+/**
+ * @brief Starts the OTA self-update process.
+ * @return true if the update process was started, otherwise false.
+ */
 bool startSelfUpdate();
 
-// get self update status
+/**
+ * @brief Returns the current self-update status.
+ * @return Reference to the live self-update state.
+ */
 SelfUpdateStatus& getSelfUpdateStatus();
 
+/**
+ * @brief Gets the firmware asset name used for OTA downloads.
+ * @return Asset filename for the current platform.
+ */
 String getFirmwareAssetName();
 
 

@@ -122,3 +122,50 @@ void setColorArray(JsonObject& opt, const char* key, uint32_t color) {
   arr.add((color >>  8) & 0xFF);
   arr.add((color      ) & 0xFF);
 }
+
+
+// ============================================================================
+// RESET FILAMENT DB TO DEFAULT
+// ============================================================================
+bool resetFilamentsToDefaults()
+{
+    Serial.println(F("[FACTORY RESET] Resetting filament database..."));
+
+    JsonDocument doc;
+    JsonArray arr = doc.to<JsonArray>();
+
+    JsonObject filament = arr.add<JsonObject>();
+
+    filament["uid"] = "AA:BB:CC:DD:EE:FF:AB";
+    filament["vendor"] = "change me";
+    filament["type"] = "PLA";
+    filament["color"] = "red";
+    filament["ledIndex"] = 0;
+    filament["info1"] = "test 1";
+    filament["info2"] = "http://example.com";
+    filament["storage"] = "Box 1";
+    filament["filamentId"] = -1;
+
+    File f = LittleFS.open("/filaments.json", "w");
+
+    if (!f)
+    {
+        Serial.println(F("[FACTORY RESET] Failed to open filaments.json!"));
+        return false;
+    }
+
+    size_t written = serializeJson(doc, f);
+    f.close();
+
+    if (written == 0)
+    {
+        Serial.println(F("[FACTORY RESET] Failed to write filaments.json!"));
+        return false;
+    }
+
+    Serial.printf(
+        "[FACTORY RESET] Default filament database written. bytes=%u\n",
+        (unsigned)written);
+
+    return true;
+}

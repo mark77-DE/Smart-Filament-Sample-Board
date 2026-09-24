@@ -12,21 +12,15 @@
 
 
 /**
- * @brief Loads the filament database into memory (FilamentDB)
- * @return true on success, otherwise false
+ * @brief Loads the filament database from the configured file into memory.
+ * @return true on success, otherwise false.
  */
 bool loadFilaments();
 
-// ============================================================================
-// JSON helper API
-// ============================================================================
-
-
-
 /**
- * @brief Loads the filament database as a JsonArray into an existing document
- * @param target Target JsonArray (will be populated)
- * @return true on success, otherwise false
+ * @brief Exports the filament database as a JSON array.
+ * @param target JsonArray to populate.
+ * @return true on success, otherwise false.
  */
 bool loadFilamentsAsJson(JsonArray target);
 
@@ -44,15 +38,7 @@ bool importFilamentsJson(JsonArray src);
 // Miscellaneous
 // ============================================================================
 
-/**
- * @brief Loads the filament database into an external array
- * @param dst Target array
- * @param maxEntries Maximum number of entries
- * @param outCount Number of entries actually loaded (by ref)
- * @return true on success, otherwise false
- * @note Declaration only; implementation may be elsewhere (depending on the FilamentDB API).
- */
-// bool loadFilamentDB(FilamentEntry* dst, size_t maxEntries, size_t& outCount);
+
 
 /**
  * @brief Saves the current filament database to /filaments.json
@@ -61,10 +47,10 @@ bool importFilamentsJson(JsonArray src);
 bool saveFilamentsToFile();
 
 /**
- * @brief Writes a 0xRRGGBB color as an [r,g,b] array into a JsonObject
- * @param opt Target JsonObject (e.g. "options")
- * @param key Key under which the array is created
- * @param color 0xRRGGBB
+ * @brief Writes a packed RGB color into a JSON object as an RGB array.
+ * @param opt JSON object to update.
+ * @param key Field name to write under.
+ * @param color 24-bit RGB color value in 0xRRGGBB format.
  */
 void setColorArray(JsonObject& opt, const char* key, uint32_t color);
 
@@ -92,6 +78,12 @@ inline bool migrateFilamentEntry(JsonObject entry, const String& configVersion)
 
     return changed;
 }
+
+/**
+ * @brief Resets the filament database to the factory default.
+ * @return true on success, otherwise false
+ */
+bool resetFilamentsToDefaults();
 
 /**
  * @brief Migrates all entries in a filament array

@@ -3,27 +3,28 @@
 #include "filehandling.h"  // stellt CONFIG bereit (AppConfig)
 
 // ============================================================================
-// GPIO-Hardware-Modul: Button (entprellt + Events) & Buzzer (Sequenzen, non-blocking)
+// GPIO hardware module: button (debounced + events) & buzzer (sequences, non-blocking)
 // - Uses CONFIG.button / CONFIG.buzzer, but falls back to defaults,
-//   wenn Keys in /config_v2.json fehlen.
-// - ESP32: passiver Buzzer via LEDC (PWM), aktiver via digitalWrite.
+//   if keys are missing in /config_v2.json.
+// - ESP32: passive buzzer via LEDC (PWM), active via digitalWrite.
 // ============================================================================
 
 /**
- * @brief Initializes the button and buzzer according to the configuration.
- *        Mehrfachaufruf ist erlaubt (re-init).
+ * @brief Initializes the GPIO button and buzzer subsystem.
+ * @details Re-applies the active configuration and resets internal debouncing state.
+ * @note Safe to call repeatedly after a config reload.
  */
 void gpiohw_init();
 
 /**
- * @brief Zyklischer Updater (non-blocking). In jeder loop() aufrufen.
- *        Alias ruft intern gpiohw_tick(millis()) auf.
+ * @brief Updates the debounced button state and buzzer sequencer.
+ * @note Call this once per loop iteration.
  */
 void gpiohw_update();
 
 /**
- * @brief Zyklischer Updater mit externem Zeitstempel.
- * @param now Aktuelle Zeit in Millisekunden (millis()).
+ * @brief Updates the GPIO state using an externally supplied timestamp.
+ * @param now Current time in milliseconds.
  */
 void gpiohw_tick(unsigned long now);
 
@@ -31,31 +32,58 @@ void gpiohw_tick(unsigned long now);
 // Buzzer-API (Sequenzen laufen non-blocking, werden im Tick abgearbeitet)
 // ---------------------------------------------------------------------------
 
-/** @brief Ein kurzer Pieps. */
+/**
+ * @brief Emits a single short beep.
+ */
 void buzzer_single_beep();
-/** @brief Two short beeps with a short pause. */
+
+/**
+ * @brief Emits a double-beep pattern.
+ */
 void buzzer_double_beep();
-/** @brief Fehlersequenz: mehrere kurze Pieps (konfigurierbar). */
+
+/**
+ * @brief Emits the configured error beep sequence.
+ */
 void buzzer_error_beep();
-/** @brief Sequenz sofort abbrechen (Buzzer aus). */
+
+/**
+ * @brief Interrupt beep sequence -> buzzer off.
+ */
 void buzzer_stop();
-/** @brief true while a sequence is running. */
+
+/**
+ * @brief true if buzzer busy, otherwise false.
+ * @return return true if buzzer busy, otherwise false;
+ */
 bool buzzer_busy();
 
 // ---------------------------------------------------------------------------
-// Button-Events (Getter mit Auto-Reset, wie in deinem alten Stand)
+// Button events (auto-reset getters, like in the previous implementation)
 // ---------------------------------------------------------------------------
 
-/** @brief true genau einmal pro kurzem Tastendruck (kein Double, kein Long). */
+/**
+ * @brief Returns true once for a short press event.
+ * @return true when a valid short press was detected, otherwise false.
+ */
 bool button_short_press();
-/** @brief true genau einmal, wenn Long-Press erreicht wurde. */
+/**
+ * @brief Returns true once for a long press event.
+ * @return true when a valid long press was detected, otherwise false.
+ */
 bool button_long_press();
-/** @brief true genau einmal, wenn Double-Click erkannt wurde. */
+/**
+ * @brief Returns true once for a double press event.
+ * @return true when a valid double press was detected, otherwise false.
+ */
 bool button_double_press();
-/** @brief true bei jedem Hold-Intervall nach Long-Press. */
+/**
+ * @brief Returns true once when button is in hold for more than CONFIGV2.button.holdRepeatMs.
+ * @return true when button is hold for more than CONFIGV2.button.holdRepeatMs, otherwise false.
+ */
 bool button_hold();
 
-// Feuert SOFORT beim Loslassen (wenn kein Long erkannt wurde).
+// Fired immediately on release (if no long press was detected).
 // Independent of the double-press window. True once (auto-reset).
 bool button_tap_release();
-void gpiohw_reset_click_state(); // Click/Double/Long-Logik komplett flushen
+void gpiohw_reset_click_state(); // Completely clear click/double/long logic state

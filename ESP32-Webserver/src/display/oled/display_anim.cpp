@@ -151,7 +151,7 @@ static void resetTextAnimation(unsigned long now) {
 
 // ------------------------------------------------------------
 // Helper: draw centered text (for typing phase)
-// (löscht weiterhin das Display – aber nur während des „Tippen“)
+// (still clears the display, but only while typing)
 // ------------------------------------------------------------
 static void drawIdleText(DisplayType &display, uint8_t count, bool showCursor) {
     if (count == 0) {
@@ -282,7 +282,7 @@ namespace DisplayAnim {
 
 
 // ------------------------------------------------------------
-// Idle normal starten → Animation zuerst
+// Start idle normally → animation first
 // ------------------------------------------------------------
 void startIdle(unsigned long now) {
     s_state         = IDLE_ANIM;
@@ -346,11 +346,11 @@ void tickIdle(DisplayType &display, unsigned long now) {
         // --------------------------
         case IDLE_TEXT: {
 
-            // ===== Tipp-Animation (Buchstabe für Buchstabe) =====
+            // ===== Typewriter animation (character by character) =====
             if (s_textCharIndex < s_textLen) {
 
                 if (s_lastCharTime == 0) {
-                    // erster Buchstabe
+                    // first character
                     s_textCharIndex = 1;
                     s_lastCharTime  = now;
                     drawIdleText(display, s_textCharIndex, false);
@@ -362,7 +362,7 @@ void tickIdle(DisplayType &display, unsigned long now) {
                     drawIdleText(display, s_textCharIndex, false);
                 }
 
-                // Layout wird erst gebraucht, wenn Text fertig ist
+                // Layout is needed only when the text is finished
             }
 
             // ===== Cursor-Blinken, nachdem der Text komplett ist =====
@@ -382,7 +382,7 @@ void tickIdle(DisplayType &display, unsigned long now) {
                 }
             }
 
-            // ===== Gesamtdauer abgelaufen? → zurück zur Animation =====
+            // ===== Total duration expired? → return to animation =====
             if ((now - s_textStartTime) >= IDLE_TEXT_DURATION) {
                 s_state         = IDLE_ANIM;
                 s_frame         = 0;
@@ -400,7 +400,7 @@ void tickIdle(DisplayType &display, unsigned long now) {
 // ----------------------------------------------
 namespace {
 
-// kleine Hilfsfunktion wie in display.cpp
+// small helper like in display.cpp
 static String fixUmlauts_local(String s) {
     s.replace("ä","ae"); s.replace("ö","oe"); s.replace("ü","ue");
     s.replace("Ä","Ae"); s.replace("Ö","Oe"); s.replace("Ü","Ue");
@@ -408,7 +408,7 @@ static String fixUmlauts_local(String s) {
     return s;
 }
 
-// Textausschnitt zentriert an vorgegebenem Zeilen-Top zeichnen
+// Draw a centered text snippet at the specified line top
 static void drawCenteredSubstringAtTop(
     DisplayType& display,
     const String& full,
@@ -424,8 +424,8 @@ static void drawCenteredSubstringAtTop(
     display.print(s);
 }
 
-// Layout: ermittelt konstante Y-Top-Positionen der 3 Zeilen,
-// damit während des Tippens/Löschens nix vertikal „zittert“.
+// Layout: determine stable Y top positions for the 3 lines,
+// so nothing jitters vertically while typing/deleting.
 static void computeThreeLineLayout(
     DisplayType& display,
     int16_t& yTop1,
@@ -475,7 +475,7 @@ void playThreeLineTypewriter(
     uint32_t eraseCharDelayMs,
     uint32_t eraseLinePauseMs
 ) {
-    // Fix für Umlaute (wie in deinem UI)
+    // Fix for umlauts (as used in the UI)
     String L1 = fixUmlauts_local(line1);
     String L2 = fixUmlauts_local(line2);
     String L3 = fixUmlauts_local(line3);
@@ -492,34 +492,34 @@ void playThreeLineTypewriter(
         displayFlush();
     };
 
-    // 1) Tippen Zeile 1
+    // 1) Type line 1
     for (size_t i = 1; i <= L1.length(); ++i) {
         drawAll(i, 0, 0);
         delay_with_yield(charDelayMs);
     }
     delay_with_yield(linePauseMs);
 
-    // 2) Tippen Zeile 2
+    // 2) Type line 2
     for (size_t i = 1; i <= L2.length(); ++i) {
         drawAll(L1.length(), i, 0);
         delay_with_yield(charDelayMs);
     }
     delay_with_yield(linePauseMs);
 
-    // 3) Tippen Zeile 3
+    // 3) Type line 3
     for (size_t i = 1; i <= L3.length(); ++i) {
         drawAll(L1.length(), L2.length(), i);
         delay_with_yield(charDelayMs);
     }
 
-    // 4) Vollbild kurz halten
+    // 4) Hold the full display briefly
     delay_with_yield(endHoldMs);
 
     if (!eraseBackwards) {
         return; // Finish without backward animation
     }
 
-    // 5) Rückwärts löschen: Zeile 3 → 2 → 1
+    // 5) Delete backwards: line 3 → 2 → 1
     delay_with_yield(eraseLinePauseMs);
     for (int i = (int)L3.length() - 1; i >= 0; --i) {
         drawAll(L1.length(), L2.length(), (size_t)i);
@@ -538,7 +538,7 @@ void playThreeLineTypewriter(
         delay_with_yield(eraseCharDelayMs);
     }
 
-    // Ende: Display bleibt leer (oder du lässt hier bewusst das letzte Bild stehen)
+    // End: display stays empty (or you deliberately leave the final image visible here)
     displayClear();
     displayFlush();
 }

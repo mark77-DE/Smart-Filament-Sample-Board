@@ -4,54 +4,76 @@
 
 #include "led_config.h"
 
+// OPTIONAL: Marker so gpio_hardware.cpp knows that
+// Button/buzzer are present in CONFIG:
+#define CONFIG_HAS_GPIO
+
 
 // ============================================================================
 // Configuration structures
 // ============================================================================
+/**
+ * @brief System
+ * Configuration
+ */
+
+struct systemConfig {
+  String        version               = "error";      
+  bool          darkmode              = false;                      ///< Dark mode enabled
+  bool          debugMode             = true;                       ///< Debug mode enabled
+  uint32_t      webLEDTimeout         = 3000;                       ///< Dashboard default (ms)
+  String        hostname              = "filament-sample-board";    ///< Wi-Fi hostname
+  bool          animationAfterBoot    = true;                       ///< Startup animation after boot enabled
+  String        defaultLanguage       = "en";                       ///< Default language (e.g. "en" or "de")
+  uint32_t      updateCheckInterval   = 240;                        ///< Seconds until reboot after long press
+  String        timezone              = "UTC";                      // POSIX-TZ-String, example see TIMEZONE in platformio.ini
+};
+
+
 
 /**
- * @brief Globale LED-Hardware-Konfiguration
+ * @brief Global LED hardware configuration
  *
  * Applies to all addressable LEDs in the device.
  * Defaults come from platformio.ini.
  */
 struct LedHardwareConfigV2 {
-  LedType  type  = static_cast<LedType>(LED_TYPE);
-  LedOrder order = static_cast<LedOrder>(LED_ORDER);
+  LedType  type  = static_cast<LedType>(LED_TYPE);                ///< defaults to platformio.ini
+  LedOrder order = static_cast<LedOrder>(LED_ORDER);              ///< defaults to platformio.ini
 };
 
 
 /**
- * @brief LED-Konfiguration (Filament-Stripe)
+ * @brief LED configuration (filament strip)
  */
 struct LedConfigV2 {
-  int      count;       ///< Number of LEDs
-  int      pin;         ///< GPIO pin
-  int      brightness;  ///< Brightness [0..255]
-  int      timeout;     ///< Timeout in ms
-  uint32_t color;       ///< Default color 0xRRGGBB
-  uint32_t colorError;  ///< Error color 0xRRGGBB
-  uint32_t colorPulse;  ///< Idle pulse color 0xRRGGBB
+  int      count        = 8;          ///< Number of LEDs
+  int      pin          = -1;         ///< GPIO pin
+  int      brightness   = 10;         ///< Brightness [0..255]
+  int      timeout      = 2000;       ///< Timeout in ms
+  uint32_t color        = 0x00FF00;   ///< Default color 0xRRGGBB
+  uint32_t colorError   = 0xFF00FF;   ///< Error color 0xRRGGBB
+  uint32_t colorPulse   = 0x0040A0;   ///< Idle pulse color 0xRRGGBB
 };
 
 /**
- * @brief NFC-LED-Konfiguration
+ * @brief NFC LED configuration
  */
 struct NfcLedConfigV2 {
-  int      count;                 ///< Number of LEDs
-  int      pin;                   ///< GPIO pin
-  int      brightness;            ///< Brightness [0..255]
-  int      timeout;               ///< Timeout in ms
-  uint32_t colorSuccess;          ///< Success color 0xRRGGBB
-  uint32_t colorError;            ///< Error color 0xRRGGBB
-  uint32_t colorPulse;            ///< Idle pulse color 0xRRGGBB
-  bool     successBlinkEnabled;   ///< True = success blinking enabled
-  int      successBlinkCount;     ///< Number of blink cycles
-  int      successBlinkMs;        ///< Blink interval in ms
+  int      count                  = 8;          ///< Number of LEDs
+  int      pin                    = -1;         ///< GPIO pin
+  int      brightness             = 10;         ///< Brightness [0..255]
+  int      timeout                = 4000;       ///< Timeout in ms
+  uint32_t colorSuccess           = 0x00FF00;   ///< Success color 0xRRGGBB
+  uint32_t colorError             = 0xFF0000;   ///< Error color 0xRRGGBB
+  uint32_t colorPulse             = 0x0000FF;   ///< Idle pulse color 0xRRGGBB
+  bool     successBlinkEnabled    = true;       ///< True = success blinking enabled
+  int      successBlinkCount      = 3;          ///< Number of blink cycles
+  int      successBlinkMs         = 200;        ///< Blink interval in ms
 };
 
 /**
- * @brief Button-Konfiguration
+ * @brief Button configuration
  */
 struct ButtonConfigV2 {
   bool enabled       = true; ///< Button enabled?
@@ -64,56 +86,59 @@ struct ButtonConfigV2 {
 };
 
 /**
- * @brief Buzzer-Konfiguration
+ * @brief Buzzer configuration
  */
 struct BuzzerConfigV2 {
-  bool enabled       = true; ///< Buzzer enabled?
+  bool enabled       = true;  ///< Buzzer enabled?
   int  pin           = -1;    ///< Buzzer GPIO (-1 = off)
   bool activeHigh    = true;  ///< Active level HIGH?
   bool passive       = false; ///< false = active buzzer, true = passive (PWM)
   int  freqHz        = 4000;  ///< Frequency for tone()
-  int  singleMs      = 80;    ///< Dauer Single-Beep
-  int  doubleOnMs    = 60;    ///< Ein-Zeit Double-Beep
-  int  doubleGapMs   = 80;    ///< Pause Double-Beep
-  int  errorOnMs     = 50;    ///< Ein-Zeit Error-Sequenz
-  int  errorGapMs    = 60;    ///< Pause Error-Sequenz
-  int  errorCount    = 3;     ///< Wiederholungen Error-Sequenz
+  int  singleMs      = 80;    ///< Duration of single beep
+  int  doubleOnMs    = 60;    ///< Duration of one double-beep pulse
+  int  doubleGapMs   = 80;    ///< Pause between double-beep pulses
+  int  errorOnMs     = 50;    ///< Duration of one error-sequence pulse
+  int  errorGapMs    = 60;    ///< Pause between error-sequence pulses
+  int  errorCount    = 3;     ///< Number of error-sequence repetitions
 };
 
 /**
- * @brief MQTT-Konfiguration
+ * @brief MQTT configuration
  */
 
 struct MqttConfigV2 {
-  bool enabled;
-  String server;
-  uint16_t port;
-  String user;
-  String password;
-  String baseTopic;
-  String clientId;
-  bool haDiscovery;          ///< Home Assistant Discovery aktiv
-  String haDiscoveryPrefix;  ///< Prefix for HA Discovery (e.g. "homeassistant")
+  bool enabled                = false;
+  String server               = "192.168.168.150";
+  uint16_t port               = 1883;
+  String user                 = "";    
+  String password             = "";
+  String baseTopic            = "spotmyfilament";
+  String clientId             = "filament-board";
+  bool haDiscovery            = false   ;          ///< Home Assistant discovery active
+  String haDiscoveryPrefix    = "homeassistant";  ///< Prefix for HA Discovery (e.g. "homeassistant")
 };
 
-// OPTIONAL: Marker so gpio_hardware.cpp knows that
-// Button/buzzer are present in CONFIG:
-#define CONFIG_HAS_GPIO
-
-struct systemConfig {
-  String        version = "error";
-  bool          darkmode;    ///< Dark mode enabled
-  bool          debugMode;   ///< Debug mode enabled
-  uint32_t      webLEDTimeout;   // Dashboard default (ms)
-  String        hostname;    ///< Wi-Fi hostname
-  bool          animationAfterBoot; ///< Startup animation after boot enabled
-  String        defaultLanguage; ///< Default language (e.g. "en" or "de")
-  uint32_t      updateCheckInterval; ///< Seconds until reboot after long press
-  String        timezone;   // POSIX-TZ-String, example see TIMEZONE in platformio.ini
-};
 
 /**
- * @brief Haupt-Konfigurationsstruktur der App
+ * @brief Filaman configuration
+ */
+
+struct FilamanConfig 
+{
+  /* data */
+  bool      enabled         = false;
+  String    server          = "192.168.169.151";    //IP-address of filaman server
+  uint32_t  port            = 8083;                 //port of filman api/server
+  String    user            = "admin@exapmle.com";  //Filaman login user (usually email address)
+  String    password        = "admin123";           //Filaman password
+};
+
+
+
+
+
+/**
+ * @brief Main application configuration structure
  */
 struct AppConfigV2 {
   systemConfig system;     ///< System configuration
@@ -127,6 +152,7 @@ struct AppConfigV2 {
   ButtonConfigV2 button;      ///< Pushbutton configuration
   BuzzerConfigV2 buzzer;      ///< Buzzer configuration
   MqttConfigV2   mqttConfig;  ///< MQTT configuration
+  FilamanConfig  filamanConfig;     ///< Filaman configuration
 };
 
 // Global, currently loaded configuration
@@ -152,6 +178,12 @@ void applyConfigV2();
  * @return true on success, otherwise false
  */
 bool saveConfigV2();
+
+/**
+ * @brief reset config to default
+ * @return true on success, otherwise false
+ */
+void resetConfigToDefaults();
 
 
 
@@ -204,8 +236,12 @@ uint32_t colorFromArrayV2(JsonArrayConst arr);
 
 
 
-// Migration routine
-// in config.h (IMPORTANT: in the header, not in the .cpp!)
+/**
+ * @brief Migrates a JSON config object from an older schema version to the current format.
+ * @tparam TCfg JSON object or document type that supports bracket access.
+ * @param cfg Configuration document to normalize in place.
+ * @return true if the config was changed during migration, otherwise false.
+ */
 template<typename TCfg>
 bool migrateConfigV2(TCfg& cfg)
 {
@@ -228,6 +264,29 @@ bool migrateConfigV2(TCfg& cfg)
         }
         Serial.println(F("[MIGRATION] 2.1 -> 2.2"));
         ver = "2.2";
+        changed = true;
+    }
+
+    if (ver == "2.2") {
+        // Next step later
+        //CONFIGV2.system.timezone = sys["timezone"] | CONFIGV2.system.timezone;
+        if (cfg["filamanConfig"]["enabled"].isNull()) {
+            cfg["filamanConfig"]["enabled"] = false;
+        }
+        if (cfg["filamanConfig"]["server"].isNull()) {
+            cfg["filamanConfig"]["server"] = "";
+        }
+        if (cfg["filamanConfig"]["port"].isNull()) {
+            cfg["filamanConfig"]["port"] = 8083;
+        }
+        if (cfg["filamanConfig"]["user"].isNull()) {
+            cfg["filamanConfig"]["user"] = "";
+        }
+        if (cfg["filamanConfig"]["password"].isNull()) {
+            cfg["filamanConfig"]["password"] = "";
+        }
+        Serial.println(F("[MIGRATION] 2.2 -> 2.3"));
+        ver = "2.3";
         changed = true;
     }
 

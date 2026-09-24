@@ -1,0 +1,82 @@
+// filaman_manager.h
+// Non-blocking wrapper around FilamanClient: runs lookups/sync on a
+// background FreeRTOS task so handleUID()/loop() never wait on the network
+// round trip. Identity (vendor/type/color/ledIndex) comes entirely from the
+// synced local FilamentDB — this manager's live job is only refreshing the
+// location for an already-known filament_id, plus the periodic/manual sync
+// itself.
+#pragma once
+#include <Arduino.h>
+#include <vector>
+#include "FilamanClient.h" // for FilamentSyncEntry
+
+namespace FilamanManager
+{
+
+  // One resolved location entry for the "found at multiple places" case —
+  // name already resolved (not just the raw location_id), so callers don't
+  // need their own lookup for a WebIF/dashboard display.
+  struct ResolvedLocation
+  {
+    String name;
+    float remainingWeightG;
+  };
+
+  // Call once after CONFIGV2 is loaded/changed (e.g. from applyConfigV2()),
+  // so the client picks up the current filamanConfig without a reboot.
+  void applyConfig();
+
+  // Starts a background live location lookup for a filament that's already
+  // known locally (filamentId comes from FilamentDB, populated during sync).
+  // `uid` is only carried through so the caller can later check the result
+  // still belongs to the tag currently being displayed.
+  // Returns immediately (non-blocking). Returns false without doing anything
+  // if FilaMan is disabled, filamentId is invalid, or a lookup/warmup/sync is
+  // already in flight (kept deliberately simple: one thing at a time).
+  /**
+   * @brief Starts a background lookup for a filament location.
+   * @param filamentId FilaMan filament ID for the known spool.
+   * @param uid UID associated with the current scan.
+   * @return true if the lookup request was accepted, otherwise false.
+   */
+  bool requestLocationLookup(int filamentId, const String &uid);
+
+  // Call once per loop() iteration. Returns true exactly once when a result
+  // becomes available. `uid` tells you which tag this result belongs to.
+  // `locationName` is the ready-to-display summary (e.g. "B3 (+1 weitere)");
+  // `locations` is the full resolved list behind it (name + remaining
+  // weight per spot), for callers that want more detail (e.g. the WebIF).
+  bool pollResult(String &uid, bool &found, String &locationName, std::vector<ResolvedLocation> &locations);
+
+  // Non-blocking: logs in and pre-fetches the location cache in the background.
+  // Call once after WiFi connects, and optionally on a periodic timer
+  // afterwards. Shares the same "one background task at a time" slot as
+  // requestLocationLookup(), so it's simply skipped if a real lookup is in flight.
+  bool requestWarmup();
+
+  // Non-blocking: syncs all filaments tagged with sampleboard_uid from FilaMan
+  // into a background-collected list. Meant to be triggered rarely (WebIF
+  // button / hardware button), not automatically — pulling ~1300 filaments
+  // takes many requests. Runs on its own task, independent of the lookup/
+  // warmup busy flag (but they share the same FilamanClient instance
+  // internally, so a sync won't start while a lookup/warmup is in flight,
+  // and vice versa).
+  bool requestSync();
+
+  // True while a sync is currently running.
+  bool isSyncBusy();
+
+  // Call once per loop() iteration. Returns true exactly once when a sync
+  // run has finished. `entries` holds everything found (already includes
+  // per-filament spool count/weight); merging them into FilamentDB is left
+  // to the caller (single-threaded in loop(), to avoid touching FilamentDB
+  // from a background task). `summary` gives the headline numbers (scanned/
+  // tagged/spools found/tagged-without-spools/pages failed) for a status
+  // line or log, without having to derive them from `entries` yourself.
+  bool pollSyncResult(std::vector<FilamentSyncEntry> &entries, bool &success, FilamentSyncSummary &summary);
+
+  // True while a lookup, warmup, or sync is currently running (e.g. to show
+  // a "busy" state).
+  bool isBusy();
+
+} // namespace FilamanManager

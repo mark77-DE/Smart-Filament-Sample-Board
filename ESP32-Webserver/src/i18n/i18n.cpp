@@ -1,7 +1,7 @@
 #include "i18n.h"
 #include <ArduinoJson.h>
-#include <LittleFS.h>
 #include "config.h"
+#include "web_assets_generated.h"
 
 JsonDocument langDoc;
 
@@ -9,7 +9,11 @@ String I18N::_currentLang = "de";
 
 void I18N::begin(const String &lang)
 {
+    if (_currentLang == lang)
+        return;
+
     _currentLang = lang;
+
     if (lang == "de")
     {
         loadLanguage("/lang_de.json");
@@ -22,23 +26,28 @@ void I18N::begin(const String &lang)
 
 bool I18N::loadLanguage(const char *path)
 {
-    if (!LittleFS.begin(true))
-    {
-        Serial.println("LittleFS konnte nicht gemountet werden!");
-        return false;
-    }
+    const uint8_t *data = nullptr;
+    size_t length = 0;
 
-    File file = LittleFS.open(path, "r");
-    if (!file)
+    if (strcmp(path, "/lang_de.json") == 0)
     {
-        Serial.printf("Sprachdatei %s nicht gefunden!\n", path);
+        data = asset_lang_de_json;
+        length = asset_lang_de_json_len;
+    }
+    else if (strcmp(path, "/lang_en.json") == 0)
+    {
+        data = asset_lang_en_json;
+        length = asset_lang_en_json_len;
+    }
+    else
+    {
+        Serial.printf("Unbekannte Sprachdatei %s\n", path);
         return false;
     }
 
     langDoc.clear(); // clear old content before loading new language
 
-    DeserializationError err = deserializeJson(langDoc, file);
-    file.close();
+    DeserializationError err = deserializeJson(langDoc, data, length);
 
     if (err)
     {
@@ -56,6 +65,7 @@ bool I18N::loadLanguage(const char *path)
 const char *I18N::get(const char *key)
 {
     JsonVariant val = langDoc["i18n"][key];
+
     if (val.is<const char *>())
     {
         return val.as<const char *>();

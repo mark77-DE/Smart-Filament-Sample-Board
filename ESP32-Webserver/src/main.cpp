@@ -32,7 +32,14 @@
 #include "update_manager.h"
 #include "time_manager.h"
 
+#include "filaman_manager.h"
+#include "filaman_sync_apply.h"
+
 #include <esp_heap_caps.h>
+
+#include <vector>
+
+#include "debug_utils.h"
 
 constexpr uint32_t SPLASH_CHAR_MS = 35;   // timing for typewriter effect at boot (ms per char)
 constexpr uint32_t SPLASH_LINE_MS = 200;  // extra delay after each line at boot (ms)
@@ -46,35 +53,36 @@ NFCInfo g_nfcInfo = {0, 0, 0, false};
 
 bool rebootReason = false;
 
+static String g_lastHandledUid;
+static UidSource g_lastHandledSource = UidSource::NFC;
+
+volatile bool factoryResetRequested = false;
+
 static void printOtaInfo()
 {
   const esp_partition_t *boot = esp_ota_get_boot_partition();
   const esp_partition_t *run = esp_ota_get_running_partition();
 
-  if (CONFIGV2.system.debugMode)
-  {
-    Serial.println();
-    Serial.printf("OTA boot: name=%s addr=0x%06X subtype=0x%02X\n",
-                  boot ? boot->label : "null",
-                  boot ? (unsigned)boot->address : 0,
-                  boot ? (unsigned)boot->subtype : 0);
+  DEBUG_BLOCK(Serial.println());
 
-    Serial.printf("OTA run : name=%s addr=0x%06X subtype=0x%02X\n",
-                  run ? run->label : "null",
-                  run ? (unsigned)run->address : 0,
-                  run ? (unsigned)run->subtype : 0);
-  }
+  DEBUG_LOGF("OTA", "boot: name=%s addr=0x%06X subtype=0x%02X",
+             boot ? boot->label : "null",
+             boot ? (unsigned)boot->address : 0,
+             boot ? (unsigned)boot->subtype : 0);
+
+  DEBUG_LOGF("OTA", "run : name=%s addr=0x%06X subtype=0x%02X",
+             run ? run->label : "null",
+             run ? (unsigned)run->address : 0,
+             run ? (unsigned)run->subtype : 0);
 
   if (run)
   {
     esp_ota_img_states_t st{};
     if (esp_ota_get_state_partition(run, &st) == ESP_OK)
     {
-      if (CONFIGV2.system.debugMode)
-      {
-        Serial.printf("OTA state: %d (PENDING_VERIFY=%d)\n",
-                      (int)st, (int)ESP_OTA_IMG_PENDING_VERIFY);
-      }
+      DEBUG_LOGF("OTA", "state: %d (PENDING_VERIFY=%d)",
+           (int)st, (int)ESP_OTA_IMG_PENDING_VERIFY);
+      
     }
   }
 }
@@ -118,7 +126,7 @@ String activeUID = ""; // active UID
 volatile bool g_applyConfigPending = false;
 volatile bool g_reloadFilamentsPending = false;
 
-// globale WebIF-Timer-variables + Setter
+// global WebIF timer variables + setters
 
 static bool s_webifIdleArmed = false;
 static uint32_t s_webifIdleUntil = 0;
@@ -190,7 +198,7 @@ void renderRebootCountdown(unsigned long nowMs)
     return;
   }
 
-  // --- Reboot aktiv ---
+  // --- Reboot active ---
   if (!inReboot)
   {
     inReboot = true;
@@ -200,20 +208,16 @@ void renderRebootCountdown(unsigned long nowMs)
     {
       LEDCTRL_NFC::showSuccess();       // NFC ring immediately green (solid)
       LEDCTRL_FILAMENT::successBlink(); // Filament: blinks -> green (
-      if (CONFIGV2.system.debugMode)
-      {
-        Serial.println("Reboot countdown: SUCCESS");
-      }
+      DEBUG_LOG("System", "Reboot countdown: SUCCESS");
+      
     }
     else
     {
-      // Beim Start des Countdowns IMMER auf Error umschalten (einmalig)
+      // On countdown start, always switch to error once (single-time)
       LEDCTRL_NFC::showError();       // NFC-Ring sofort rot (solid)
       LEDCTRL_FILAMENT::errorBlink(); // Filament: blinks -> red (as intended)
-      if (CONFIGV2.system.debugMode)
-      {
-        Serial.println("Reboot countdown: ERROR or user reboot");
-      }
+      DEBUG_LOG("System", "Reboot countdown: ERROR or user reboot");
+      
     }
   }
 
@@ -239,11 +243,7 @@ void renderRebootCountdown(unsigned long nowMs)
 void activateLed(int index)
 {
 
-  if (CONFIGV2.system.debugMode)
-  {
-    Serial.print("activateLed: index=");
-    Serial.println(index);
-  }
+  DEBUG_LOGF("led", "activateLed: index=%i", index);
 
   if (targetLed != -1 && targetLed != index)
   {
@@ -266,33 +266,25 @@ void handleUID(const String &uid, UidSource source)
 {
   lastTagTime = millis();
   isActive = true;
-
-  // Idle-Animation stoppen
+  g_lastHandledUid = uid;
+  g_lastHandledSource = source;
   DisplayAnim::stop();
 
   FilamentEntry entry;
   JsonDocument doc;
   doc["uid"] = uid;
 
-  if (CONFIGV2.system.debugMode)
-  {
-    Serial.print("handleUID: UID=");
-    Serial.print(uid);
-    Serial.print(" Source=");
-    Serial.println((source == UidSource::NFC) ? "NFC" : "WebIF");
-  }
+  
+  DEBUG_LOGF("uid", "handleUID: UID=%s, Source=%s", uid.c_str(), (source == UidSource::NFC) ? "NFC" : "WebIF");
 
   const bool isNfc = (source == UidSource::NFC);
 
   if (FilamentDB::findByUID(uid, entry))
   {
-    // --- BEKANNTES TAG ---
-
-    // Deinen Zielpixel aktivieren (deine bestehende Logik)
+    // --- BEKANNTES TAG (lokal synchronisiert) ---
     activateLed(entry.ledIndex);
 
-    // Display mit Filament-Infos
-    // MYDISPLAY::show(entry);
+    // Sofort mit dem lokal bekannten (ggf. etwas veralteten) Lagerort anzeigen
     MYDISPLAY::showFourLinesCentered(entry.vendor, entry.type, entry.color, entry.storage);
 
     if (CONFIGV2.mqttConfig.enabled)
@@ -300,30 +292,45 @@ void handleUID(const String &uid, UidSource source)
       publishFilamentState(entry);
     }
 
-    // NFC feedback (green with optional blink -> solid -> timeout after removal)
     if (isNfc)
     {
       LEDCTRL_NFC::showSuccess();
     }
 
-    // nur piepen, wenn von NFC und (optional) kein laufender Beep
     if (isNfc && !buzzer_busy())
     {
       buzzer_single_beep();
     }
 
-    // Event for the WebSocket
     doc["action"] = "knownUID";
     doc["ledIndex"] = entry.ledIndex;
     doc["vendor"] = entry.vendor;
     doc["type"] = entry.type;
     doc["color"] = entry.color;
+
+    // Lagerort im Hintergrund live nachladen — bewusst OHNE "Suche..."
+    // Zwischenbildschirm, da Identität schon feststeht und angezeigt ist;
+    // nur der (potenziell veraltete) Lagerort wird per loop()-Poll ersetzt.
+    if (CONFIGV2.filamanConfig.enabled && entry.filamentId >= 0)
+    {
+      if (FilamanManager::requestLocationLookup(entry.filamentId, uid) && CONFIGV2.system.debugMode)
+      {
+        Serial.println("[FILAMAN] request live location");
+      }
+    }
   }
   else
   {
     // --- UNBEKANNTES TAG ---
+    // Kein Live-Fallback mehr möglich: sampleboard_uid/_led sitzen nur noch
+    // am Filament in FilaMan, nicht mehr an einer Spule. Ein wirklich
+    // unbekanntes Tag wird erst nach dem nächsten FilaMan-Sync auflösbar.
 
-    // If a target pixel was previously set: turn it off and reset it
+    if (CONFIGV2.system.debugMode)
+    {
+      Serial.println("[NFC] tag unbekannt");
+    }
+
     if (targetLed != -1)
     {
       LEDCTRL_FILAMENT::setPixel(targetLed, 0);
@@ -331,20 +338,14 @@ void handleUID(const String &uid, UidSource source)
       ledStartTime = millis();
     }
 
-    // Display-Hinweis
     MYDISPLAY::showErrorCentered(I18N::get("txt_unknown"), TFT_RED);
 
     if (isNfc)
     {
-      // Rotes Fehlerfeedback am NFC-Ring
       LEDCTRL_NFC::showError();
-
-      // NEU: Filament-Stripe erst BLINKEN lassen,
-      // danach (wenn Timeout nicht abgelaufen) automatisch errorAll()
       LEDCTRL_FILAMENT::errorBlink();
     }
 
-    // Event for the WebSocket
     doc["action"] = "unknownUID";
   }
 
@@ -363,6 +364,37 @@ void printChipInfo()
   Serial.printf("Board Variant: %s\n", BOARD_VARIANT);
   Serial.println();
   Serial.println();
+}
+
+void resetWiFiSettings()
+{
+  WiFiManager wifiManager;
+
+  Serial.println("[FACTORY RESET] Resetting WiFi settings...");
+
+  wifiManager.resetSettings();
+}
+
+void factoryReset()
+{
+  Serial.println("[FACTORY RESET] Starting...");
+
+  // Delete WiFiManager credentials
+  resetWiFiSettings();
+
+  // Reset filaments,jso to default
+  resetFilamentsToDefaults();
+
+  // Reset application configuration to defaults
+  resetConfigToDefaults();
+
+  // Save default configuration
+  saveConfigV2();
+
+  Serial.println("[FACTORY RESET] Restarting...");
+
+  delay(500);
+  ESP.restart();
 }
 
 // ----------------------------- Setup -----------------------------
@@ -392,10 +424,7 @@ void setup()
 
   g_sysInfo = getSysInfo();
 
-  if (CONFIGV2.system.debugMode)
-  {
-    printChipInfo();
-  }
+  DEBUG_BLOCK(printChipInfo());
 
   loadConfigV2();
 
@@ -412,9 +441,9 @@ void setup()
 
   // 3) WLAN verbinden
   //    Desired behavior:
-  //    - Wenn er NICHT verbunden ist und WiFiManager das AP-Config-Portal startet:
+  //    - If it is NOT connected and WiFiManager starts the AP config portal:
   //      -> Show the AP IP immediately (callback), so the user knows where to connect.
-  //    - Erst WENN er mit dem Router verbunden ist:
+  //    - Only once it is connected to the router:
   //      -> Show "CONNECTING..." and then the router IP.
   WiFiManager wifiManager;
   wifiManager.setDebugOutput(CONFIGV2.system.debugMode);
@@ -436,7 +465,7 @@ void setup()
     ESP.restart();
   }
 
-  // Ab hier: Router verbunden
+  // From here on: router connected
   MYDISPLAY::showCentered("VERBINDUNG...");
 
   Serial.printf("IP-Address:  %s\n", WiFi.localIP().toString().c_str());
@@ -444,7 +473,7 @@ void setup()
   Serial.printf("MAC-Address: %s\n", mac.c_str());
   Serial.println();
 
-  // 4) IP kurz zeigen (nicht hart blockieren)
+  // 4) Show the IP briefly (do not block hard)
   {
     MYDISPLAY::showCentered(WiFi.localIP().toString(), TFT_GREEN);
     const uint32_t until = millis() + 1200UL;
@@ -470,36 +499,30 @@ void setup()
   }
   else
   {
-    if (CONFIGV2.system.debugMode)
-    {
-      Serial.println("[MQTT] disabled in config, skipping initialization.");
-    }
+    DEBUG_LOG("MQTT", "disabled in config, skipping initialization.");
   }
 
   // Upadte Check
 
+  updateInit();
+  updateLoop(); // initial einmal
+
+  MYDISPLAY::showBootVersion(FIRMWARE_VERSION, BUILD_DATE_SHORT);
+
+  const uint32_t until = millis() + FIRMWARE_HOLD_MS;
+  while ((int32_t)(until - millis()) > 0)
   {
-
-    updateInit();
-    updateLoop(); // initial einmal
-
-    MYDISPLAY::showBootVersion(FIRMWARE_VERSION, BUILD_DATE_SHORT);
-
-    const uint32_t until = millis() + FIRMWARE_HOLD_MS;
-    while ((int32_t)(until - millis()) > 0)
-    {
-      gpiohw_tick(millis());
-      ws.cleanupClients();
-      yield();
-    }
+    gpiohw_tick(millis());
+    ws.cleanupClients();
+    yield();
   }
 
-  // Nach dem Firmware-Bootscreen (10 s), WLAN+Webserver sind schon da
+  // After the firmware boot screen (10 s), WLAN + web server are already active
   displayClear();
   DisplayAnim::playThreeLineTypewriter(display, F("Spot my"), F("Filament by"), F("Mark & Kolja"),
                                        SPLASH_CHAR_MS, SPLASH_LINE_MS, SPLASH_HOLD_MS);
 
-  // 7) PN532 JETZT initialisieren (kann im Fehlerfall aufs Display schreiben)
+  // 7) Initialize PN532 now (can write to the display in case of errors)
   uint32_t version = NFC::init(&nfc); // begin() + SAMConfig(), FW wird intern geloggt
 
   if (!version)
@@ -519,11 +542,25 @@ void setup()
   // 8) Idle-Animation vorbereiten
   DisplayAnim::startIdleTextFirst(millis());
 
-  // 5) WebSocket + Webserver starten (WebIF nun sofort erreichbar)
+  // 5) Start WebSocket + web server (WebIF is immediately reachable now)
   // FIX: avoid duplicate WS registration - add it only in the web server module
   // server.addHandler(&ws); // <-- ENTFERNT, Registrierung erfolgt in initWebServer()
   initWebServer(server, ws);
   WiFi.setSleep(false);
+
+  // Only once, no duplicate call:
+  if (WiFi.status() == WL_CONNECTED)
+  {
+    FilamanManager::requestWarmup(); // Session + location cache first
+
+    // Automatic boot sync only if this is really desired (see the follow-up question) —
+    // otherwise omit it here and trigger only via button/WebIF.
+    // FilamanManager::requestSync();
+  }
+  else if (CONFIGV2.system.debugMode)
+  {
+    Serial.println("[FILAMAN] boot: WiFi not yet connected, skipping warmup/sync");
+  }
 
   Serial.println();
   Serial.println();
@@ -543,11 +580,11 @@ void loop()
   }
 
   // ---------------------------------------------------------------------------
-  // 0) Zeitbasis
+  // 0) Time base
   // ---------------------------------------------------------------------------
   const unsigned long now = millis();
 
-  // 0a) Button/Buzzer tick (Entprellung, Sequencer, Events)
+  // 0a) Button/buzzer tick (debounce, sequencer, events)
   gpiohw_tick(now);
 
   // 0b) Double press -> start reboot (only if none is running)
@@ -569,21 +606,21 @@ void loop()
     renderRebootCountdown(now);
   }
 
-  // 0d (Config)
+  // 0d (config)
   if (g_applyConfigPending)
   {
     g_applyConfigPending = false;
 
-    // 1) alles ruhig stellen
+    // 1) settle everything down
     buzzer_stop();
     gpiohw_reset_click_state(); // verhindert Phantom-Clicks
     DisplayAnim::stop();
 
-    // 2) LEDs aus (damit kein alter Effekt reinfunkt)
+    // 2) switch off LEDs (so no stale effect leaks in)
     LEDCTRL_NFC::allOff();
     LEDCTRL_FILAMENT::allOff();
 
-    // 3) jetzt erst re-init (sicher im loop-Kontext!)
+    // 3) only now re-init (safe in loop context!)
     applyConfigV2();
 
     // 4) optional: Idle sauber neu starten
@@ -592,7 +629,7 @@ void loop()
   }
 
   // ---------------------------------------------------------------------------
-  // 1) NFC-Polling + Guards + LED-Trigger
+  // 1) NFC polling + guards + LED trigger
   // ---------------------------------------------------------------------------
   bool tagPresent = false;
   NFC::tick(now, isActive, lastTagTime, tagPresent);
@@ -609,6 +646,70 @@ void loop()
   // 1b) Also pass presence to the filament controller
   // ---------------------------------------------------------------------------
   LEDCTRL_FILAMENT::tagPresenceTick(tagPresent);
+
+  // ---------------------------------------------------------------------------
+  // 1c) FilaMan: fetch the result of a background lookup (if any)
+  // ---------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------
+  // 1c) FilaMan: fetch the result of a background lookup (if any)
+  // ---------------------------------------------------------------------------
+  {
+    String resUid, resLocation;
+    bool resFound;
+    std::vector<FilamanManager::ResolvedLocation> resLocations;
+    if (FilamanManager::pollResult(resUid, resFound, resLocation, resLocations))
+    {
+      // Relevant, wenn's noch der zuletzt behandelte Tag ist — bei NFC-Quelle
+      // zusätzlich nur, solange das Tag noch physisch aufliegt (verhindert
+      // veraltete Anzeige nach Entfernen); bei WebIF-Quelle gibt's keine
+      // physische Präsenz, die Prüfung entfällt dort.
+      bool stillRelevant = (resUid == g_lastHandledUid) &&
+                           (g_lastHandledSource != UidSource::NFC || resUid == NFC::currentHoldUid());
+
+      if (stillRelevant)
+      {
+        if (resFound)
+        {
+          FilamentEntry entry;
+          if (FilamentDB::findByUID(resUid, entry))
+          {
+            MYDISPLAY::showFourLinesCentered(entry.vendor, entry.type, entry.color, resLocation);
+          }
+          if (buzzer_busy() == false)
+            buzzer_single_beep();
+          LEDCTRL_NFC::showSuccess();
+        }
+        // resFound == false -> Live-Lookup fehlgeschlagen oder kein Bestand
+        // gefunden. Bewusst KEINE Fehleranzeige: die Identität ist ja bekannt,
+        // der lokal bekannte (ggf. leicht veraltete) Lagerort bleibt stehen.
+      }
+
+      // Unabhängig vom Hold-Status IMMER an alle WebIF-Clients broadcasten —
+      // ein per Dashboard-Klick ausgelöster Lookup (UidSource::WEBIF) hat
+      // ja keinen "gehaltenen" NFC-Tag, soll aber trotzdem seine Antwort bekommen.
+      JsonDocument locDoc;
+      locDoc["action"] = "filamanLocation";
+      locDoc["uid"] = resUid;
+      locDoc["found"] = resFound;
+      if (resFound)
+      {
+        locDoc["location"] = resLocation;
+        JsonArray locArr = locDoc["locations"].to<JsonArray>();
+        for (auto &loc : resLocations)
+        {
+          JsonObject o = locArr.add<JsonObject>();
+          o["name"] = loc.name;
+          o["weightG"] = loc.remainingWeightG;
+        }
+      }
+      String locMsg;
+      serializeJson(locDoc, locMsg);
+      ws.textAll(locMsg);
+
+      DEBUG_LOGF("FILAMAN", "pollResult: uid=%s, found=%s, location=%s",
+                 resUid.c_str(), resFound ? "true" : "false", resLocation.c_str());
+    }
+  }
 
   // ---------------------------------------------------------------------------
   // 2) Reboot (falls angefordert) + Countdown-UI
@@ -638,7 +739,7 @@ void loop()
   }
 
   // ---------------------------------------------------------------------------
-  // 4) LED-Controller: Filament (Auto-Off erst nach Tag-Entfernung)
+  // 4) LED controller: filament (auto-off only after tag removal)
   // ---------------------------------------------------------------------------
   LEDCTRL_FILAMENT::update();
 
@@ -654,7 +755,7 @@ void loop()
   const bool idleNow = LEDCTRL_NFC::isIdle();
   if (!rebootPending && idleNow && !prevIdle)
   {
-    // NICHT auf Idle, wenn WebIF gerade aktiv ist
+    // Do not switch to idle if the WebIF is currently active
     if (!webifIsArmed())
     {
       DisplayAnim::startIdleTextFirst(now);
@@ -681,9 +782,78 @@ void loop()
   MYDISPLAY::renderSelfUpdateStatus(getSelfUpdateStatus());
 
   // ---------------------------------------------------------------------------
-  // 8) Time Loop -> timemanager.cpp
+  // 9) Time Loop -> timemanager.cpp
   // ---------------------------------------------------------------------------
   TimeManager::loop();
+
+  // ---------------------------------------------------------------------------
+  // 10) refresh filaman locations cache / sync Filaman database locally
+  // ---------------------------------------------------------------------------
+  static unsigned long lastFilamanWarmup = 0;
+  const unsigned long FILAMAN_WARMUP_INTERVAL_MS = 30UL * 60UL * 1000UL;
+  if (millis() - lastFilamanWarmup > FILAMAN_WARMUP_INTERVAL_MS)
+  {
+    lastFilamanWarmup = millis();
+    FilamanManager::requestWarmup();
+  }
+
+  {
+    std::vector<FilamentSyncEntry> syncEntries;
+    FilamentSyncSummary syncSummary;
+    bool syncOk;
+    if (FilamanManager::pollSyncResult(syncEntries, syncOk, syncSummary))
+    {
+      FilamanSyncApplyResult applyResult;
+      if (syncOk)
+      {
+        applyResult = applyFilamanSyncToLocalDb(syncEntries);
+      }
+      else if (CONFIGV2.system.debugMode)
+      {
+        Serial.println("[FILAMAN] sync failed");
+      }
+
+      // An alle WebIF-Clients broadcasten, damit der Nutzer, der den Sync
+      // ausgelöst hat (und jeder, der das Dashboard gerade offen hat), das
+      // Ergebnis sieht — nicht nur die serielle Konsole.
+      JsonDocument syncDoc;
+      syncDoc["action"] = "filamanSyncResult";
+      syncDoc["success"] = syncOk;
+
+      if (syncOk)
+      {
+        syncDoc["totalFilamentsScanned"] = syncSummary.totalFilamentsScanned;
+        syncDoc["taggedFilamentsFound"] = syncSummary.taggedFilamentsFound;
+        syncDoc["totalSpoolsFound"] = syncSummary.totalSpoolsFound;
+        syncDoc["pagesFailed"] = syncSummary.pagesFailed;
+        syncDoc["updated"] = applyResult.updated;
+        syncDoc["added"] = applyResult.added;
+        syncDoc["skipped"] = applyResult.skipped;
+
+        if (!syncSummary.taggedWithoutSpools.empty())
+        {
+          JsonArray arr = syncDoc["taggedWithoutSpools"].to<JsonArray>();
+          for (auto &desc : syncSummary.taggedWithoutSpools)
+          {
+            arr.add(desc);
+          }
+        }
+      }
+      String syncMsg;
+      serializeJson(syncDoc, syncMsg);
+      ws.textAll(syncMsg);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // 10)  RESET DEVICE AND DATA
+  // ---------------------------------------------------------------------------
+
+  if (factoryResetRequested)
+  {
+    factoryReset();
+    return;
+  }
 
   // ---------------------------------------------------------------------------
   // LAST) (Optional) yield() und chrash check

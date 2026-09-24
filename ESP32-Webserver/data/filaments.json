@@ -1,32 +1,13 @@
 [
   {
-    "uid": "04:8A:BD:2E:4F:61:81",
+    "uid": "AA:BB:CC:DD:EE:FF:AB",
     "vendor": "change me",
     "type": "PLA",
     "color": "red",
     "ledIndex": 0,
     "info1": "test 1",
-    "info2": "http://sunlu.de",
-    "storage": "Box 1"
-  },
-  {
-    "uid": "04:8A:BD:2E:4F:61:82",
-    "vendor": "change me 2",
-    "type": "PLA+",
-    "color": "blue",
-    "ledIndex": 1,
-    "info1": "test 2",
-    "info2": "http://tinmorry.de",
-    "storage": "Box 2"
-  },
-  {
-    "uid": "04:8A:BD:2E:4F:61:83",
-    "vendor": "change me 3",
-    "type": "PLA+",
-    "color": "yellow",
-    "ledIndex": 2,
-    "info1": "test 3",
-    "info2": "http://bambu.de",
-    "storage": "Box 3"
+    "info2": "http://example.com",
+    "storage": "Box 1",
+    "filamentId": -1
   }
 ]

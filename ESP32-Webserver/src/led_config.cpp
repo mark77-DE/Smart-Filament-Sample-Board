@@ -2,7 +2,7 @@
 #include "config.h"
 
 // ============================================================================
-// NeoPixel-Typ aus Konfiguration erzeugen
+// Create the NeoPixel type from the configuration
 // ============================================================================
 
 neoPixelType getNeoPixelType(LedType type, LedOrder order)

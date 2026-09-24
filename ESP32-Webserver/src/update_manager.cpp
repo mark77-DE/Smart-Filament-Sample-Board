@@ -8,6 +8,11 @@
 #include <Update.h>
 #include <WiFi.h>
 #include <esp_heap_caps.h>
+#include "filaman_manager.h"
+#include "debug_utils.h"
+#include "ledctrl_filament.h"
+#include "ledctrl_nfc.h"
+#include "display/display_anim.h"
 
 static bool changed = false;
 
@@ -33,39 +38,29 @@ void updateInit()
         updateIntervalMs = CONFIGV2.system.updateCheckInterval * 60 * 1000UL;
     }
 
-    // erster Check nach initialDelay
+    // First check after initialDelay
     g_updateInfo.lastCheck = millis() - (updateIntervalMs - initialDelayMs);
 
     changed = true;
 
-    if (CONFIGV2.system.debugMode)
-    {
-        Serial.println("[UPDATE-CHECK] Init done. Current version: " + g_updateInfo.currentVersion);
-        Serial.println("[UPDATE-CHECK] Interval (s): " + String(updateIntervalMs / 1000));
-        Serial.println("[UPDATE-CHECK] URL: " + String(FW_VERSION_URL));
-        Serial.println("[UPDATE-CHECK] Binary URL: " + String(FW_BINARY_URL));
-    }
+    DEBUG_LOGF("update-check", "Init done. Current version: %s", g_updateInfo.currentVersion.c_str());
+    DEBUG_LOGF("update-check", "Interval (s): %lu", updateIntervalMs / 1000);
+    DEBUG_LOGF("update-check", "URL: %s", FW_VERSION_URL);
+    DEBUG_LOGF("update-check", "Binary URL: %s", FW_BINARY_URL);
 }
 
-// ----------------------------------------
 bool checkForUpdate(String &latestVersion)
 {
     if (WiFi.status() != WL_CONNECTED)
     {
-        if (CONFIGV2.system.debugMode)
-        {
-            Serial.println("[UPDATE-CHECK] WiFi not connected, skipping check.");
-        }
+        DEBUG_LOG("UPDATE-CHECK", "WiFi not connected");
         return false;
     }
 
-    if (CONFIGV2.system.debugMode)
-    {
-        Serial.println("[UPDATE-CHECK] Checking for update");
-        Serial.println("[UPDATE-CHECK] Uptime: " + String(millis() / 1000) + " seconds");
-        Serial.println("[UPDATE-CHECK] URL: " + String(FW_VERSION_URL));
-        Serial.println("[UPDATE-CHECK] Binary URL: " + String(FW_BINARY_URL));
-    }
+    DEBUG_LOGF("update-check", "Init done. Current version: %s", g_updateInfo.currentVersion.c_str());
+    DEBUG_LOGF("update-check", "Interval (s): %lu", updateIntervalMs / 1000);
+    DEBUG_LOGF("update-check", "URL: %s", FW_VERSION_URL);
+    DEBUG_LOGF("update-check", "Binary URL: %s", FW_BINARY_URL);
 
     HTTPClient http;
     http.setTimeout(2000);
@@ -89,36 +84,26 @@ bool checkForUpdate(String &latestVersion)
 
     if (!beginOk)
     {
-        if (CONFIGV2.system.debugMode)
-        {
-            Serial.println("[UPDATE-CHECK] http.begin() failed");
-        }
+        DEBUG_LOG("UPDATE-CHECK", "http.begin() failed");
+        
         return false;
     }
 
-    if (CONFIGV2.system.debugMode) Serial.println("[HEAP] Checkpoint A (before GET)");
-    heap_caps_check_integrity_all(true);
+    
 
     int httpCode = http.GET();
 
-    if (CONFIGV2.system.debugMode) Serial.println("[HEAP] Checkpoint B (after GET)");
-    heap_caps_check_integrity_all(true);
+   
 
-    if (CONFIGV2.system.debugMode)
-    {
-        Serial.println("[UPDATE-CHECK] HTTP Code: " + String(httpCode));
-    }
+    DEBUG_LOGF("UPDATE-CHECK", "HTTP Code: %d", httpCode);
+    
 
     if (httpCode != 200)
     {
-        if (CONFIGV2.system.debugMode)
-        {
-            Serial.println("[UPDATE-CHECK] HTTP request failed");
-        }
+        DEBUG_LOG("UPDATE-CHECK", "HTTP request failed");
         http.end();
 
-        if (CONFIGV2.system.debugMode) Serial.println("[HEAP] Checkpoint C-fail (after http.end())");
-        heap_caps_check_integrity_all(true);
+        
 
         return false;
     }
@@ -126,20 +111,16 @@ bool checkForUpdate(String &latestVersion)
     latestVersion = http.getString();
     latestVersion.trim();
 
-    if (CONFIGV2.system.debugMode) Serial.println("[HEAP] Checkpoint C (after getString)");
-    heap_caps_check_integrity_all(true);
+    
 
     LATEST_FIRMWARE_VERSION = latestVersion;
 
-    if (CONFIGV2.system.debugMode)
-    {
-        Serial.println("[UPDATE-CHECK] Latest version fetched: " + latestVersion);
-    }
+    DEBUG_LOGF("UPDATE-CHECK", "Latest version fetched: %s", latestVersion.c_str());
+    
 
     http.end();
 
-    if (CONFIGV2.system.debugMode) Serial.println("[HEAP] Checkpoint D (after http.end())");
-    heap_caps_check_integrity_all(true);
+    
 
     return latestVersion.length() > 0;
 }
@@ -173,12 +154,8 @@ bool isUpdateAvailable(const String &current, const String &latest)
 {
     bool available = compareVersion(current, latest) > 0;
 
-    if (CONFIGV2.system.debugMode)
-    {
-        Serial.println("[UPDATE-CHECK] Compare versions: Current=" + current +
-                       " Latest=" + latest +
-                       " -> UpdateAvailable=" + String(available));
-    }
+    DEBUG_LOGF("UPDATE-CHECK", "Compare versions: current=%s, latest=%s, updateAvailable=%d", current.c_str(), latest.c_str(), available);
+    
 
     return available;
 }
@@ -195,6 +172,13 @@ void updateTask(void *parameter)
         updateResultReady = true;
     }
 
+    // ----------------------------------------
+    // Update check finished -> resume UI
+    // ----------------------------------------
+    LEDCTRL_FILAMENT::standBy(false);
+    LEDCTRL_NFC::standBy(false);
+    DisplayAnim::startIdle(millis());
+
     updateTaskRunning = false;
     vTaskDelete(NULL);
 }
@@ -202,12 +186,13 @@ void updateTask(void *parameter)
 // ----------------------------------------
 void startUpdateTask()
 {
+    if (FilamanManager::isSyncBusy())
+        return;
+
     if (updateTaskRunning)
     {
-        if (CONFIGV2.system.debugMode)
-        {
-            Serial.println("[UPDATE-CHECK] Task already running, skip.");
-        }
+        DEBUG_LOG("UPDATE-CHECK", "Task already running, skip.");
+        
         return;
     }
 
@@ -232,7 +217,7 @@ void updateLoop()
     if (CONFIGV2.system.updateCheckInterval != updateIntervalMs / (60 * 1000UL))
     {
         updateIntervalMs = CONFIGV2.system.updateCheckInterval * 60 * 1000UL;
-        Serial.println("[UPDATE-CHECK] Update interval changed to " + String(updateIntervalMs) + " ms");
+        
     }
 
     // 🔹 Zeit noch nicht erreicht
@@ -240,11 +225,18 @@ void updateLoop()
     {
         g_updateInfo.lastCheck = now;
 
-        if (CONFIGV2.system.debugMode)
-        {
-            Serial.println("[UPDATE-CHECK] Trigger async update check");
-        }
+
+
+        DEBUG_LOGF("UPDATE-CHECK", "Trigger async update check");
+        DisplayAnim::stop();
+        MYDISPLAY::clear();
+        LEDCTRL_FILAMENT::standBy(true);
+        LEDCTRL_NFC::standBy(true);
+        MYDISPLAY::showCentered("Update check");
+        
         startUpdateTask();
+
+
     }
 
     // 🔹 Ergebnis verarbeiten (NON-BLOCKING)
@@ -254,10 +246,8 @@ void updateLoop()
 
         if (latestVersionBuffer != g_updateInfo.latestVersion)
         {
-            if (CONFIGV2.system.debugMode)
-            {
-                Serial.println("[UPDATE-CHECK] New version detected!");
-            }
+            DEBUG_LOGF("UPDATE-CHECK", "New version detected!");
+            
             changed = true;
         }
 
@@ -364,16 +354,10 @@ static void selfUpdateTask(void *parameter)
     String latestVersion = g_updateInfo.latestVersion;
     String firmwareAsset = getFirmwareAssetName();
 
-    if (CONFIGV2.system.debugMode)
-    {
-        Serial.println("[SELF-UPDATE] Task started.");
-        Serial.println("[SELF-UPDATE] Current version: " +
-                       g_updateInfo.currentVersion);
-        Serial.println("[SELF-UPDATE] Latest version: " +
-                       latestVersion);
-        Serial.println("[SELF-UPDATE] Firmware asset: " +
-                       firmwareAsset);
-    }
+    DEBUG_LOG("SELF-UPDATE", "Task started.");
+DEBUG_LOGF("SELF-UPDATE", "Current version: %s", g_updateInfo.currentVersion.c_str());
+DEBUG_LOGF("SELF-UPDATE", "Latest version: %s", latestVersion.c_str());
+DEBUG_LOGF("SELF-UPDATE", "Firmware asset: %s", firmwareAsset.c_str());
 
     // ----------------------------------------
     // Validate latest version
@@ -450,16 +434,13 @@ static void selfUpdateTask(void *parameter)
         return;
     }
 
-    if (CONFIGV2.system.debugMode)
-    {
-        Serial.println("[SELF-UPDATE] Firmware URL:");
-        Serial.println(firmwareUrl);
-    }
+    DEBUG_LOGF("self-update", "Update URL: %s", firmwareUrl.c_str());
+    
 
     g_selfUpdateStatus.message = "Connecting to firmware server";
 
     // ----------------------------------------
-    // Start HTTPS or lokal http connection
+    // Start HTTPS or local HTTP connection
     // ----------------------------------------
 
     bool isHttps = String(firmwareUrl).startsWith("https://");
@@ -496,28 +477,21 @@ static void selfUpdateTask(void *parameter)
         return;
     }
 
-    if (CONFIGV2.system.debugMode)
-        Serial.println("[SELF-UPDATE] Starting firmware download...");
+    DEBUG_LOG("self-update", "Starting firmware download...");
 
     // in checkForUpdate(), vor und nach dem HTTP-Request
-    heap_caps_check_integrity_all(true); // vorher: sollte noch OK sein
+    heap_caps_check_integrity_all(true); // before: should still be OK
 
     int httpCode = http.GET();
 
-    heap_caps_check_integrity_all(true); // nachher: hier crasht es jetzt ggf. schon,
-                                         // statt erst Minuten später im tcpip_thread
+    heap_caps_check_integrity_all(true); // after: may already crash here,
+                                         // instead of minutes later in the tcpip thread
 
-    if (CONFIGV2.system.debugMode)
-    {
-        Serial.println("[SELF-UPDATE] HTTP response code: " +
-                       String(httpCode));
-    }
+    DEBUG_LOGF("SELF-UPDATE", "HTTP response code: %d", httpCode);
 
     if (httpCode != HTTP_CODE_OK)
     {
-        Serial.println(
-            "[SELF-UPDATE] Firmware download failed. HTTP code: " +
-            String(httpCode));
+        LOG_LNF("SELF-UPDATE", "Firmware download failed. HTTP code: %d", httpCode);
 
         g_selfUpdateStatus.running = false;
         g_selfUpdateStatus.finished = true;
@@ -539,9 +513,7 @@ static void selfUpdateTask(void *parameter)
 
     if (totalSize <= 0)
     {
-        Serial.println(
-            "[SELF-UPDATE] Invalid firmware size: " +
-            String(totalSize));
+        LOG_LNF("SELF-UPDATE", "Invalid firmware size: %d", totalSize);
 
         g_selfUpdateStatus.running = false;
         g_selfUpdateStatus.finished = true;
@@ -555,12 +527,7 @@ static void selfUpdateTask(void *parameter)
         return;
     }
 
-    if (CONFIGV2.system.debugMode)
-    {
-        Serial.println("[SELF-UPDATE] Firmware size: " +
-                       String(totalSize) +
-                       " bytes");
-    }
+    LOG_LNF("SELF-UPDATE", "Firmware size: %d bytes", totalSize);
 
     // ----------------------------------------
     // Get download stream
@@ -568,10 +535,14 @@ static void selfUpdateTask(void *parameter)
 
     WiFiClient *stream = http.getStreamPtr();
 
+    DEBUG_LOGF("UPDATE-CHECK", "HTTP Code: %d", httpCode);
+    DEBUG_LOGF("UPDATE-CHECK", "Content-Length: %d", http.getSize());
+    DEBUG_LOGF("UPDATE-CHECK", "Stream connected: %d", stream->connected());
+    DEBUG_LOGF("UPDATE-CHECK", "Stream available: %d", stream->available());
+
     if (stream == nullptr)
     {
-        Serial.println(
-            "[SELF-UPDATE] Firmware download stream unavailable.");
+        LOG_LN("SELF-UPDATE", "Firmware download stream unavailable.");
 
         g_selfUpdateStatus.running = false;
         g_selfUpdateStatus.finished = true;
@@ -591,9 +562,7 @@ static void selfUpdateTask(void *parameter)
 
     if (!Update.begin(totalSize))
     {
-        Serial.println(
-            "[SELF-UPDATE] Update.begin() failed. Error: " +
-            String(Update.getError()));
+        LOG_LNF("SELF-UPDATE", "Update.begin() failed. Error: %s", Update.errorString());
 
         g_selfUpdateStatus.running = false;
         g_selfUpdateStatus.finished = true;
@@ -629,7 +598,7 @@ static void selfUpdateTask(void *parameter)
         {
             if (!http.connected())
             {
-                Serial.println("[SELF-UPDATE] Connection lost.");
+                LOG_LN("self-update", "Connection lost.");
 
                 Update.abort();
 
@@ -647,7 +616,7 @@ static void selfUpdateTask(void *parameter)
 
             if (millis() - lastDataTime > 15000)
             {
-                Serial.println("[SELF-UPDATE] Download timeout.");
+                LOG_LN("self-update", "Download timeout.");
 
                 Update.abort();
 
@@ -691,9 +660,7 @@ static void selfUpdateTask(void *parameter)
 
         if (written != (size_t)len)
         {
-            Serial.println(
-                "[SELF-UPDATE] Firmware write failed. Error: " +
-                String(Update.getError()));
+            LOG_LNF("self-update", "Firmware write failed. Error: %s", Update.errorString());
 
             Update.abort();
 
@@ -730,13 +697,8 @@ static void selfUpdateTask(void *parameter)
                 String(progressStep) +
                 "%";
 
-            if (CONFIGV2.system.debugMode)
-            {
-                Serial.println(
-                    "[SELF-UPDATE] Progress: " +
-                    String(progressStep) +
-                    "%");
-            }
+            DEBUG_LOGF("self-update", "Progress: %d%", progressStep);
+
         }
 
         yield();
@@ -749,14 +711,11 @@ static void selfUpdateTask(void *parameter)
     g_selfUpdateStatus.progress = 100;
     g_selfUpdateStatus.message = "Finalizing firmware update";
 
-    if (CONFIGV2.system.debugMode)
-        Serial.println("[SELF-UPDATE] Finalizing OTA update...");
+    DEBUG_LOG("self-update", "Finalizing OTA update...");
 
     if (!Update.end(false))
     {
-        Serial.println(
-            "[SELF-UPDATE] Update.end() failed. Error: " +
-            String(Update.getError()));
+        LOG_LNF("SELF-UPDATE", "Update.end() failed. Error: %s", Update.errorString());
 
         g_selfUpdateStatus.running = false;
         g_selfUpdateStatus.finished = true;
@@ -776,7 +735,7 @@ static void selfUpdateTask(void *parameter)
 
     if (!Update.isFinished())
     {
-        Serial.println("[SELF-UPDATE] OTA update is not finished.");
+        LOG_LN("SELF-UPDATE","OTA update is not finished.");
 
         g_selfUpdateStatus.running = false;
         g_selfUpdateStatus.finished = true;
@@ -802,7 +761,7 @@ static void selfUpdateTask(void *parameter)
     g_selfUpdateStatus.progress = 100;
     g_selfUpdateStatus.message = "Firmware update successful";
 
-    Serial.println("[SELF-UPDATE] Firmware update successful.");
+    LOG_LN("SELF-UPDATE","Firmware update successful.");
 
     // ----------------------------------------
     // Reboot after successful update
@@ -829,9 +788,7 @@ bool startSelfUpdate()
     if (selfUpdateTaskRunning ||
         g_selfUpdateStatus.running)
     {
-        if (CONFIGV2.system.debugMode)
-            Serial.println(
-                "[SELF-UPDATE] Update already running.");
+        DEBUG_LOG("SELF-UPDATE","Update already running.");
 
         return false;
     }
@@ -843,11 +800,8 @@ bool startSelfUpdate()
     g_selfUpdateStatus.progress = 0;
     g_selfUpdateStatus.message = "Starting firmware update";
 
-    if (CONFIGV2.system.debugMode)
-    {
-        Serial.println(
-            "[SELF-UPDATE] Starting self-update process...");
-    }
+    DEBUG_LOG("SELF-UPDATE","Starting self-update process...");
+    
 
     // Check WiFi before starting the task
     if (WiFi.status() != WL_CONNECTED)
@@ -857,7 +811,7 @@ bool startSelfUpdate()
         g_selfUpdateStatus.success = false;
         g_selfUpdateStatus.message = "WiFi not connected";
 
-        Serial.println("[SELF-UPDATE] WiFi not connected.");
+        LOG_LN("SELF-UPDATE","WiFi not connected.");
 
         return false;
     }
@@ -874,8 +828,7 @@ bool startSelfUpdate()
 
     if (result != pdPASS)
     {
-        Serial.println(
-            "[SELF-UPDATE] Failed to create update task.");
+        LOG_LN("SELF-UPDATE","Failed to create update task.");
 
         g_selfUpdateStatus.running = false;
         g_selfUpdateStatus.finished = true;
